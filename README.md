@@ -8,8 +8,8 @@
 ---
 <dl>
 	<dt>UI</dt>
-	<dd>[화면 중앙 상단 메시지](http://biud436.blog.me/220146919203)</dd>
-	<dd>[HUD(HP, MP, EXP, LEVEL)](http://biud436.blog.me/220132329008)</dd>
+	>[화면 중앙 상단 메시지](http://biud436.blog.me/220146919203)
+	>[HUD(HP, MP, EXP, LEVEL)](http://biud436.blog.me/220132329008)
 
 	<dt>시스템</dt>
 	<dd>목록</dd>
