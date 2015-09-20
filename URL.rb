@@ -1,3 +1,9 @@
+# 윈도우 API 함수 URLDownloadToFileW 함수를 이용해 인터넷으로 파일을 다운로드 받는 스크립트입니다.
+
+# -  코드를 입력하고 실행한다
+# URL >> "https://d289qh4hsbjjw7.cloudfront.net/rpgmaker-20130522223546811/files/carousel-screenshot-rpg-maker-mv.jpg"
+
+# - Graphics/Picture 폴더에 새롭게 추가되어있는 파일을 확인한다
 module URL
   API = Win32API.new('urlmon.dll','URLDownloadToFileW', 'ppplp','l')
   def self.download(url)
