@@ -1,5 +1,5 @@
 #==============================================================================
-# ** Audio Listener
+# ** Audio_Listener
 # Author : biud436
 # Date : 2015.10.13
 # Version : 1.0
@@ -7,7 +7,7 @@
 module AudioListener
     
   # BGS 설정
-  @@bgs = RPG::SE.new("",80)
+  @@se = RPG::SE.new("",80)
   
   # 대기 시간
   SEC = 2
@@ -19,9 +19,9 @@ module AudioListener
   #--------------------------------------------------------------------------
   # * BGS 설정
   #--------------------------------------------------------------------------   
-  def self.set_bgs
+  def self.set_se
     $game_map.map.note.split(/\n/).each do |note|
-      @@bgs.name = (note.gsub!(/<BGS>[ ]*(.+)/) { $1.to_s }) || 'Attack1' 
+      @@se.name = (note.gsub!(/<SE>[ ]*(.+)/) { $1.to_s }) || 'Attack1' 
     end    
   end
 
@@ -32,7 +32,7 @@ module AudioListener
     loop do
       next unless SceneManager.scene.is_a?(Scene_Map)
       AudioEvent.stop unless loop?
-      @@bgs.play 
+      @@se.play 
       sleep(SEC)
     end
   end
@@ -41,7 +41,7 @@ module AudioListener
   # * 맵 이름 확인
   #--------------------------------------------------------------------------     
   def self.loop?
-    ($data_mapinfos[$game_map.map_id].name =~ /<BGS_LOOP>/i) != nil
+    ($data_mapinfos[$game_map.map_id].name =~ /<SE_LOOP>/i) != nil
   end
 
 end
@@ -53,7 +53,7 @@ module AudioEvent
   def self.start
     if AudioListener.loop?
       AudioListener.t = Thread.new do
-        AudioListener.set_bgs
+        AudioListener.set_se
         AudioListener.start 
       end
     end
