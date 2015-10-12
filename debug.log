@@ -1,0 +1,9 @@
+[1012/204601:WARNING:resource_bundle.cc(304)] locale_file_path.empty()
+[1012/204601:ERROR:main_delegate.cc(564)] Could not load locale pak for en-US
+[1012/204601:ERROR:main_delegate.cc(571)] Could not load cef.pak
+[1012/204601:ERROR:main_delegate.cc(588)] Could not load cef_100_percent.pak
+[1012/204602:WARNING:resource_bundle.cc(497)] locale resources are not loaded
+[1012/204608:WARNING:resource_bundle.cc(304)] locale_file_path.empty()
+[1012/204608:ERROR:main_delegate.cc(564)] Could not load locale pak for en-US
+[1012/204608:ERROR:main_delegate.cc(571)] Could not load cef.pak
+[1012/204608:ERROR:main_delegate.cc(588)] Could not load cef_100_percent.pak

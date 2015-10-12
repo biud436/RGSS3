@@ -68,7 +68,7 @@ module RS
   
   # 기본 설정
   LIST["폰트명"] = Font.default_name
-  LIST["폰트크기"] = Font.default_size + 2
+  LIST["폰트크기"] = Font.default_size
   LIST["X"] = -186
   LIST["Y"] = 0
   LIST["높이"] = Graphics.height - LIST["Y"]
