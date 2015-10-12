@@ -1,13 +1,14 @@
 #==============================================================================
-# ** Hangul Message System 1.5.3 (RPG Maker VX Ace)
+# ** Hangul Message System 1.5.3b (RPG Maker VX Ace)
 #==============================================================================
 # Name       : 한글 메시지 시스템
 # Author     : 러닝은빛(biud436)
-# Version    : 1.5.3
+# Version    : 1.5.3b
 # Link       : http://biud436.blog.me/220251747366
 #==============================================================================
 # ** 업데이트 로그
 #==============================================================================
+# 2015.10.12 - 이름 윈도우 텍스트 크기 설정
 # 2015.09.06 - 화면 영역 내 메시지 표시 기능
 # 2015.08.22 - 버그 수정(명령어 처리 순서 변경)
 # 2015.08.11 - RGB 모듈 코드 정리
@@ -67,7 +68,7 @@ module RS
   
   # 기본 설정
   LIST["폰트명"] = Font.default_name
-  LIST["폰트크기"] = Font.default_size
+  LIST["폰트크기"] = Font.default_size + 2
   LIST["X"] = -186
   LIST["Y"] = 0
   LIST["높이"] = Graphics.height - LIST["Y"]
@@ -1148,6 +1149,7 @@ class RS::Window_Name < Window_Base
     self.arrows_visible = false
     self.width = @_width || window_width
     text = convert_escape_characters(@text)
+    self.contents.font.size = RS::LIST["폰트크기"]
     draw_text(0,0,contents_width,calc_line_height(text),text.to_s,1)
   end
   #--------------------------------------------------------------------------
