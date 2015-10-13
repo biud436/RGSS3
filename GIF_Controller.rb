@@ -1,6 +1,8 @@
 #==============================================================================
 # ** GIF_Controller
 # Author : biud436
+# Date : 2015.10.12
+# Version : 1.0b
 #==============================================================================
 module GIF
   
@@ -8,7 +10,7 @@ module GIF
   BASE_FOLDER = "Graphics/Pictures/"  
 
   # GIF 구조체
-  GIFC = Struct.new(:path, :x, :y, :visible)
+  GIFC = Struct.new(:path, :event, :visible)
   
 end
 
@@ -39,6 +41,18 @@ class Spriteset_Map
   end
 end
 
+class GifSprite
+  attr_accessor :position_update
+  #--------------------------------------------------------------------------
+  # * 위치 업데이트
+  #--------------------------------------------------------------------------   
+  alias alias_position_update update
+  def update
+    alias_position_update
+    @position_update.call
+  end
+end
+
 class GIF_Controller
   include GIF
   #--------------------------------------------------------------------------
@@ -64,8 +78,7 @@ class GIF_Controller
         next unless l.code == 108 || l.code == 408
         gif = GIFC.new
         gif.path = l.parameters[0].gsub!(/GIF\W*->\W*(.+)/i){ gif_path($1) }
-        gif.x = event.screen_x
-        gif.y = event.screen_y
+        gif.event = event
         gif.visible = true
         temp << gif
       end 
@@ -79,9 +92,11 @@ class GIF_Controller
     gif_list.each do |gif|
       pic = GifSprite.new(gif.path, wait_time)
       file_name = File.basename(gif.path,".gif")
-      pic.x = gif.x - (pic.width / 2)
-      pic.y = gif.y - (pic.height / 2)
       pic.visible = gif.visible
+      pic.position_update = ->() do
+        pic.x = gif.event.screen_x - (pic.width / 2)
+        pic.y = gif.event.screen_y - (pic.height / 2)
+      end
       @list << pic
     end
   end
