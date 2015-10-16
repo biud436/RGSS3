@@ -30,7 +30,7 @@ module Logo
   end  
   
   def play_sound(path)
-    c = path.scan(/\w+/)
+    c = path.scan(/[^\/]+/)
     case c[0]
     when "ME" then Audio.me_play('Audio/ME/'+c[1],ME_Volume) 
     when "SE" then Audio.se_play('Audio/SE/'+c[1],70,100) 
@@ -39,12 +39,12 @@ module Logo
     end
   end
 end
-
+ 
 def rgss_main(&block)
   Logo.start if not $BTEST
   block.call
 end
-
+ 
 if not Logo::TITLE_MUSIC
   class Scene_Title < Scene_Base
     def play_title_music
