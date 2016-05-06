@@ -1,13 +1,14 @@
 #==============================================================================
-# ** Hangul Message System 1.5.3b (RPG Maker VX Ace)
+# ** Hangul Message System 1.5.4 (RPG Maker VX Ace)
 #==============================================================================
 # Name       : 한글 메시지 시스템
 # Author     : 러닝은빛(biud436)
-# Version    : 1.5.3b
+# Version    : 1.5.4
 # Link       : http://biud436.blog.me/220251747366
 #==============================================================================
 # ** 업데이트 로그
 #==============================================================================
+# 2016.05.07 - 정규표현식 및 텍스트 매칭 코드 수정, 자동 개행 기능 추가
 # 2015.10.12 - 이름 윈도우 텍스트 크기 설정
 # 2015.09.06 - 화면 영역 내 메시지 표시 기능
 # 2015.08.22 - 버그 수정(명령어 처리 순서 변경)
@@ -57,6 +58,7 @@
 # \이탤릭!
 # \속도![텍스트의 속도]
 # \그림![그림파일명]
+# \자동개행!
 #==============================================================================
 # ** RS
 #------------------------------------------------------------------------------
@@ -88,10 +90,9 @@ module RS
   LIST["화면영역내표시"] = true
   
   # 정규 표현식
-  BASE = "속크굵이테말효그"
   CODE["16진수"] = /#([a-zA-Z^\d]*)/i
   CODE["색상추출"] = /^\p{hangul}+|c_[a-zA-z]+$/
-  CODE["명령어"] = /^[\$\.\|\^!><\{\}\\]|^[A-Z]|^[\#색#{BASE}]+|^\[+/i
+  CODE["명령어"] = /^[\$\.\|\^!><\{\}\\]|^[A-Z]|^[가-힣]+[!]*/i
   CODE["이름색상코드"] = /\[(\p{hangul}+[\d]*|c_[\p{Latin}]+)\]/
   CODE["웹색상"] = /([\p{Latin}\d]+)!/
   CODE["추출"] = /^(\p{hangul}+)/
@@ -825,32 +826,31 @@ class Window_Message
   #--------------------------------------------------------------------------    
   alias msg_speed_process_escape_character process_escape_character
   def process_escape_character(code, text, pos)   
-    if (code=~/[#{RS::BASE}]/) != nil
-      sign = code.upcase + text.slice!(RS::CODE["처리!"])[$1] rescue ""
-      case sign
-      when '속도' 
+      case code
+      when '속도!' 
         set_text_speed(obtain_escape_param(text).to_i)
-      when '크기'
+      when '크기!'
         t = obtain_escape_param(text).to_i
         contents.font.size = t
         pos[:height] = [t,pos[:height]].max
-      when '굵게' 
+      when '굵게!' 
         contents.font.bold = !contents.font.bold
-      when '이탤릭' 
+      when '이탤릭!' 
         contents.font.italic = !contents.font.italic
-      when '테두리' 
+      when '테두리!' 
         contents.font.outline = !contents.font.outline
-      when '테두리색'
+      when '테두리색!'
         color = Color.gm_color(obtain_name_color(text))
         change_out_color(color)      
-      when '그림'
+      when '그림!'
         process_draw_picture(obtain_escape_sound(text).to_s,pos)
-      when '효과음' 
+      when '효과음!' 
         $game_map.se_play = obtain_escape_sound(text).to_s
+      when '자동개행!'
+        $game_message.word_wrap_enabled = true
+      else
+        msg_speed_process_escape_character(code, text, pos)
       end  
-    else
-      msg_speed_process_escape_character(code, text, pos)
-    end
   end
   #--------------------------------------------------------------------------
   # * 그림의 처리
@@ -1195,6 +1195,7 @@ class Game_Message
   attr_accessor :balloon
   attr_accessor :texts  
   attr_accessor :ox
+  attr_accessor :word_wrap_enabled
   #--------------------------------------------------------------------------
   # * 초기화
   #--------------------------------------------------------------------------      
@@ -1212,6 +1213,7 @@ class Game_Message
     @message_speed = 1
     @balloon = -2
     @ox = 0
+    @word_wrap_enabled = false
   end
 end
 
@@ -1266,6 +1268,7 @@ class Window_Message < Window_Base
     end
     setup_owner(sign.to_i)
     update_balloon_position
+    $game_message.word_wrap_enabled = false
   end
   #--------------------------------------------------------------------------
   # * 텍스트 처리
@@ -1572,4 +1575,37 @@ class Window_Message
   def visible_line_number
     $game_message.line || RS::LIST["라인"]
   end
+  #--------------------------------------------------------------------------
+  # * Character Processing
+  #     c    : Characters
+  #     text : A character string buffer in drawing processing (destructive)
+  #     pos  : Draw position {:x, :y, :new_x, :height}
+  #--------------------------------------------------------------------------
+  def process_character(c, text, pos)
+    case c
+    when "\n"   # New line
+      process_new_line(text, pos)
+    when "\f"   # New page
+      process_new_page(text, pos)
+    when "\e"   # Control character
+      process_escape_character(obtain_escape_code(text), text, pos)
+    else        # Normal character
+      process_normal_character(c, pos, text)
+    end
+  end  
+  #--------------------------------------------------------------------------
+  # * 텍스트 자동 개행
+  #--------------------------------------------------------------------------
+  alias process_word_wrap_character process_normal_character
+  def process_normal_character(c, pos, text)
+    
+    # 자동 개행 여부 판단
+    if $game_message.word_wrap_enabled
+      tw = text_size(c).width
+      if pos[:x] + (tw * 2) > contents_width
+        process_new_line(text, pos)
+      end
+    end
+    process_word_wrap_character(c, pos)
+  end  
 end
