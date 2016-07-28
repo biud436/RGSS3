@@ -8,6 +8,10 @@
 #   2015.02.02 - 다른 맵에 있는 이벤트도 불러올 수 있습니다
 #   2015.01.18 - 최초 버전입니다
 #==============================================================================
+# ** Terms of Use
+#==============================================================================
+# Free for commercial and non-commercial use
+#==============================================================================
 
 class Game_Event
   attr_reader :move_type
@@ -20,7 +24,7 @@ module OPT
   EVData = Struct.new(:sprite_name,:sprite_index,:pages)
   #--------------------------------------------------------------------------
   # * Init Struct
-  #--------------------------------------------------------------------------  
+  #--------------------------------------------------------------------------
   def set_character_data
     ev_data = EVData.new
     page = RPG::Event::Page.new
@@ -39,7 +43,7 @@ module OPT
   end
   #--------------------------------------------------------------------------
   # * 이벤트 커맨드 리스트를 스크립트로 작성한 것입니다
-  #--------------------------------------------------------------------------  
+  #--------------------------------------------------------------------------
   def get_test_event_list
     list = []
     # 페이스칩 명 , 페이스칩의 인덱스, 메시지의 배경, 메시지의 위치 설정
@@ -54,34 +58,34 @@ module OPT
   end
   #--------------------------------------------------------------------------
   # * 실제 이벤트에 설정해놓은 커맨드 리스트를 가져옵니다
-  #--------------------------------------------------------------------------  
+  #--------------------------------------------------------------------------
   def get_event_list(event_index)
     list = $game_map.events[event_index].list
     list
   end
   #--------------------------------------------------------------------------
   # * 이동 루트의 설정을 스크립트로 작성한 것입니다
-  #--------------------------------------------------------------------------  
+  #--------------------------------------------------------------------------
   def get_test_move_route
     # 이동 루트의 설정입니다
     move_route = RPG::MoveRoute.new
     move_route.repeat = true
     # 램덤 이동
-    move_route.list = [RPG::MoveCommand.new(9),RPG::MoveCommand.new]    
+    move_route.list = [RPG::MoveCommand.new(9),RPG::MoveCommand.new]
     move_route
   end
   #--------------------------------------------------------------------------
   # * 실제 이벤트에 설정해놓은 이동 루트를 가져옵니다
-  #--------------------------------------------------------------------------    
+  #--------------------------------------------------------------------------
   def get_move_route(event_index)
     list = $game_map.events[event_index].move_route
     list
   end
   #--------------------------------------------------------------------------
   # * 다른 맵에 있는 이벤트를 가져옵니다.
-  #--------------------------------------------------------------------------    
+  #--------------------------------------------------------------------------
   def set_event_data(index,map_id=$game_map.map_id)
-    events = {}    
+    events = {}
     map = load_data(sprintf("Data/Map%03d.rvdata2", map_id))
     map.events.each {|i, event| events[i] = Game_Event.new(map_id, event) }
     ev_data = EVData.new
@@ -90,36 +94,36 @@ module OPT
     ev_data.sprite_index = page.graphic.character_index
     ev_data.pages = events[index].get_pages
     ev_data
-  end  
+  end
 end
- 
-class Object  
-  include OPT  
+
+class Object
+  include OPT
   #--------------------------------------------------------------------------
   # * 이벤트를 즉시 생성합니다
-  #--------------------------------------------------------------------------  
+  #--------------------------------------------------------------------------
   def instance_create(x,y,data=set_character_data)
-   
+
     # 기초 이벤트를 구성합니다
     m_event = RPG::Event.new(x,y)
-   
+
     # 이벤트의 ID 를 설정합니다
     m_event.id = if $game_map.events.empty?
       1
     else
       $game_map.events.keys.max + 1
     end
-   
+
     # 이벤트의 이름입니다
     m_event.name = "EV#{m_event.id.to_s}"
-       
+
     # 페이지 설정
     data.pages.each_with_index { |page,i| m_event.pages[i] = page }
-   
+
     # 이벤트를 추가합니다
     event = Game_Event.new($game_map.map_id,m_event)
     $game_map.events[m_event.id] = event
-   
+
     # Spriteset_Map 의 캐릭터 배열에 방금 만든 캐릭터를 추가합니다
     get_scene = SceneManager.scene
     if get_scene.is_a?(Scene_Map)
@@ -131,7 +135,7 @@ class Object
   end
   #--------------------------------------------------------------------------
   # * 이벤트를 구성하고 있는 모든 오브젝트를 없앱니다
-  #--------------------------------------------------------------------------    
+  #--------------------------------------------------------------------------
   def instance_destroy(index)
     $game_map.events.delete(index)
     get_scene = SceneManager.scene.spriteset
@@ -140,29 +144,29 @@ class Object
   end
   #--------------------------------------------------------------------------
   # * 병렬 처리 이벤트에서 이벤트를 생성합니다
-  #--------------------------------------------------------------------------    
+  #--------------------------------------------------------------------------
   def instance_create_ex(event_id,x,y,map_id=$game_map.map_id)
-    Thread.new do 
+    Thread.new do
       ev_data = set_event_data(event_id,map_id)
       instance_create(x,y,ev_data)
     end
   end
 end
- 
+
 class Scene_Map
   attr_accessor :spriteset
 end
- 
+
 class Spriteset_Map
   attr_accessor :character_sprites
   attr_reader :viewport1
 end
- 
+
 class Game_Character
   attr_reader   :move_route
 end
 
-class Object 
+class Object
   def instance_destroy_each(args)
     return unless args.is_a?(Range) || args.is_a?(Array)
     args.each do |i|

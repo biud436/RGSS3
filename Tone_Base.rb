@@ -1,11 +1,25 @@
-=begin
-# RGB는 -255~255 까지의 숫자를 지정할 수 있습니다. 
-get_character(0)._tone(Red,Green,Blue)
-# Gray 색상은  0~255 까지만 지정할 수 있습니다.
-get_character(0)._tone(Red,Green,Blue,Gray)
-# 원래의 톤으로 되돌립니다.
-get_character(0).tone = nil
-=end
+#==============================================================================
+# ** Tone_Base
+# Name : Tone_Base
+# Desc : This script changes certain character's tone using Tone object.
+# Author : biud436
+# Version : 1.0
+#==============================================================================
+# ** How to Use
+#==============================================================================
+# RGB struct can set a number -255 between 255.
+# get_character(0)._tone(Red,Green,Blue)
+#
+# The gray color can set a number 0 between 255.
+# get_character(0)._tone(Red,Green,Blue,Gray)
+#
+# This methods originally returns its tone.
+# get_character(0).tone = nil
+#==============================================================================
+# ** Terms of Use
+#==============================================================================
+# Free for commercial and non-commercial use
+#==============================================================================
 module Tone_Base
   $tone = ->(red=0,green=0,blue=0,gray=0){rl = Tone.new(red,green,blue,gray); rl}
 end
