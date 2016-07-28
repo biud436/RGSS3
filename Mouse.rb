@@ -8,6 +8,7 @@
 #==============================================================================
 # Free for commercial and non-commercial use
 #==============================================================================
+
 module Unicode
   MultiByteToWideChar = Win32API.new('Kernel32','MultiByteToWideChar','llpipi','i')
   WideCharToMultiByte = Win32API.new('Kernel32','WideCharToMultiByte','llpipipp','i')
@@ -60,13 +61,18 @@ module TouchInput
   GetCursorPos = Win32API.new('user32.dll', 'GetCursorPos', 'p', 's')
   ScreenToClient = Win32API.new('user32.dll', 'ScreenToClient', 'lp', 's')
   GetAsyncKeyState = Win32API.new('user32.dll', 'GetAsyncKeyState', 'i', 'i')
+  ShowCursor = Win32API.new("user32", "ShowCursor", "i", "i" )
   @window_name = INI.read_string('Game', 'Title', 'Game.ini')
   @handle = FindWindowW.call('RGSS Player'.unicode!, @window_name.unicode!)
+
+  ShowCursor.call(0)
 
   NONE = 0
   PRESSED = 1
   RELEASED = 2
   PRESS = 3
+
+  MOUSE_ICON = 397
 
   KEY_MAPPER = {
   :LEFT => 0,
@@ -152,6 +158,10 @@ module TouchInput
     @current_point[:y]
   end
 
+  def get_pos
+    [x, y]
+  end
+
 end
 
 class Window_Selectable < Window_Base
@@ -200,4 +210,45 @@ module Input
     xxxx_update
     TouchInput.update
   end
+end
+
+if defined? BattleManager
+
+  module TouchInput::Cursor
+    def create_cursor(index)
+      @cursor = Sprite.new
+      @cursor.x, @cursor.y = TouchInput.get_pos
+      @cursor.bitmap = Bitmap.new(24,24)
+      @contents = @cursor.bitmap
+      @draw_icon = lambda {|icon_index,x,y,enabled = true|
+      bitmap = Cache.system("Iconset")
+      rect = Rect.new(icon_index % 16 * 24, icon_index / 16 * 24, 24, 24)
+      @contents.blt(x, y, bitmap, rect, enabled ? 255 : 128)}
+      @draw_icon.(index,0,0,true)
+      @cursor.z = 500
+      @update_cursor = lambda {|pos| return false if @cursor.nil?
+      @cursor.x, @cursor.y = pos }
+      @dispose_cursor = lambda {@contents.dispose; @cursor.dispose}
+    end
+  end
+
+  class Scene_Base
+    include TouchInput::Cursor
+    alias mouse_cursor_start start
+    alias mouse_cursor_update update
+    alias mouse_cursor_terminate terminate
+    def start
+      mouse_cursor_start
+      create_cursor(TouchInput::MOUSE_ICON)
+    end
+    def update
+      mouse_cursor_update
+      @update_cursor.call(TouchInput.get_pos) if @cursor
+    end
+    def terminate
+      mouse_cursor_terminate
+      @dispose_cursor.call if @cursor
+    end
+  end
+
 end
