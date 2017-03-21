@@ -23,9 +23,6 @@
 #===============================================================================
 $Imported = $Imported || {}
 $Imported["RS_CustomWindow"] = true
-module CUSTOM_WINDOW
-  MAX_SIZE = 50
-end
 class Window_CustomText < Window_Base
   def initialize(*args)
     super(*args[0..3])
@@ -99,10 +96,9 @@ class Scene_Map < Scene_Base
     end
   end
   def create_custom_window(*args)
-    uid = ($game_map.uid += 1) % CUSTOM_WINDOW::MAX_SIZE
+    uid = ($game_map.uid += 1)
     $game_map.custom_windows[uid] = args
     new_window = Window_CustomText.new(*args)
-    remove_custom_window(uid)
     @custom_windows[uid] = new_window
     uid
   end
