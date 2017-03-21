@@ -16,9 +16,16 @@
 # screen, can use the text code.
 # auto_dispose : auto_dispose is you can set whether the window automatically 
 # ends up when pressing a decision key. 
+# if there 
+# ------------------------------------------------------------------------------
+# remove_custom_window(uid)
+# ------------------------------------------------------------------------------
 #===============================================================================
 $Imported = $Imported || {}
 $Imported["RS_CustomWindow"] = true
+module CUSTOM_WINDOW
+  MAX_SIZE = 50
+end
 class Window_CustomText < Window_Base
   def initialize(*args)
     super(*args[0..3])
@@ -47,6 +54,8 @@ end
 class Game_Interpreter
   def create_custom_window(*args)
     SceneManager.scene.create_custom_window(*args)
+  end
+  def remove_custom_window(uid)
   end
 end
 class Scene_Map < Scene_Base
@@ -90,9 +99,21 @@ class Scene_Map < Scene_Base
     end
   end
   def create_custom_window(*args)
-    uid = $game_map.uid += 1
+    uid = ($game_map.uid += 1) % CUSTOM_WINDOW::MAX_SIZE
     $game_map.custom_windows[uid] = args
     new_window = Window_CustomText.new(*args)
+    remove_custom_window(uid)
     @custom_windows[uid] = new_window
+    uid
+  end
+  def remove_custom_window(uid)
+    return false unless @disposing_windows.is_a?(Array)
+    return false unless @custom_windows.is_a?(Hash)
+    if @custom_windows[uid].is_a?(Window_Base)
+      @disposing_windows.push(->(){
+        @custom_windows.delete(uid)
+        $game_map.custom_windows.delete(uid)
+      })      
+    end
   end
 end
