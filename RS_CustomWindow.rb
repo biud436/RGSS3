@@ -16,10 +16,15 @@
 # screen, can use the text code.
 # auto_dispose : auto_dispose is you can set whether the window automatically 
 # ends up when pressing a decision key. 
-# if there 
 # ------------------------------------------------------------------------------
 # remove_custom_window(uid)
 # ------------------------------------------------------------------------------
+# If you want to remove already created custom window, you can try this.
+# Notice that there is one important parameter.
+# uid - when calling 'create_custom_window' method, it returns the variable 
+# named 'uid'. So getting variable 'uid' there is two ways :
+# - the way that uses the method called 'create_custom_window'
+# - the way that uses a global variable called '$game_map.uid'
 #===============================================================================
 $Imported = $Imported || {}
 $Imported["RS_CustomWindow"] = true
@@ -53,6 +58,7 @@ class Game_Interpreter
     SceneManager.scene.create_custom_window(*args)
   end
   def remove_custom_window(uid)
+    SceneManager.scene.remove_custom_window(uid)
   end
 end
 class Scene_Map < Scene_Base
