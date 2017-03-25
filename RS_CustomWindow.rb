@@ -26,6 +26,9 @@
 # - the way that uses the method called 'create_custom_window'
 # - the way that uses a global variable called '$game_map.uid'
 #===============================================================================
+# The update Logs
+#===============================================================================
+# 2017.03.25 (v1.0.1) - Fixed an issue that didn't remove existing window.
 $Imported = $Imported || {}
 $Imported["RS_CustomWindow"] = true
 class Window_CustomText < Window_Base
@@ -112,10 +115,8 @@ class Scene_Map < Scene_Base
     return false unless @disposing_windows.is_a?(Array)
     return false unless @custom_windows.is_a?(Hash)
     if @custom_windows[uid].is_a?(Window_Base)
-      @disposing_windows.push(->(){
-        @custom_windows.delete(uid)
-        $game_map.custom_windows.delete(uid)
-      })      
+    @custom_windows.delete(uid)
+    $game_map.custom_windows.delete(uid)
     end
   end
 end
