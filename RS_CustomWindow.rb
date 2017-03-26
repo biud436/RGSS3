@@ -29,6 +29,7 @@
 # The update Logs
 #===============================================================================
 # 2017.03.25 (v1.0.1) - Fixed an issue that didn't remove existing window.
+# 2017.03.26 (v1.0.2) - Added the remove function for all custom windows
 $Imported = $Imported || {}
 $Imported["RS_CustomWindow"] = true
 class Window_CustomText < Window_Base
@@ -63,6 +64,9 @@ class Game_Interpreter
   def remove_custom_window(uid)
     SceneManager.scene.remove_custom_window(uid)
   end
+  def remove_all_custom_windows
+    SceneManager.scene.remove_all_custom_windows
+  end
 end
 class Scene_Map < Scene_Base
   alias xxxx_start start
@@ -92,11 +96,7 @@ class Scene_Map < Scene_Base
   alias xxxx_terminate terminate
   def terminate
     xxxx_terminate
-    if @custom_windows.is_a?(Hash)
-      @custom_windows.values.each do |window|
-        window.dispose if window.is_a?(Window_Base)
-      end
-    end
+    remove_all_custom_windows
   end
   def restore_custom_windows
     return unless $game_map.custom_windows.is_a?(Hash)
@@ -115,8 +115,16 @@ class Scene_Map < Scene_Base
     return false unless @disposing_windows.is_a?(Array)
     return false unless @custom_windows.is_a?(Hash)
     if @custom_windows[uid].is_a?(Window_Base)
+    @custom_windows[uid].visible = false
     @custom_windows.delete(uid)
     $game_map.custom_windows.delete(uid)
     end
   end
+  def remove_all_custom_windows
+    if @custom_windows.is_a?(Hash)
+      @custom_windows.values.each do |window|
+        window.dispose if window.is_a?(Window_Base)
+      end
+    end    
+  end  
 end
