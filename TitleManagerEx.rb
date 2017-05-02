@@ -5,7 +5,11 @@
 # Author     : biud436
 # Date       : 2015.09.07
 # Version    : 1.0
-# Usage      : DataManager.ending_setup("엔딩1")
+# Usage      :
+# In a script calls, you can be used as below codes. The parameters are the name
+# of an ending within a game and its name can set in Tool module.
+#
+# EndingManager.ending_setup("엔딩1")
 #==============================================================================
 # ** Terms of Use
 #==============================================================================
@@ -13,16 +17,17 @@
 #==============================================================================
 # ** Tool
 #------------------------------------------------------------------------------
-# 타이틀에서 불러올 그래픽 파일들을 설정합니다
+# This module sets up graphics resources to import within a title screen.
 #==============================================================================
 module Tool
+
+  # Import the game data from Data/System.rvdata2 file
   SYS = load_data("Data/System.rvdata2")
   RESOURCE = {
-  #--------------------------------------------------------------------------
-  # * 해당 엔딩에 맞는 타이틀 파일을 설정해주세요(Title1, Title2)
-  # "엔딩명" => ["타이틀1의 파일명","타이틀2의 파일명","BGM명"],
-  #--------------------------------------------------------------------------
-  "기본타이틀" => [SYS.title1_name,SYS.title2_name,SYS.title_bgm],
+
+  # Sets the image and BGM for title screen and notice that you must set the
+  # actual name of the resouce file.
+  "기본타이틀" => [SYS.title1_name,SYS.title2_name,SYS.title_bgm], # Default Title Resource
   "엔딩1" => ["Book","","Theme1"],
   "엔딩2" => ["Castle","","Theme2"],
   "엔딩3" => ["CrossedSwords","","Theme3"],

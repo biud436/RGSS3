@@ -1,19 +1,21 @@
 #==============================================================================
 # ** Tone_Base
 # Name : Tone_Base
-# Desc : This script changes certain character's tone using Tone object.
+# Desc : This script allows you to change certain character's tone.
 # Author : biud436
 # Version : 1.0
 #==============================================================================
 # ** How to Use
 #==============================================================================
-# RGB struct can set a number -255 between 255.
-# get_character(0)._tone(Red,Green,Blue)
+# This provides useful methods how the player's tone can change during playing
+# the game. In script command in an event editor, You can also use as follows.
 #
-# The gray color can set a number 0 between 255.
+# This code can set player's image tone as a number between -255 and 255.
+# get_character(0)._tone(Red,Green,Blue)
 # get_character(0)._tone(Red,Green,Blue,Gray)
 #
-# This methods originally returns its tone.
+# This code can return or set player's image tone as a type of Tone. the object
+# named 'nil' indicates to set as original tone.
 # get_character(0).tone = nil
 #==============================================================================
 # ** Terms of Use

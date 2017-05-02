@@ -1,13 +1,14 @@
 #==============================================================================
 # ** URL
 # Name : URL
-# Desc : This script downloads certain picture to your project from the internet.
+# Desc : This script allows you to download certain picture to your project
+# from certain site.
 # Author : biud436
 # Version : 1.0
 #==============================================================================
 # ** How to Use
 #==============================================================================
-# script executes the code that try this :
+# This code executes the code that can download an image from certain site :
 # URL >> "https://d289qh4hsbjjw7.cloudfront.net/rpgmaker-20130522223546811/files/carousel-screenshot-rpg-maker-mv.jpg"
 #==============================================================================
 # ** Terms of Use

@@ -73,25 +73,28 @@ class Scene_Map < Scene_Base
   def start
     xxxx_start
     @custom_windows = {}
+    @custom_window_dirty = false
     @disposing_windows = []
     restore_custom_windows
   end
   alias xxxx_update update
   def update
     xxxx_update
-    @custom_windows.keys.each do |key|
-      if @custom_windows[key].is_a?(Window_Base)  
-        @custom_windows[key].update
-        @disposing_windows.push(->(){
-          if @custom_windows[key].auto_dispose? && Input.trigger?(:C)
-            @custom_windows.delete(key)
-            $game_map.custom_windows.delete(key)
-          end
-        })
+    if not @custom_window_dirty
+      @custom_windows.keys.each do |key|
+        if @custom_windows[key].is_a?(Window_Base)  
+          @custom_windows[key].update
+          @disposing_windows.push(->(){
+            if @custom_windows[key].auto_dispose? && Input.trigger?(:C)
+              @custom_windows.delete(key)
+              $game_map.custom_windows.delete(key)
+            end
+          })
+        end
       end
+      @disposing_windows.each {|i| i.call if i.is_a?(Proc)}
+      @disposing_windows.clear       
     end
-    @disposing_windows.each {|i| i.call if i.is_a?(Proc)}
-    @disposing_windows.clear 
   end
   alias xxxx_terminate terminate
   def terminate
@@ -109,6 +112,7 @@ class Scene_Map < Scene_Base
     $game_map.custom_windows[uid] = args
     new_window = Window_CustomText.new(*args)
     @custom_windows[uid] = new_window
+    @custom_window_dirty = false
     uid
   end
   def remove_custom_window(uid)
@@ -121,10 +125,12 @@ class Scene_Map < Scene_Base
     end
   end
   def remove_all_custom_windows
+    @custom_window_dirty = true
     if @custom_windows.is_a?(Hash)
       @custom_windows.values.each do |window|
+        window.visible = false
         window.dispose if window.is_a?(Window_Base)
       end
-    end    
+    end
   end  
 end

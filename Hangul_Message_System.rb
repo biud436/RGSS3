@@ -1114,6 +1114,7 @@ class RS::Window_Name < Window_Base
     f.gsub!(/(?:\eN|\e주인공)\[(\d+)\]/i) { actor_name($1.to_i) }
     f.gsub!(/(?:\eP|\e파티원)\[(\d+)\]/i) { party_member_name($1.to_i) }
     f.gsub!(/(?:\eG|\e골드)/i)          { Vocab::currency_unit }
+    f.gsub!(/(?:\eC)\[(\d+)\]/i) { "" }    
     f.gsub!(/\e색\[(.+?)\]/) { "" }
     f.gsub!(/\e테두리색!\[(.+)\]/) { "" }
     f.gsub!(/\e#([\p{Latin}\d]+)!/) { "" }
@@ -1309,6 +1310,7 @@ class Window_Message < Window_Base
     f.gsub!(/(?:\eN|\e주인공)\[(\d+)\]/i) { actor_name($1.to_i) }
     f.gsub!(/(?:\eP|\e파티원)\[(\d+)\]/i) { party_member_name($1.to_i) }
     f.gsub!(/(?:\eG|\e골드)/i)          { Vocab::currency_unit }
+    f.gsub!(/(?:\eC)\[(\d+)\]/i) { "" }
     f.gsub!(/\e색\[(.+?)\]/) { "" }
     f.gsub!(/\e테두리색!\[(.+)\]/) { "" }
     f.gsub!(/\e#([\p{Latin}\d]+)!/) { "" }
