@@ -1,13 +1,17 @@
 #==============================================================================
-# ** Hangul Message System 1.5.4 (RPG Maker VX Ace)
+# ** Hangul Message System 1.5.5 (RPG Maker VX Ace)
 #==============================================================================
 # Name       : Hangul Message System
 # Author     : biud436
-# Version    : 1.5.4
+# Version    : 1.5.5
 # Link       : http://biud436.blog.me/220251747366
 #==============================================================================
 # ** 업데이트 로그
 #==============================================================================
+# 2017.06.20 :
+# - 말풍선 모드에서도 얼굴 이미지 사용 가능
+# - 멈춤 표시 이미지 표시
+# - 말풍선 위치 화면 내로 자동 조절
 # 2016.05.07 - 정규표현식 및 텍스트 매칭 코드 수정, 자동 개행 기능 추가
 # 2015.10.12 - 이름 윈도우 텍스트 크기 설정
 # 2015.09.06 - 화면 영역 내 메시지 표시 기능
@@ -87,7 +91,7 @@ module RS
   LIST["투명도"] = 250
   LIST["이름윈도우X1"] = 10
   LIST["이름윈도우X2"] = 210
-  LIST["이름윈도우Y"] = 30
+  LIST["이름윈도우Y"] = 36
   LIST["텍스트시작X"] = LIST["왼쪽"] + 12
   LIST["텍스트속도-최소"] = 0
   LIST["텍스트속도-최대"] = 8
@@ -169,18 +173,17 @@ module RS::BNSprite
   def create_balloon_sprite
     @b_cursor = Sprite.new
     @b_cursor.visible = false
-    @b_cursor.bitmap = set_balloon_sprite(nil)
-    @b_cursor.src_rect.set(0,0,240,72)
+    @b_cursor.bitmap = Cache.system("Window")
+    @b_cursor.src_rect.set(96, 80, 16, 16)
+    @b_cursor.z = 290
   end
   #--------------------------------------------------------------------------
-  # * 말풍선 스프라이트 설정
+  # * 말풍선 스프라이트 해방
   #--------------------------------------------------------------------------
-  def set_balloon_sprite(str)
-    case str
-    when "",nil
-      return Bitmap.new(240,72)
-    else
-      return Cache.picture(str)
+  def update_balloon_sprite
+    if @b_cursor and @b_cursor.bitmap
+      dx = 16 * ((Time.now.to_i % 2) + 1)
+      @b_cursor.src_rect.set(96 + dx, 80,16, 16)
     end
   end
   #--------------------------------------------------------------------------
@@ -754,6 +757,7 @@ class Window_Message
   #--------------------------------------------------------------------------
   def update
     load_face_update
+    update_balloon_sprite
     @util.face_update if @fiber
   end
   #--------------------------------------------------------------------------
@@ -1114,7 +1118,7 @@ class RS::Window_Name < Window_Base
     f.gsub!(/(?:\eN|\e주인공)\[(\d+)\]/i) { actor_name($1.to_i) }
     f.gsub!(/(?:\eP|\e파티원)\[(\d+)\]/i) { party_member_name($1.to_i) }
     f.gsub!(/(?:\eG|\e골드)/i)          { Vocab::currency_unit }
-    f.gsub!(/(?:\eC)\[(\d+)\]/i) { "" }    
+    f.gsub!(/(?:\eC)\[(\d+)\]/i) { "" }
     f.gsub!(/\e색\[(.+?)\]/) { "" }
     f.gsub!(/\e테두리색!\[(.+)\]/) { "" }
     f.gsub!(/\e#([\p{Latin}\d]+)!/) { "" }
@@ -1261,12 +1265,13 @@ class Window_Message < Window_Base
   def new_page(text, pos)
     open_balloon
     balloon_new_page(text,pos)
+    wait(1)
   end
   #--------------------------------------------------------------------------
   # * 말풍선 설정
   #--------------------------------------------------------------------------
   def open_balloon(sign=$game_message.balloon)
-    return nil if $game_message.face_name.size > 0
+    # return nil if $game_message.face_name.size > 0
     if sign == -2
       resize_message_system
       return nil
@@ -1294,8 +1299,12 @@ class Window_Message < Window_Base
     tmp_text = tmp_text.split("\n")
     tmp_text.sort! {|a,b| b.size - a.size }
     _rect = contents.text_size(tmp_text[0])
-    @_width = (_rect.width) + STD_PADDING
-    @_height = tmp_text.size * FONT_SIZE + STD_PADDING
+    @_width = (_rect.width) + standard_padding * 2
+    @_height = tmp_text.size * FONT_SIZE + standard_padding * 2
+    if $game_message.face_name.size > 0
+      @_width += new_line_x
+      @_height = [@_height, fitting_height(4)].max
+    end
   end
   #--------------------------------------------------------------------------
   # * 텍스트 매칭 (모든 명령어 제거)
@@ -1360,21 +1369,59 @@ class Window_Message < Window_Base
     # 말풍선 소유자의 화면 좌표
     mx = $game_map.msg_owner.screen_x rescue 0
     my = $game_map.msg_owner.screen_y rescue 0
+    tx = @_width / 2
+    ty = @_height
+    scale_y = 1
+    tile_height = 32
+    dx = mx - @_width / 2
+    dy = my - @_height - tile_height
+    ny = self.y - @name_window.height - RS::LIST["이름윈도우Y"]
 
-    # 말풍선의 폭과 높이 범위 제한
-    @_width = (@_width.between?(WIDTH, Graphics.width - WIDTH) == true) ? @_width : WIDTH
-    @_height = (@_height.between?(HEIGHT, Graphics.height - HEIGHT) == true) ? @_height : HEIGHT
+    # 화면 좌측
+    if (mx - @_width / 2) < 0
+      dx = 0
+      tx = mx
+    end
 
-    # 말풍선 위치 및 크기 설정 (화면 내에 가두지 않습니다)
-    self.x = get_x(mx - @_width / 2)
-    self.y = get_y(my - (@_height + @_height/2))
+    # 화면 우측
+    if (mx - @_width / 2) > (Graphics.width - @_width)
+      dx = Graphics.width - @_width
+      tx = mx - dx
+    end
+
+    # 화면 상단
+    if (my - @_height - tile_height / 2) < 0
+      dy = my + tile_height / 2
+      scale_y = -1
+      ty = (@_height * scale_y) + @_height
+      ny = (self.y + @_height) + RS::LIST["이름윈도우Y"]
+    end
+
+    # 화면 하단
+    if (my - @_height) > Graphics.height - @_height
+      dy = Graphics.width - @_height
+      ty = dy - @_height
+    end
+
+    # 말풍선 위치 및 크기 설정
+    self.x = dx
+    self.y = dy
     self.width = @_width
     self.height = @_height
 
+    # pause 커서의 좌표
+    @b_cursor.x = dx + tx
+    @b_cursor.y = dy + ty
+    @b_cursor.mirror = (scale_y == -1) ? true : false
+
+    # 이름 윈도우 좌표 수정
+    @name_window.y = ny
+
     # 투명도 설정
     self.opacity = balloon_sprite? ? 0 : RS::LIST["투명도"]
+    @balloon_pause = false
     self.arrows_visible = false
-    @b_cursor.visible = balloon_sprite? ? true : false
+    @b_cursor.visible = true
     show
   end
   #--------------------------------------------------------------------------
@@ -1395,6 +1442,13 @@ class Window_Message < Window_Base
   #--------------------------------------------------------------------------
   def resize_message_system
 
+    # 대화창의 소유자 설정
+    $game_map.msg_owner = $game_player
+
+    @balloon_pause = true
+    self.arrows_visible = true
+    @b_cursor.visible = false
+
     # 대화창의 위치
     @position = $game_message.position
 
@@ -1402,22 +1456,14 @@ class Window_Message < Window_Base
     y = @position * (Graphics.height - window_height) / 2
 
     # 위치 및 크기 설정
-    self.x = 0
-    self.y = y
-    self.width = window_width
-    self.height = fitting_height($game_message.line || RS::LIST["라인"])
+    self.move(0, y, window_width, fitting_height($game_message.line || RS::LIST["라인"]) )
 
-    # 대화창의 소유자 설정
-    $game_map.msg_owner = $game_player
-
-    self.arrows_visible = true
-    @b_cursor.visible = false
   end
   #--------------------------------------------------------------------------
   # * Input Pause Processing (말풍선 모드)
   #--------------------------------------------------------------------------
   def input_pause
-    self.pause = true
+    self.pause = @balloon_pause
     wait(10)
     Fiber.yield until Input.trigger?(:B) || Input.trigger?(:C)
     Input.update
@@ -1435,6 +1481,7 @@ class Window_Message < Window_Base
   # * 배경 업데이트
   #--------------------------------------------------------------------------
   def update_background
+    update_balloon_sprite
     @background = $game_message.background
     self.opacity = @background == 0 ? RS::LIST["투명도"] : 0
   end
