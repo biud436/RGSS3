@@ -2,7 +2,9 @@
 # ** Self Variables
 # Author : biud436
 # Date : 2015.03.21
-# Version : 1.0
+# Version Log : 
+# 1.0
+# 1.1
 #==============================================================================
 # ** 스크립트 소개
 #==============================================================================
@@ -28,6 +30,7 @@
 #==============================================================================
 # Free for commercial and non-commercial use
 #==============================================================================
+
 class Game_SelfVariables
   def initialize
     @data = {}
@@ -49,7 +52,7 @@ class Game_SelfVariables
     $game_map.need_refresh = true
   end
 end
-
+ 
 module DataManager
  class << self
     alias self_var_create_game_objects create_game_objects
@@ -67,6 +70,31 @@ module DataManager
       contents = self_var_make_save_contents
       contents[:self_variables] = $self_variables
       contents
+    end
+  end
+end
+ 
+class Game_SelfVariables
+  def set_data(mid, eid, id, value)
+    @data[[mid,eid,id]] = value
+    on_change    
+  end
+  def get_data(mid, eid, id)
+    @data[[mid,eid,id]] || 0
+  end  
+end
+ 
+class Game_Event < Game_Character
+  alias xxxx_eval eval
+  def eval(*args)
+    if args[0] && args[0].match(/\$(?:SELF_VARIABLES)\[(.+?)\][ ]*=[ ]*(.*)/i)
+      id = $1.to_s
+      value = $2.to_i
+      $self_variables.set_data(@map_id, @event_id, id, value)
+    elsif args[0] && args[0].match(/\$(?:SELF_VARIABLES)\[(.+?)\]/i)
+      $self_variables.get_data(@map_id, @event_id, $1.to_s)
+    else
+      xxxx_eval(*args)
     end
   end
 end
