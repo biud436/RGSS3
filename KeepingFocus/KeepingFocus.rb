@@ -134,9 +134,9 @@ if $WindowRunning
   #--------------------------------------------------------------------------
   # * 업데이트
   #--------------------------------------------------------------------------
-    def self.update(*args, &block)
-      return if not $WindowRunning
-      rs_input_update(*args, &block)
-    end
+    # def self.update(*args, &block)
+      # return if not $WindowRunning
+      # rs_input_update(*args, &block)
+    # end
   end
 end
