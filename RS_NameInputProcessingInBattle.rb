@@ -106,7 +106,7 @@ class Scene_Battle < Scene_Base
   #--------------------------------------------------------------------------    
   alias xxxx_update update
   def update
-    xxxx_update if not @is_lock_scene
+    return xxxx_update if not @is_lock_scene
     name_input_window_update
   end  
   
