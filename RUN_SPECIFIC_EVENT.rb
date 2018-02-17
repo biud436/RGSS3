@@ -1,19 +1,24 @@
 # 작성자 : 러닝은빛
 # 작성일 : 2018.02.15
  
-module SPECIFIC_EVENT
-  
-  DATA = {
-  # -1은 플레이어, 0은 이 이벤트, 나머지는 이벤트 ID
-  :ID           => -1,
-  # 실행 간격  
-  :INTERVAL     => 1,
-  # 애니메이션 ID
-  :ANIMATION_ID => 10,
-  # 맵 ID  
-  :MAP_ID       => 2
-  }
-  
+class Game_System
+
+  attr_accessor :specific_event_data
+
+  alias xxxx_initialize initialize
+  def initialize
+    xxxx_initialize
+    @specific_event_data = {
+      # -1은 플레이어, 0은 이 이벤트, 나머지는 이벤트 ID
+      :ID           => -1,
+      # 실행 간격  
+      :INTERVAL     => 1,
+      # 애니메이션 ID
+      :ANIMATION_ID => 10,
+      # 맵 ID  
+      :MAP_ID       => 2    
+    }
+  end
 end
  
 class Scene_Map < Scene_Base
@@ -30,10 +35,10 @@ class Scene_Map < Scene_Base
   end  
 
   def run_specific_event
-    return unless $game_map.map_id == SPECIFIC_EVENT::DATA[:MAP_ID]
-    c = $game_map.interpreter.get_character(SPECIFIC_EVENT::DATA[:ID])
-    if c and Time.now.to_i - @run_interval >= SPECIFIC_EVENT::DATA[:INTERVAL]
-      c.animation_id = SPECIFIC_EVENT::DATA[:ANIMATION_ID]
+    return unless $game_map.map_id == $game_system.specific_event_data[:MAP_ID]
+    c = $game_map.interpreter.get_character($game_system.specific_event_data[:ID])
+    if c and Time.now.to_i - @run_interval >= $game_system.specific_event_data[:INTERVAL]
+      c.animation_id = $game_system.specific_event_data[:ANIMATION_ID]
       @run_interval = Time.now.to_i
     end
   end
