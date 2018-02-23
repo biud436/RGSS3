@@ -55,14 +55,20 @@ if $RM_VERSION[:VX]
       self.angle = @picture.angle
       self.tone = @picture.tone
     end
-  end	
+	end	
 end
   def update_origin
     if @picture.origin == 0
       if PIC::RANGE === @picture.number
         # 특정 그림을 맵에 고정합니다
-        self.ox = $game_map.display_x * 32
-        self.oy = $game_map.display_y * 32
+				if $RM_VERSION[:VX]
+					self.ox = $game_map.display_x / 8
+					self.oy = $game_map.display_y / 8
+				end
+				if $RM_VERSION[:VXA]
+					self.ox = $game_map.display_x * 32
+					self.oy = $game_map.display_y * 32
+				end				
       else
         # 화면 좌표에 고정합니다
         self.ox = 0
