@@ -7,24 +7,25 @@
 #   RS.get_env("USERNAME")
 #===============================================================================
 
-module Unicode
-  MultiByteToWideChar = Win32API.new('Kernel32','MultiByteToWideChar','llpipi','i')
-  WideCharToMultiByte = Win32API.new('Kernel32','WideCharToMultiByte','llpipipp','i')
-  UTF_8 = 65001
-  def unicode!
-    buf = "\0" * (self.size * 2 + 1)
-    MultiByteToWideChar.call(UTF_8, 0, self, -1, buf, buf.size)
-    buf
-  end
-  def unicode_s
-    buf = "\0" * (self.size * 2 + 1)
-    WideCharToMultiByte.call(UTF_8, 0, self, -1, buf, buf.size, nil, nil)
-    buf.delete("\0")
-  end
-end
-
-class String
-  include Unicode
+if not defined? Unicode
+    module Unicode
+      MultiByteToWideChar = Win32API.new('Kernel32','MultiByteToWideChar','llpipi','i')
+      WideCharToMultiByte = Win32API.new('Kernel32','WideCharToMultiByte','llpipipp','i')
+      UTF_8 = 65001
+      def unicode!
+        buf = "\0" * (self.size * 2 + 1)
+        MultiByteToWideChar.call(UTF_8, 0, self, -1, buf, buf.size)
+        buf
+      end
+      def unicode_s
+        buf = "\0" * (self.size * 2 + 1)
+        WideCharToMultiByte.call(UTF_8, 0, self, -1, buf, buf.size, nil, nil)
+        buf.delete("\0")
+      end
+    end
+    class String
+      include Unicode
+    end
 end
 
 module RS
