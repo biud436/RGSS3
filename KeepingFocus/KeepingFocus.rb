@@ -5,6 +5,9 @@
 # Link : http://biud436.blog.me/220425931217
 #==============================================================================
 
+$imported = {} if $imported.nil?
+$imported["RS_KeepingFocus"] = true
+
 module RS
   Init = Win32API.new('RSModule','Initialize','v','s')
   GetFPS = Win32API.new('RSModule','GetFPS','v','i')

@@ -8,6 +8,9 @@
 # Free for commercial and non-commercial use
 #==============================================================================
 
+$imported = {} if $imported.nil?
+$imported["RS_CharacterContoroller"] = true
+
 module R
   # 이벤트 ID
   @@id = 2

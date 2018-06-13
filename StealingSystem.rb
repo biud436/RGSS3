@@ -11,6 +11,9 @@
 # Free for commercial and non-commercial use
 #==============================================================================
 
+$imported = {} if $imported.nil?
+$imported["RS_StealingSystem"] = true
+
 module Tile
   # 탐색이 가능한 타일셋의 이름 (타일셋이 등록되지 않은 곳에선 물건을 훔칠 수 없습니다)
   NAME = ["Interior"]

@@ -1,3 +1,7 @@
+
+$imported = {} if $imported.nil?
+$imported["RS_CircleRendering"] = true
+
 class Scene_Map
   alias xxxx_start start
   def start
@@ -11,7 +15,7 @@ class Scene_Map
   def update
     xxxx_update
     if @sprite
-      @sprite.update 
+      @sprite.update
     end
   end
   alias xxxx_terminate terminate
@@ -19,7 +23,7 @@ class Scene_Map
     xxxx_terminate
     @sprite.dispose if @sprite
   end
-  
+
   def draw_circle_blur
     rad1 = 100
     rad2 = 200
@@ -41,5 +45,5 @@ class Scene_Map
       end
     end
   end
-  
+
 end

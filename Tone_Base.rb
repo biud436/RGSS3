@@ -22,6 +22,10 @@
 #==============================================================================
 # Free for commercial and non-commercial use
 #==============================================================================
+
+$imported = {} if $imported.nil?
+$imported["RS_CharacterTone"] = true
+
 module Tone_Base
   $tone = ->(red=0,green=0,blue=0,gray=0){rl = Tone.new(red,green,blue,gray); rl}
 end

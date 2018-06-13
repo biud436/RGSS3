@@ -8,20 +8,20 @@
 # ------------------------------------------------------------------------------
 # create_custom_window(x, y, width, height, text, auto_dispose)
 # ------------------------------------------------------------------------------
-# x : x is the same as x-position of the custom window 
-# y : y is the same as x-position of the custom window 
-# width : width is the same as a maximum width of the custom window 
+# x : x is the same as x-position of the custom window
+# y : y is the same as x-position of the custom window
+# width : width is the same as a maximum width of the custom window
 # height : height is the same as a maximum height of the custom window
-# text : text is you can write the string as you want to indicate into the 
+# text : text is you can write the string as you want to indicate into the
 # screen, can use the text code.
-# auto_dispose : auto_dispose is you can set whether the window automatically 
-# ends up when pressing a decision key. 
+# auto_dispose : auto_dispose is you can set whether the window automatically
+# ends up when pressing a decision key.
 # ------------------------------------------------------------------------------
 # remove_custom_window(uid)
 # ------------------------------------------------------------------------------
 # If you want to remove already created custom window, you can try this.
 # Notice that there is one important parameter.
-# uid - when calling 'create_custom_window' method, it returns the variable 
+# uid - when calling 'create_custom_window' method, it returns the variable
 # named 'uid'. So getting variable 'uid' there is two ways :
 # - the way that uses the method called 'create_custom_window'
 # - the way that uses a global variable called '$game_map.uid'
@@ -30,8 +30,10 @@
 #===============================================================================
 # 2017.03.25 (v1.0.1) - Fixed an issue that didn't remove existing window.
 # 2017.03.26 (v1.0.2) - Added the remove function for all custom windows
-$Imported = $Imported || {}
-$Imported["RS_CustomWindow"] = true
+
+$imported = {} if $imported.nil?
+$imported["RS_CustomWindow"] = true
+
 class Window_CustomText < Window_Base
   def initialize(*args)
     super(*args[0..3])
@@ -82,7 +84,7 @@ class Scene_Map < Scene_Base
     xxxx_update
     if not @custom_window_dirty
       @custom_windows.keys.each do |key|
-        if @custom_windows[key].is_a?(Window_Base)  
+        if @custom_windows[key].is_a?(Window_Base)
           @custom_windows[key].update
           @disposing_windows.push(->(){
             if @custom_windows[key].auto_dispose? && Input.trigger?(:C)
@@ -93,7 +95,7 @@ class Scene_Map < Scene_Base
         end
       end
       @disposing_windows.each {|i| i.call if i.is_a?(Proc)}
-      @disposing_windows.clear       
+      @disposing_windows.clear
     end
   end
   alias xxxx_terminate terminate
@@ -132,5 +134,5 @@ class Scene_Map < Scene_Base
         window.dispose if window.is_a?(Window_Base)
       end
     end
-  end  
+  end
 end

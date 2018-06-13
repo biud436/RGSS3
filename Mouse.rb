@@ -9,6 +9,9 @@
 # Free for commercial and non-commercial use
 #==============================================================================
 
+$imported = {} if $imported.nil?
+$imported["RS_Mouse"] = true
+
 module Unicode
   MultiByteToWideChar = Win32API.new('Kernel32','MultiByteToWideChar','llpipi','i')
   WideCharToMultiByte = Win32API.new('Kernel32','WideCharToMultiByte','llpipipp','i')

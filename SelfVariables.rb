@@ -2,14 +2,14 @@
 # ** Self Variables
 # Author : biud436
 # Date : 2015.03.21
-# Version Log : 
+# Version Log :
 # 1.0
 # 1.1
 #==============================================================================
 # ** 스크립트 소개
 #==============================================================================
 # 셀프 변수 스크립트입니다.
-# 
+#
 #==============================================================================
 # ** 스크립트 설치
 #==============================================================================
@@ -30,6 +30,9 @@
 #==============================================================================
 # Free for commercial and non-commercial use
 #==============================================================================
+
+$imported = {} if $imported.nil?
+$imported["RS_SelfVariables"] = true
 
 class Game_SelfVariables
   def initialize
@@ -52,7 +55,7 @@ class Game_SelfVariables
     $game_map.need_refresh = true
   end
 end
- 
+
 module DataManager
  class << self
     alias self_var_create_game_objects create_game_objects
@@ -73,17 +76,17 @@ module DataManager
     end
   end
 end
- 
+
 class Game_SelfVariables
   def set_data(mid, eid, id, value)
     @data[[mid,eid,id]] = value
-    on_change    
+    on_change
   end
   def get_data(mid, eid, id)
     @data[[mid,eid,id]] || 0
-  end  
+  end
 end
- 
+
 class Game_Event < Game_Character
   alias xxxx_eval eval
   def eval(*args)

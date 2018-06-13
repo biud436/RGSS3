@@ -11,6 +11,10 @@
 # 'x' is a number between 0 and 255.
 # If its value is close to with 255, it will absolutely set as an opaque.
 #==============================================================================
+
+$imported = {} if $imported.nil?
+$imported["RS_WindowManager"] = true
+
 module WindowManager
 
   FindWindow = Win32API.new('User32','FindWindow',['P','P'],'L')

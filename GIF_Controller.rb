@@ -8,6 +8,10 @@
 #==============================================================================
 # Free for commercial and non-commercial use
 #==============================================================================
+
+$imported = {} if $imported.nil?
+$imported["RS_GIFController"] = true
+
 module GIF
 
   # GIF 파일이 저장된 위치

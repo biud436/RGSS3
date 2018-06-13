@@ -26,6 +26,10 @@
 #==============================================================================
 # Free for commercial and non-commercial use
 #==============================================================================
+
+$imported = {} if $imported.nil?
+$imported["RS_RotateMenu"] = true
+
 module RS_MENU_COMMAND
 
   # 기본 위치

@@ -19,6 +19,10 @@
 #------------------------------------------------------------------------------
 # This module sets up graphics resources to import within a title screen.
 #==============================================================================
+
+$imported = {} if $imported.nil?
+$imported["RS_TitleManagerEx"] = true
+
 module Tool
 
   # Import the game data from Data/System.rvdata2 file

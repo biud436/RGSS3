@@ -5,17 +5,20 @@
 # Y 좌표 * 32(타일 세로 크기)
 #===============================================
 
+$imported = {} if $imported.nil?
+$imported["RS_FixSpritePicture"] = true
+
 $RM_VERSION = {
 	'XP'=>false,
 	'VX'=>false,
 	'VXA'=>false
 }
 
-case RUBY_VERSION 
+case RUBY_VERSION
 when "1.9.2"
 	if Object.const_defined?("SceneManager")
 		$RM_VERSION[:VXA] = true
-	end	
+	end
 when "1.8.1"
 	if Object.const_defined?("Vocab")
 		$RM_VERSION[:VX] = true
@@ -30,7 +33,7 @@ module PIC
 end
 
 class Sprite_Picture < Sprite
-	
+
 if $RM_VERSION[:VX]
   def update
     super
@@ -55,7 +58,7 @@ if $RM_VERSION[:VX]
       self.angle = @picture.angle
       self.tone = @picture.tone
     end
-	end	
+	end
 end
   def update_origin
     if @picture.origin == 0
@@ -68,7 +71,7 @@ end
 				if $RM_VERSION[:VXA]
 					self.ox = $game_map.display_x * 32
 					self.oy = $game_map.display_y * 32
-				end				
+				end
       else
         # 화면 좌표에 고정합니다
         self.ox = 0

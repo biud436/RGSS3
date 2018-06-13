@@ -7,6 +7,10 @@
 #==============================================================================
 # Free for commercial and non-commercial use
 #==============================================================================
+
+$imported = {} if $imported.nil?
+$imported["RS_FollowerPassable"] = true
+
 class Game_Player < Game_Character
   alias xxxx_passable? passable?
   def passable?(x, y, d)

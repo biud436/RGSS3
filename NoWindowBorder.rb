@@ -1,3 +1,6 @@
+$imported = {} if $imported.nil?
+$imported["RS_NoWindowBorder"] = true
+
 module Unicode
   MultiByteToWideChar = Win32API.new('Kernel32','MultiByteToWideChar','llpipi','i')
   WideCharToMultiByte = Win32API.new('Kernel32','WideCharToMultiByte','llpipipp','i')

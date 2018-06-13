@@ -10,6 +10,9 @@
 # Free for commercial and non-commercial use
 #==============================================================================
 
+$imported = {} if $imported.nil?
+$imported["RS_DeleteAllSaveFiles"] = true
+
 module SaveManager
   extend self
   def delete_all

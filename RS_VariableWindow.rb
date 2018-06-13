@@ -1,19 +1,21 @@
 # ==============================================================
-# 작성자 : 러닝은빛
-# 작성일 : 2018.06.13
+# Author : biud436
+# Date : 2018.06.13
 # ==============================================================
+
+$imported = {} if $imported.nil?
+$imported["RS_VariableWindow"] = true
+
 module VARIABLE
+  # You can change a desired id for variable that can accees.
   ID = 5
 end
-
-$Imported = {} if not defined? $Imported
-$Imported["RS_VariableWindow"] = true
 
 class Window_Variable < Window_Base
   def initialize
     super(0, 0, window_width, fitting_height(1))
     refresh
-  end    
+  end
   def window_width
     return 160
   end
@@ -23,7 +25,7 @@ class Window_Variable < Window_Base
     pos = {:x => x, :y => y, :new_x => x, :height => calc_line_height(text)}
     process_character(text.slice!(0, 1), text, pos) until text.empty?
     return pos[:x]
-  end  
+  end
   def text
     "\\v[#{VARIABLE::ID}]"
   end
@@ -48,12 +50,10 @@ class Scene_Menu < Scene_MenuBase
   def start
     xxxx_start
     create_variable_window
-  end    
+  end
   def create_variable_window
     @variable_window = Window_Variable.new
     @variable_window.x = 0
     @variable_window.y = @gold_window.y - @variable_window.height
   end
 end
-
-

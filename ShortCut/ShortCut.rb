@@ -7,6 +7,10 @@
 #==============================================================================
 # ** Unicode
 #==============================================================================
+
+$imported = {} if $imported.nil?
+$imported["RS_ShortCut"] = true
+
 if not defined? Unicode
   module Unicode
     MultiByteToWideChar = Win32API.new('Kernel32','MultiByteToWideChar','llpipi','i')

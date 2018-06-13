@@ -9,6 +9,9 @@
 #   2015.01.18 - 최초 버전입니다
 #==============================================================================
 
+$imported = {} if $imported.nil?
+$imported["RS_EventTest"] = true
+
 class Game_Event
   attr_reader :move_type
   def get_pages

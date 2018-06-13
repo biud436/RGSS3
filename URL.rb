@@ -15,6 +15,10 @@
 #==============================================================================
 # Free for commercial and non-commercial use
 #==============================================================================
+
+$imported = {} if $imported.nil?
+$imported["RS_AsyncDownloader"] = true
+
 module URL
   API = Win32API.new('urlmon.dll','URLDownloadToFileW', 'ppplp','l')
   def self.download(url)

@@ -29,6 +29,9 @@
 # 그럴땐 쓰레드를 이용해 별도의 흐름에서 코드를 실행해보시기 바랍니다.
 #==============================================================================
 
+$imported = {} if $imported.nil?
+$imported["RS_GetHTML"] = true
+
 module Net
   Open = Win32API.new('RSNet.dll','HttpOpen','ppp','v')
 end

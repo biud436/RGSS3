@@ -48,7 +48,8 @@
 # Free for commercial and non-commercial use
 #==============================================================================
 
-=end
+$imported = {} if $imported.nil?
+$imported["RS_Menu"] = true
 
 module RECT_SRC
   W = 78

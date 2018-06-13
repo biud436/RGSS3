@@ -37,7 +37,7 @@
 #==============================================================================
 
 $imported = {} if $imported.nil?
-$imported["Info_Message_UI"] = true
+$imported["RS_InfoMessageUI"] = true
 
 module UI_MSG
   # 글자의 크기 설정

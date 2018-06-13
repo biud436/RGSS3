@@ -7,6 +7,9 @@
 #   RS.get_env("USERNAME")
 #===============================================================================
 
+$imported = {} if $imported.nil?
+$imported["RS_GetEnv"] = true
+
 if not defined? Unicode
     module Unicode
       MultiByteToWideChar = Win32API.new('Kernel32','MultiByteToWideChar','llpipi','i')

@@ -13,6 +13,9 @@
 # Free for commercial and non-commercial use
 #==============================================================================
 
+$imported = {} if $imported.nil?
+$imported["RS_InstanceEvent"] = true
+
 class Game_Event
   attr_reader :move_type
   def get_pages

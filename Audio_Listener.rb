@@ -8,6 +8,10 @@
 #==============================================================================
 # Free for commercial and non-commercial use
 #==============================================================================
+
+$imported = {} if $imported.nil?
+$imported["RS_AudioListener"] = true
+
 module AudioListener
 
   # SE 설정

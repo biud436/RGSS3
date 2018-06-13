@@ -3,6 +3,10 @@
 # Date : 2018.05.28
 # Description : 그림의 크기를 특정 변수에 대입합니다.
 #==============================================================================
+
+$imported = {} if $imported.nil?
+$imported["RS_PictureVariables"] = true
+
 module RS
   SCAN_IMAGE_WIDTH = /(?:이미지 가로 크기)/i
   SCAN_IMAGE_HEIGHT = /(?:이미지 세로 크기)/i
@@ -58,8 +62,8 @@ class Game_Interpreter
   def command_231
     xxxx_command_231
     valid = @params[3] != 0
-    valid = $data_system.variables[@params[4]].slice(RS::SCAN_IMAGE_WIDTH) if valid 
-    valid = $data_system.variables[@params[5]].slice(RS::SCAN_IMAGE_HEIGHT) if valid 
-    screen.pictures[@params[0]].set_ids(@params[4], @params[5]) if valid 
+    valid = $data_system.variables[@params[4]].slice(RS::SCAN_IMAGE_WIDTH) if valid
+    valid = $data_system.variables[@params[5]].slice(RS::SCAN_IMAGE_HEIGHT) if valid
+    screen.pictures[@params[0]].set_ids(@params[4], @params[5]) if valid
   end
 end

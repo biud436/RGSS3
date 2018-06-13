@@ -17,6 +17,10 @@
 # $game_map.search_bgm_play("Scene")
 #
 #==============================================================================
+
+$imported = {} if $imported.nil?
+$imported["RS_RTPReader"] = true
+
 module RTP
   FN_EXT = "*.{png,ogg,mp3}"
   HOME = ENV["CommonProgramFiles"].split("\\")

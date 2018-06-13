@@ -5,6 +5,10 @@
 #==============================================================================
 # Free for commercial and non-commercial use
 #==============================================================================
+
+$imported = {} if $imported.nil?
+$imported["RS_HUD"] = true
+
 module HUD
   # 스크린
   SCREEN = :BOTTOM_LEFT
