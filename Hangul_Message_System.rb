@@ -1,13 +1,16 @@
 #==============================================================================
-# ** Hangul Message System 1.5.5 (RPG Maker VX Ace)
+# ** Hangul Message System 1.5.6 (RPG Maker VX Ace)
 #==============================================================================
 # Name       : Hangul Message System
 # Author     : biud436
-# Version    : 1.5.5
+# Version    : 1.5.6
 # Link       : http://biud436.blog.me/220251747366
 #==============================================================================
 # ** 업데이트 로그
 #==============================================================================
+# 2018.06.26 :
+# - draw_text_ex
+# - text_width_ex
 # 2017.06.20 :
 # - 말풍선 모드에서도 얼굴 이미지 사용 가능
 # - 멈춤 표시 이미지 표시
@@ -673,6 +676,33 @@ class Window_Base
     contents.font.out_color = Font.default_out_color
   end
   #--------------------------------------------------------------------------
+  # * 저장
+  #--------------------------------------------------------------------------
+  def save
+    @message_desc = {}
+    @message_desc[:font_name] = contents.font.name
+    @message_desc[:font_size] = contents.font.size
+    @message_desc[:font_bold] = contents.font.bold
+    @message_desc[:font_italic] = contents.font.italic
+    @message_desc[:font_outline] = contents.font.outline
+    @message_desc[:font_out_color] = contents.font.out_color
+    @message_desc[:font_color] = contents.font.color
+  end
+  #--------------------------------------------------------------------------
+  # * 복구
+  #--------------------------------------------------------------------------
+  def restore
+    return if @message_desc.nil?
+    contents.font.name = @message_desc[:font_name]
+    contents.font.size = @message_desc[:font_size]
+    contents.font.bold = @message_desc[:font_bold]
+    contents.font.italic = @message_desc[:font_italic]
+    contents.font.outline = @message_desc[:font_outline]
+    contents.font.out_color = @message_desc[:font_out_color]
+    contents.font.color = @message_desc[:font_color]
+    @message_desc = nil
+  end
+  #--------------------------------------------------------------------------
   # * 테두리 색상 처리
   #--------------------------------------------------------------------------
   def change_out_color(color, enabled = true)
@@ -687,6 +717,25 @@ class Window_Base
     draw_icon(item.icon_index, x, y, enabled)
     change_color(normal_color, enabled)
     draw_text_ex(x + 24, y, item.name)
+  end
+  #--------------------------------------------------------------------------
+  # * draw_text_ex
+  #--------------------------------------------------------------------------
+  def draw_text_ex(x, y, text)
+    reset_font_settings
+    text = convert_escape_characters(text)
+    pos = {:x => x, :y => y, :new_x => x, :height => calc_line_height(text)}
+    process_character(text.slice!(0, 1), text, pos) until text.empty?
+    return pos[:x] - x
+  end
+  #--------------------------------------------------------------------------
+  # * text_width_ex
+  #--------------------------------------------------------------------------
+  def text_width_ex(text)
+    save
+    temp_width = draw_text_ex(0, contents_height, text)
+    restore
+    return temp_width
   end
 end
 

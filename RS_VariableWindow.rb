@@ -1,15 +1,16 @@
-# ==============================================================
-# Author : biud436
-# Date : 2018.06.13
-# ==============================================================
+# ===============================
+# 작성자 : 러닝은빛
+# 작성일 : 2018.06.13
+# 버전 로그 :
+# 2018.06.26 (v1.0.0) - First Release
+# 2018.06.26 (v1.0.1) - MV 함수와 일치시킴
+# ===============================
+module VARIABLE
+  ID = 5
+end
 
 $imported = {} if $imported.nil?
 $imported["RS_VariableWindow"] = true
-
-module VARIABLE
-  # You can change a desired id for variable that can accees.
-  ID = 5
-end
 
 class Window_Variable < Window_Base
   def initialize
@@ -24,7 +25,7 @@ class Window_Variable < Window_Base
     text = convert_escape_characters(text)
     pos = {:x => x, :y => y, :new_x => x, :height => calc_line_height(text)}
     process_character(text.slice!(0, 1), text, pos) until text.empty?
-    return pos[:x]
+    return pos[:x] - x
   end
   def text
     "\\v[#{VARIABLE::ID}]"
@@ -33,11 +34,11 @@ class Window_Variable < Window_Base
     text_size(text).width
   end
   def padding
-    window_width + 10
+
   end
   def refresh
     contents.clear
-    pos = draw_text_ex(padding, 0, text) - padding
+    pos = draw_text_ex(0, contents_height, text)
     width = contents_width
     width -= pos
     width -= 8
