@@ -10,7 +10,7 @@
 # $game_system.msg_busy_character_move_enabled = false
 #
 # - 이동 가능 설정
-# $game_system.msg_busy_character_move_enabled = false
+# $game_system.msg_busy_character_move_enabled = true
 #
 #==============================================================================
 $imported = {} if $imported.nil?
