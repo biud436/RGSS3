@@ -13,7 +13,6 @@ module RS
   RSCheckControllers = Win32API.new('Controller.dll', 'RSCheckControllers', 'p', 'v')
   def self.check_controllers
     states = "\0" * 4
-    ret = []
     RSCheckControllers.call(states)
     states.include?('t')
   end
