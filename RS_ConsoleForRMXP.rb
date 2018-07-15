@@ -59,7 +59,7 @@ module Console
   WriteConsoleW = Win32API.new('Kernel32', 'WriteConsoleW', 'lplpp', 's')
   SetConsoleTitle = Win32API.new('Kernel32', 'SetConsoleTitleW', 'p', 's')
   
-  AllocConsole.call
+  AllocConsole.call if $DEBUG or $BTEST
   @@std_handle = GetStdHandle.call(-11)
   @@game_title = INI.read_string("Game", "Title", "Game.ini")
   
