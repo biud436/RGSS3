@@ -4,7 +4,7 @@
 # This script allows you to send the debug message to console.
 # Author : biud436
 # Date : 2018.07.15
-# Version : 1.0.1
+# Version : 1.0.2
 # Usage :
 # p "안녕하세요?", "러닝은빛입니다"
 # p 50, 46, 87
@@ -12,6 +12,7 @@
 $imported = {} if $imported.nil?
 $imported["RS_ConsoleForRMXP"] = true
 
+if not defined? $NEKO_RUBY
 if not defined? Unicode
 module Unicode
   MultiByteToWideChar = Win32API.new('Kernel32','MultiByteToWideChar','llpipi','i')
@@ -88,4 +89,5 @@ module Kernel
   define_method :print do |*args|
     Console.logw(args)
   end  
+end
 end
