@@ -10,6 +10,7 @@
 #==============================================================================
 $imported = {} if $imported.nil?
 $imported["RS_CheckControllers"] = true
+if not defined? $NEKO_RUBY # $neko, NekoRGSS, Neko, NekoInput
 module RS
   RSCheckControllers = Win32API.new('Controller.dll', 'RSCheckControllers', 'p', 'v')
   def self.check_controllers
@@ -20,4 +21,5 @@ module RS
   def self.gamepad?
     check_controllers
   end
+end
 end
