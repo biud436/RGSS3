@@ -1,6 +1,11 @@
 #==============================================================================
 # ** HUD, biud436
 #==============================================================================
+# ** Change Log
+#==============================================================================
+# 2018.07.17 :
+# - 묘화 속도 향상
+#==============================================================================
 # ** Terms of Use
 #==============================================================================
 # Free for commercial and non-commercial use
@@ -132,91 +137,89 @@ class Hud
     @hud = Sprite.new
     @hud.bitmap = Cache.picture("hud_window_empty")
     @hud.x,@hud.y = HUD::POS
-    if HUD::SmoothEdge
-      draw_face_se(0,1,45,2,player.face_name,player.face_index)
-    else
-      @face = circle_clipping_mask(0,1,45,2,player.face_name,player.face_index)
-    end
+    @face = Sprite.new
+    @face.bitmap = draw_circle(player.face_name, 48, 48, 48)
   end
   #--------------------------------------------------------------------------
-  # * 원형 클리핑 마스크(효과 없음)
+  # * 마스크 비트맵 생성
+  #--------------------------------------------------------------------------  
+  def create_mask_bitmap
+    @mask_bitmap = @mask_bitmap || Cache.picture("masking")
+  end
   #--------------------------------------------------------------------------
-  def circle_clipping_mask(x,y,r,zoom,face_name,face_index,angle=360)
-    sprite = Sprite.new
-
-    diameter = r * 2
-
-    sprite.bitmap = Bitmap.new(r * zoom ,r * zoom)
-
-    bitmap = Bitmap.new(diameter,diameter)
-
-    bt = Cache.face(face_name)
-
-    origin_x = r
-    origin_y = r
-
-    rect = Rect.new(face_index % 4 * 96, face_index / 4 * 96, 96, 96)
-
-    r.times do |distance|
-      for i in 0..angle
-        dx = origin_x + distance * Math.cos(i * HUD::F_Angle)
-        dy = origin_y + distance * Math.sin(i * HUD::F_Angle)
-        bitmap.set_pixel(dx,dy,bt.get_pixel(dx + rect.x,dy + rect.y))
-        bitmap.set_pixel(dx,dy-1,bt.get_pixel(dx + rect.x,dy - 1 + rect.y))
-      end
+  # * 원 그리기
+  # 나눗셈 없이 빠른 속도로 계산합니다.
+  # 참고 : http://forum.falinux.com/zbxe/index.php?document_srl=406150
+  #--------------------------------------------------------------------------
+  def inner_circle(bitmap, face_bitmap, x_center, y_center, x_coor, y_coor)
+    
+    x_dot = 0
+    y_dot = 0
+    
+    alpha_bitmap = create_mask_bitmap
+          
+    # 아래
+    y_dot = y_center + y_coor
+    for x_dot in ((x_center - x_coor)...(x_center + x_coor))
+      color = face_bitmap.get_pixel(x_dot, y_dot)
+      color.alpha = alpha_bitmap.get_pixel(x_dot, y_dot).alpha if HUD::SmoothEdge
+      bitmap.set_pixel(x_dot, y_dot, color)
     end
-
-    sprite.bitmap.stretch_blt(sprite.src_rect,bitmap,bitmap.rect)
-    sprite.x = x - sprite.bitmap.rect.width / 2
-    sprite.y = y - sprite.bitmap.rect.height / 2
-    sprite.z = 102
-    sprite
+    
+    # 위
+    y_dot = y_center - y_coor
+    for x_dot in ((x_center - x_coor)...(x_center + x_coor))
+      color = face_bitmap.get_pixel(x_dot, y_dot)
+      color.alpha = alpha_bitmap.get_pixel(x_dot, y_dot).alpha if HUD::SmoothEdge
+      bitmap.set_pixel(x_dot, y_dot, color)
+    end
+    
+    # 중간 아래
+    y_dot = y_center + x_coor
+    for x_dot in ((x_center - y_coor)...(x_center + y_coor))
+      color = face_bitmap.get_pixel(x_dot, y_dot)
+      color.alpha = alpha_bitmap.get_pixel(x_dot, y_dot).alpha if HUD::SmoothEdge
+      bitmap.set_pixel(x_dot, y_dot, color)
+    end
+    
+    # 중간 위
+    y_dot   = y_center - x_coor
+    for x_dot in ((x_center - y_coor)...(x_center + y_coor))
+      color = face_bitmap.get_pixel(x_dot, y_dot)
+      color.alpha = alpha_bitmap.get_pixel(x_dot, y_dot).alpha if HUD::SmoothEdge
+      bitmap.set_pixel(x_dot, y_dot, color)
+    end
 
   end
   #--------------------------------------------------------------------------
-  # * 원형 페이스칩 묘화(부드러운 가장자리)
-  #--------------------------------------------------------------------------
-  def draw_face_se(x,y,r,zoom,face_name,face_index,angle=360)
-    sprite = Sprite.new
+  # * 원 그리기
+  # 나눗셈 없이 빠른 속도로 계산합니다.
+  # 참고 : http://forum.falinux.com/zbxe/index.php?document_srl=406150
+  #--------------------------------------------------------------------------  
+  def draw_circle(face_name, x_center, y_center, radius)
+    
+    x_coor = 0
+    y_coor = radius
+    p_value = 3 - 2 * radius
+    bitmap = Bitmap.new(544, 416)
+    face_bitmap = Cache.face(face_name)
 
-    diameter = r * 2
-
-    sprite.bitmap = Bitmap.new(r * zoom ,r * zoom)
-
-    bitmap = Bitmap.new(diameter,diameter)
-
-    bt = Cache.face(face_name)
-
-    origin_x = r
-    origin_y = r
-
-    rect = Rect.new(face_index % 4 * 96, face_index / 4 * 96, 96, 96)
-
-    trr = GColor.new(0,0,0,255)
-
-    r.times do |distance|
-      for i in 0..angle
-        dx = origin_x + distance * Math.cos(i * HUD::F_Angle)
-        dy = origin_y + distance * Math.sin(i * HUD::F_Angle)
-        trr.alpha = -distance * zoom * (256/diameter) - 80
-        bitmap.set_pixel(dx,dy,bt.get_pixel(dx + rect.x,dy + rect.y).add(trr))
-        bitmap.set_pixel(dx,dy-1,bt.get_pixel(dx + rect.x,dy - 1 + rect.y).add(trr) )
+    while ( x_coor < y_coor)
+      inner_circle( bitmap, face_bitmap, x_center, y_center, x_coor, y_coor)
+      if p_value < 0
+        p_value += 4 * x_coor + 6
+      else
+        p_value += 4 * ( x_coor - y_coor) + 10
+        y_coor-=1
       end
+      x_coor+=1
     end
-
-    sprite.bitmap.stretch_blt(sprite.src_rect,bitmap,bitmap.rect)
-    sprite.bitmap.stretch_blt(sprite.src_rect,bitmap,bitmap.rect)
-    sprite.bitmap.stretch_blt(sprite.src_rect,bitmap,bitmap.rect)
-    sprite.bitmap.stretch_blt(sprite.src_rect,bitmap,bitmap.rect)
-
-    bitmap.dispose
-
-    sprite.x = x - sprite.bitmap.rect.width / 2
-    sprite.y = y - sprite.bitmap.rect.height / 2
-    sprite.z = 102
-
-    @face = sprite
-
+    if x_coor == y_coor
+      inner_circle( bitmap, face_bitmap, x_center, y_center, x_coor, y_coor)
+    end
+    
+    bitmap
+    
   end
   #--------------------------------------------------------------------------
   # * HP 생성
@@ -237,7 +240,9 @@ class Hud
   #--------------------------------------------------------------------------
   def create_exp
     @exp = Spr_Params.new
+    @exp.visible = false
     @exp.bitmap = Cache.picture("exr")
+    @exp_dirty = true
   end
   #--------------------------------------------------------------------------
   # * 텍스트 생성 (주소값 전달)
@@ -330,6 +335,10 @@ class Hud
     @hp.set_rect(hp_rate,@hp.height)
     @mp.set_rect(mp_rate,@mp.height)
     @exp.set_rect(exp_rate,@exp.height)
+    if @exp_dirty
+      @exp.visible = true 
+      @exp_dirty = false
+    end
     [@hp,@mp,@exp].each {|i| i.update }
   end
   #--------------------------------------------------------------------------
