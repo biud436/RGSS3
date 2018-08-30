@@ -164,7 +164,6 @@ end
 
 class Spriteset_Map
   attr_accessor :character_sprites
-  attr_accessor :custom_events
   attr_reader :viewport1
 end
 
