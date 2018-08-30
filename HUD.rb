@@ -6,6 +6,8 @@
 # 2018.07.17 :
 # - 묘화 속도 향상
 # - 경험치 바가 잠깐 보이는 현상 제거
+# 2018.08.30 : 
+# - 화면 크기 변경했을 때 위치가 앵커에 따라 바뀌지 않는 현상 수정
 #==============================================================================
 # ** Terms of Use
 #==============================================================================
@@ -36,10 +38,10 @@ module HUD
 
   # 스크린의 좌표
   POS = case SCREEN
-  when :TOP_RIGHT then [Graphics.width - W - PD,PD]
-  when :BOTTOM_RIGHT then [Graphics.width - W - PD,Graphics.height - H - PD]
-  when :BOTTOM_LEFT then [PD,Graphics.height - H - PD]
-  when :TOP_LEFT  then [PD,PD]
+  when :TOP_RIGHT then Proc.new{[Graphics.width - W - PD,PD]}
+  when :BOTTOM_RIGHT then Proc.new{[Graphics.width - W - PD,Graphics.height - H - PD]}
+  when :BOTTOM_LEFT then Proc.new{[PD,Graphics.height - H - PD]}
+  when :TOP_LEFT  then Proc.new{[PD,PD]}
   end
 end
 
@@ -137,7 +139,7 @@ class Hud
   def create_hud
     @hud = Sprite.new
     @hud.bitmap = Cache.picture("hud_window_empty")
-    @hud.x,@hud.y = HUD::POS
+    @hud.x,@hud.y = HUD::POS.call
     @face = Sprite.new
     @face.bitmap = draw_circle(player.face_name, 48, 48, 48)
   end
