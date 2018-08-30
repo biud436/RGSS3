@@ -1,6 +1,7 @@
 #==============================================================================
 # Author       : biud436
 # Change Log   :
+#   2018.08.30 - 이벤트 삭제 방법 변경
 #   2015.07.10 - 그래픽 설정 수정
 #   2015.07.07 - 일괄 삭제 메소드(열거자 형식) 추가
 #   2015.06.22 - 새로운 메소드 추가
@@ -8,9 +9,13 @@
 #   2015.02.02 - 다른 맵에 있는 이벤트도 불러올 수 있습니다
 #   2015.01.18 - 최초 버전입니다
 #==============================================================================
+# ** Terms of Use
+#==============================================================================
+# Free for commercial and non-commercial use
+#==============================================================================
 
 $imported = {} if $imported.nil?
-$imported["RS_EventTest"] = true
+$imported["RS_InstanceEvent"] = true
 
 class Game_Event
   attr_reader :move_type
@@ -138,8 +143,9 @@ class Object
   def instance_destroy(index)
     $game_map.events.delete(index)
     get_scene = SceneManager.scene.spriteset
-    get_scene.character_sprites.delete(index - 1)
-    SceneManager.scene.spriteset.refresh_characters
+    get_scene.character_sprites.delete_if do |ev| 
+      ev.character.id == index
+    end
   end
   #--------------------------------------------------------------------------
   # * 병렬 처리 이벤트에서 이벤트를 생성합니다
@@ -158,6 +164,7 @@ end
 
 class Spriteset_Map
   attr_accessor :character_sprites
+  attr_accessor :custom_events
   attr_reader :viewport1
 end
 
