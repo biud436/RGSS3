@@ -36,7 +36,7 @@ module HUD
   SmoothEdge = true
   
   # 초기 가시 상태
-  VISIBLE = false
+  VISIBLE = true
 
   # 라디안
   F_Angle = Math::PI/180
