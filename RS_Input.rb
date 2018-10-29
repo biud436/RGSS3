@@ -60,6 +60,17 @@
 # Input.mouse_press?(2)
 # Input.mouse_x
 # Input.mouse_y
+# TouchInput.x
+# TouchInput.y
+# TouchInput.trigger?(:LEFT)
+# TouchInput.trigger?(:RIGHT)
+# TouchInput.trigger?(:MIDDLE)
+# TouchInput.press?(:LEFT)
+# TouchInput.press?(:RIGHT)
+# TouchInput.press?(:MIDDLE)
+# TouchInput.release?(:LEFT)
+# TouchInput.release?(:RIGHT)
+# TouchInput.release?(:MIDDLE)
 #
 #===============================================================================
 $imported = {} if $imported.nil?
