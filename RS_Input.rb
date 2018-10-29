@@ -1,8 +1,12 @@
 #===============================================================================
 # Name : RS_Input
 # Author : biud436
-# Version : 1.0.0 (2018.10.29)
+# Version : 1.0.1 (2018.10.29)
 # Description : This script provides the extension keycode and easy to use.
+# Version Log : 
+# v1.0.0 (2018.10.29) - First Release.
+# v1.0.1 (2018.10.29) : 
+# - Fixed the bug that causes an error when clicking the right button of the mouse.
 #-------------------------------------------------------------------------------
 # How to use
 #-------------------------------------------------------------------------------
@@ -580,19 +584,22 @@ class Window_Selectable < Window_Base
     idx = [[((my - self.y) / (col_max * item_height)), 0].max, item_max - 1].min
     idx += [[((mx - self.x) / (row_max * item_width)), 0].max, item_max - 1].min
     self.index = idx
-    if TouchInput.press?(0)
+    if TouchInput.trigger?(:LEFT)
       rect = self.item_rect(idx)
       check_area?(rect) { process_ok if ok_enabled? }
     end
-    if TouchInput.press?(:RIGHT)
-      check_area?(rect) { process_cancel }
+    if TouchInput.trigger?(:RIGHT)
+      rect = self.item_rect(idx)
+      process_cancel if cancel_enabled?
     end
   end
   def check_area?(rect)
     mx = TouchInput.x
     my = TouchInput.y
-    if (mx - self.x) >= rect.x && (mx - self.x) <= rect.x + rect.width &&
-    (my - self.y) >= rect.y && (my - self.y) <= rect.y + rect.height
+    tx = self.x
+    ty = self.y
+    if (mx - tx) >= rect.x && (mx - tx) <= rect.x + rect.width &&
+    (my - ty) >= rect.y && (my - ty) <= rect.y + rect.height
       yield
     end
   end
@@ -610,6 +617,8 @@ module TouchInput::Cursor
     @contents.blt(x, y, bitmap, rect, enabled ? 255 : 128)}
     @draw_icon.(index,0,0,true)
     @cursor.z = 500
+    @cursor.ox = -12
+    @cursor.oy = -12
     @update_cursor = lambda {|pos| return false if @cursor.nil?
     @cursor.x, @cursor.y = pos }
     @dispose_cursor = lambda {@contents.dispose; @cursor.dispose}
@@ -632,5 +641,17 @@ class Scene_Base
   def terminate
     mouse_cursor_terminate
     @dispose_cursor.call if @cursor
+  end
+end
+
+class Scene_Map
+  alias rs_open_menu_update update
+  def update
+    rs_open_menu_update
+    update_when_starting_with_menu_scene
+  end
+  
+  def update_when_starting_with_menu_scene
+    call_menu if TouchInput.trigger?(:RIGHT)
   end
 end
