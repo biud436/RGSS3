@@ -7,6 +7,7 @@
 # v1.0.0 (2018.10.29) - First Release.
 # v1.0.1 (2018.10.29) : 
 # - Fixed the bug that causes an error when clicking the right button of the mouse.
+# - Added the TouchInput feature that is the same as RPG Maker MV.
 #-------------------------------------------------------------------------------
 # How to use
 #-------------------------------------------------------------------------------
@@ -652,6 +653,27 @@ class Scene_Base
   def terminate
     mouse_cursor_terminate
     @dispose_cursor.call if @cursor
+  end
+end
+
+class Scene_MenuBase
+  alias rs_open_menu_update update
+  def update
+    rs_open_menu_update
+    update_when_starting_with_menu_scene
+  end
+  def update_when_starting_with_menu_scene
+    is_trigger = false
+    instance_variables.each do |varname|
+      ivar = instance_variable_get(varname)
+      if not ivar.is_a?(Window_Selectable)
+        is_trigger = true
+      end
+    end    
+    if is_trigger and TouchInput.trigger?(:RIGHT)
+      Sound.play_cancel
+      return_scene 
+    end
   end
 end
 
