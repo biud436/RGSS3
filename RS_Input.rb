@@ -8,6 +8,7 @@
 # v1.0.1 (2018.10.29) : 
 # - Fixed the bug that causes an error when clicking the right button of the mouse.
 # - Added the TouchInput feature that is the same as RPG Maker MV.
+# - Fixed the issue that did not play the cursor sound when selecting the button using mouse
 #-------------------------------------------------------------------------------
 # How to use
 #-------------------------------------------------------------------------------
@@ -593,9 +594,17 @@ class Window_Selectable < Window_Base
   def check_mouse_button
     mx = TouchInput.x
     my = TouchInput.y
+    _self = self
     idx = [[((my - self.y) / (col_max * item_height)), 0].max, item_max - 1].min
     idx += [[((mx - self.x) / (row_max * item_width)), 0].max, item_max - 1].min
-    self.index = idx
+    item_max.times do |i| 
+      temp_rect = self.item_rect(i)
+      check_area?(temp_rect) do
+        last_index = self.index
+        self.index = idx
+        Sound.play_cursor if self.index != last_index      
+      end
+    end
     if TouchInput.trigger?(:LEFT)
       rect = self.item_rect(idx)
       check_area?(rect) { process_ok if ok_enabled? }
