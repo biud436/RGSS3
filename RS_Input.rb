@@ -371,6 +371,12 @@ module Input
     :PRESS => 3
   }
   
+  MOUSE_BUTTON = {
+  :LEFT => 0,
+  :RIGHT => 1,
+  :MIDDLE => 2
+  }
+  
   @@test = {}
   
   class << self
@@ -416,15 +422,18 @@ module Input
     end
     
     def mouse_trigger?(*args, &block)
-      return @@mouse.map[args[0]] == STATES[:DOWN]
+      index = args[0].is_a?(Symbol) ? MOUSE_BUTTON[args[0]] : args[0]
+      return @@mouse.map[index] == STATES[:DOWN]
     end
     
     def mouse_press?(*args, &block)
-      return @@mouse.map[args[0]] == STATES[:PRESS]
+      index = args[0].is_a?(Symbol) ? MOUSE_BUTTON[args[0]] : args[0]
+      return @@mouse.map[index] == STATES[:PRESS]
     end    
     
     def mouse_release?(*args, &block)
-      return @@mouse.map[args[0]] == STATES[:UP]
+      index = args[0].is_a?(Symbol) ? MOUSE_BUTTON[args[0]] : args[0]
+      return @@mouse.map[index] == STATES[:UP]
     end        
     
     alias rs_input_press? press?
@@ -471,7 +480,7 @@ module Input
     end
     
     def get_async_key_state(symbol)
-      return 0 if not [:VK_LBUTTON, :VK_RBUTTON, :VK_MBUTTON].include?(KEY[symbol])
+      return 0 if not [:VK_LBUTTON, :VK_RBUTTON, :VK_MBUTTON].include?(symbol)
       return ((GetAsyncKeyState.call(KEY[symbol]) & 0x8000) != 0) ? 1 : 0
     end
     
@@ -480,9 +489,9 @@ module Input
       @@mouse.current = Array.new(8, 0)
       @@mouse.map = Array.new(8, 0)
       
-      @@mouse.left_button = get_async_key_state(:VK_LBUTTON)
-      @@mouse.right_button = get_async_key_state(:VK_RBUTTON)
-      @@mouse.middle_button = get_async_key_state(:VK_MBUTTON)
+      @@mouse.left_button = self.get_async_key_state(:VK_LBUTTON)
+      @@mouse.right_button = self.get_async_key_state(:VK_RBUTTON)
+      @@mouse.middle_button = self.get_async_key_state(:VK_MBUTTON)
 
       for i in (0...8)
         old = @@mouse.old[i]
@@ -519,4 +528,109 @@ module Input
     
   end
   
+end
+
+module TouchInput
+  
+  ShowCursor = Win32API.new("user32", "ShowCursor", "i", "i" )
+  ShowCursor.call(0)
+  
+  MOUSE_ICON = 397
+  
+  class << self
+    def press?(*args, &block)
+      Input.mouse_press?(*args, &block)
+    end
+    
+    def trigger?(*args, &block)
+      Input.mouse_trigger?(*args, &block)
+    end
+    
+    def release?(*args, &block); Input.mouse_release?(*args, &block); end
+    def down?(key); Input.mouse_press?(key); end
+    def up?(key); Input.mouse_release?(key); end
+    def x
+      Input.mouse_x
+    end
+    def y
+      Input.mouse_y
+    end
+    def get_pos
+      [x, y]
+    end
+  end
+end
+
+class Window_Selectable < Window_Base
+  def process_cursor_move
+    return unless cursor_movable?
+    last_index = @index
+    cursor_down (Input.trigger?(:DOWN))  if Input.repeat?(:DOWN)
+    cursor_up   (Input.trigger?(:UP))    if Input.repeat?(:UP)
+    cursor_right(Input.trigger?(:RIGHT)) if Input.repeat?(:RIGHT)
+    cursor_left (Input.trigger?(:LEFT))  if Input.repeat?(:LEFT)
+    cursor_pagedown   if !handle?(:pagedown) && Input.trigger?(:R)
+    cursor_pageup     if !handle?(:pageup)   && Input.trigger?(:L)
+    Sound.play_cursor if @index != last_index
+    check_mouse_button if defined? TouchInput
+  end
+  def check_mouse_button
+    mx = TouchInput.x
+    my = TouchInput.y
+    idx = [[((my - self.y) / (col_max * item_height)), 0].max, item_max - 1].min
+    idx += [[((mx - self.x) / (row_max * item_width)), 0].max, item_max - 1].min
+    self.index = idx
+    if TouchInput.press?(0)
+      rect = self.item_rect(idx)
+      check_area?(rect) { process_ok if ok_enabled? }
+    end
+    if TouchInput.press?(:RIGHT)
+      check_area?(rect) { process_cancel }
+    end
+  end
+  def check_area?(rect)
+    mx = TouchInput.x
+    my = TouchInput.y
+    if (mx - self.x) >= rect.x && (mx - self.x) <= rect.x + rect.width &&
+    (my - self.y) >= rect.y && (my - self.y) <= rect.y + rect.height
+      yield
+    end
+  end
+end
+
+module TouchInput::Cursor
+  def create_cursor(index)
+    @cursor = Sprite.new
+    @cursor.x, @cursor.y = TouchInput.get_pos
+    @cursor.bitmap = Bitmap.new(24,24)
+    @contents = @cursor.bitmap
+    @draw_icon = lambda {|icon_index,x,y,enabled = true|
+    bitmap = Cache.system("Iconset")
+    rect = Rect.new(icon_index % 16 * 24, icon_index / 16 * 24, 24, 24)
+    @contents.blt(x, y, bitmap, rect, enabled ? 255 : 128)}
+    @draw_icon.(index,0,0,true)
+    @cursor.z = 500
+    @update_cursor = lambda {|pos| return false if @cursor.nil?
+    @cursor.x, @cursor.y = pos }
+    @dispose_cursor = lambda {@contents.dispose; @cursor.dispose}
+  end
+end
+
+class Scene_Base
+  include TouchInput::Cursor
+  alias mouse_cursor_start start
+  alias mouse_cursor_update update
+  alias mouse_cursor_terminate terminate
+  def start
+    mouse_cursor_start
+    create_cursor(TouchInput::MOUSE_ICON)
+  end
+  def update
+    mouse_cursor_update
+    @update_cursor.call(TouchInput.get_pos) if @cursor
+  end
+  def terminate
+    mouse_cursor_terminate
+    @dispose_cursor.call if @cursor
+  end
 end
