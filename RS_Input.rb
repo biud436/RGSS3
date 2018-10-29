@@ -37,7 +37,7 @@
 #-------------------------------------------------------------------------------
 # Funcions : 
 #-------------------------------------------------------------------------------
-# Please available virtual key codes refer to the line 131.
+# Please available virtual key codes refer to the line 164 (a.k.a KEY CONSTANT)
 #
 # Input.trigger?(symbol)
 # Input.release?(symbol)
