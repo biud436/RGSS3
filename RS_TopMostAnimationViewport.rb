@@ -16,46 +16,56 @@
 $imported = {} if $imported.nil?
 $imported["RS_TopMostAnimationViewport"] = true
 
+module TopmostViewport
+  def create_viewport_for_ani
+    @viewport_for_ani = Viewport.new
+    @viewport_for_ani.z = 600
+  end
+  def update_viewport_for_ani
+    return if !@animation or !@viewport_for_ani
+    @ani_sprites.each do |sprite|
+      sprite.viewport = @viewport_for_ani if sprite.viewport != @viewport_for_ani
+    end
+  end  
+end
 
-class Spriteset_Map
-    attr_reader :viewport2
+class Sprite_Character < Sprite_Base
+  include TopmostViewport
+  alias rs_animation_for_viewport_initialize initialize
+  def initialize(viewport, character = nil)
+    create_viewport_for_ani    
+    rs_animation_for_viewport_initialize(viewport, character)
+  end  
+  alias rs_animation_for_viewport_update update
+  def update
+    rs_animation_for_viewport_update
+    update_viewport_for_ani
+  end
+  alias rs_animation_for_viewport_dispose dispose
+  def dispose
+    rs_animation_for_viewport_dispose
+    @viewport_for_ani.dispose if @viewport_for_ani
+    @viewport_for_ani = nil
   end
   
-  class Scene_Map < Scene_Base
-    attr_reader :spriteset
+end
+
+class Sprite_Battler < Sprite_Base
+  include TopmostViewport
+  alias rs_animation_for_viewport_initialize initialize
+  def initialize(viewport, battler = nil)
+    create_viewport_for_ani
+    rs_animation_for_viewport_initialize(viewport, battler)
   end
-  
-  class Sprite_Character < Sprite_Base
-    
-    alias rs_animation_for_viewport_initialize initialize
-    def initialize(viewport, character = nil)
-      create_viewport_for_ani    
-      rs_animation_for_viewport_initialize(viewport, character)
-    end  
-    
-    def create_viewport_for_ani
-      @viewport_for_ani = Viewport.new
-      @viewport_for_ani.z = 400
-    end
-      
-    alias rs_animation_for_viewport_update update
-    def update
-      rs_animation_for_viewport_update
-      update_viewport_for_ani
-    end
-    
-    alias rs_animation_for_viewport_dispose dispose
-    def dispose
-      rs_animation_for_viewport_dispose
-      @viewport_for_ani.dispose if @viewport_for_ani
-      @viewport_for_ani = nil
-    end
-    
-    def update_viewport_for_ani
-      return if !@animation or !@viewport_for_ani
-      @ani_sprites.each do |sprite|
-        sprite.viewport = @viewport_for_ani if sprite.viewport != @viewport_for_ani
-      end
-    end
-    
+  alias rs_animation_for_viewport_update update
+  def update
+    rs_animation_for_viewport_update
+    update_viewport_for_ani
   end
+  alias rs_animation_for_viewport_dispose dispose
+  def dispose
+    rs_animation_for_viewport_dispose
+    @viewport_for_ani.dispose if @viewport_for_ani
+    @viewport_for_ani = nil
+  end  
+end
