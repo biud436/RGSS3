@@ -1,13 +1,15 @@
 #==============================================================================
-# ** Hangul Message System 1.5.7 (RPG Maker VX Ace)
+# ** Hangul Message System 1.5.8 (RPG Maker VX Ace)
 #==============================================================================
 # Name       : Hangul Message System
 # Author     : biud436
-# Version    : 1.5.7
+# Version    : 1.5.8
 # Link       : http://biud436.blog.me/220251747366
 #==============================================================================
 # ** 업데이트 로그
 #==============================================================================
+# 2018.11.09 (v1.5.8) :
+# - 말풍선 모드 Background 타입에 Dim 지원
 # 2018.07.12 (v1.5.7) :
 # - 페이스칩 Z좌표 설정 기능 추가
 # - 자동 개행을 옵션에서 미리 설정할 수 있습니다.
@@ -852,10 +854,10 @@ class Window_Message
   # * 피버 메인
   #--------------------------------------------------------------------------
   def fiber_main
-    $game_message.visible = true
     update_background
     update_balloon_position
     @util.face_update
+    $game_message.visible = true    
     loop do
       process_all_text if $game_message.has_text?
       process_input
@@ -1194,7 +1196,6 @@ class RS::Window_Name < Window_Base
     @back_sprite.x = x
     @back_sprite.y = y
     @back_sprite.opacity = openness
-    @back_sprite.wave_amp = 3
     @back_sprite.update
   end
   #--------------------------------------------------------------------------
@@ -1530,6 +1531,15 @@ class Window_Message < Window_Base
     self.width = @_width
     self.height = @_height
 
+    # Dim
+    create_balloon_back_bitmap(@_width, @_height)
+    @back_sprite.x = dx
+    @back_sprite.y = dy
+    @back_sprite.src_rect.width = @_width
+    @back_sprite.src_rect.height = @_height
+    @back_sprite.opacity = openness
+    @back_sprite.update    
+
     # pause 커서의 좌표
     @b_cursor.x = dx + tx
     @b_cursor.y = dy + ty
@@ -1540,11 +1550,28 @@ class Window_Message < Window_Base
 
     # 투명도 설정
     self.opacity = balloon_sprite? ? 0 : RS::LIST["투명도"]
+
     @balloon_pause = false
     self.arrows_visible = false
     @b_cursor.visible = true
     show
+
+    update_background
+
   end
+  #--------------------------------------------------------------------------
+  # * 말풍선 Dim 비트맵 갱신
+  #--------------------------------------------------------------------------  
+  def create_balloon_back_bitmap(width, height)
+    @back_bitmap = Bitmap.new(width, height)
+    rect1 = Rect.new(0, 0, width, 12)
+    rect2 = Rect.new(0, 12, width, height - 24)
+    rect3 = Rect.new(0, height - 12, width, 12)
+    @back_bitmap.gradient_fill_rect(rect1, back_color2, back_color1, true)
+    @back_bitmap.fill_rect(rect2, back_color1)
+    @back_bitmap.gradient_fill_rect(rect3, back_color1, back_color2, true)
+    @back_sprite.bitmap = @back_bitmap if @back_sprite
+  end  
   #--------------------------------------------------------------------------
   # * 소유자를 설정합니다
   #--------------------------------------------------------------------------
@@ -1578,6 +1605,16 @@ class Window_Message < Window_Base
 
     # 위치 및 크기 설정
     self.move(0, y, window_width, fitting_height($game_message.line || RS::LIST["라인"]) )
+
+    # Dim
+    create_back_bitmap
+    @back_sprite.bitmap = @back_bitmap
+    @back_sprite.x = 0
+    @back_sprite.y = y
+    @back_sprite.src_rect.width = window_width
+    @back_sprite.src_rect.height = fitting_height($game_message.line || RS::LIST["라인"])
+    @back_sprite.opacity = openness
+    @back_sprite.update        
 
   end
   #--------------------------------------------------------------------------
