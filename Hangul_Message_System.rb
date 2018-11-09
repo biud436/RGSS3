@@ -1,15 +1,17 @@
 #==============================================================================
-# ** Hangul Message System 1.5.8 (RPG Maker VX Ace)
+# ** Hangul Message System 1.5.9 (RPG Maker VX Ace)
 #==============================================================================
 # Name       : Hangul Message System
 # Author     : biud436
-# Version    : 1.5.8
+# Version    : 1.5.9
 # Link       : http://biud436.blog.me/220251747366
 #==============================================================================
 # ** 업데이트 로그
 #==============================================================================
-# 2018.11.09 (v1.5.8) :
+# 2018.11.09 (v1.5.9) :
 # - 말풍선 모드 Background 타입에 Dim 지원
+# - 노트 태그 기능 추가
+# - 윈도우 스킨 변경 기능을 추가하였습니다.
 # 2018.07.12 (v1.5.7) :
 # - 페이스칩 Z좌표 설정 기능 추가
 # - 자동 개행을 옵션에서 미리 설정할 수 있습니다.
@@ -73,6 +75,15 @@
 # \그림![그림파일명]
 # \자동개행!
 #==============================================================================
+# ** 노트 태그
+#==============================================================================
+# 대화가 시작되기 전에 다음 노트 태그를 설정하면 메시지 설정을 바꿀 수 있습니다.
+#
+# <대화창 윈도우스킨:Window>
+# <이름 윈도우스킨:Window>
+# <대화창 투명도:255>
+#
+#==============================================================================
 # ** Terms of Use
 #==============================================================================
 # Free for commercial and non-commercial use
@@ -133,6 +144,10 @@ module RS
   # 페이스칩 인덱스는 왼쪽 위부터 0번이며, 그 다음이 1번인데 1번 이상일 경우,
   # 오른쪽에 표시됩니다.
   LIST["반전"] = true
+  
+  # 윈도우 스킨
+  LIST["윈도우스킨"] = "Window"
+  LIST["이름윈도우스킨"] = "Window"
   
   # 대화창의 배경 이미지를 pictures 폴더에 찾아 설정합니다. 예:) "msgback"
   LIST["바탕화면"] = nil
@@ -206,6 +221,68 @@ module RS
     end
   end
 
+end
+
+#==============================================================================
+# ** RS::EventComment
+#==============================================================================
+module RS::EventComment
+  def self.get(event_id, index)
+    return nil if index <= 0
+    
+    data = {}
+    data[:note] = []
+    data[:meta] = {}
+    meta = nil
+    
+    list = $game_map.events[event_id].list
+    param = list[index]
+    
+    while param.code == 408
+      value = param.parameters[0] || ""
+      data[:note] << value
+      index -= 1
+      param = list[index]  
+    end
+    if param.code == 108
+      value = param.parameters[0] || ""
+      data[:note] << value
+      index -= 1
+      param = list[index]
+      while param.code == 408
+        value = param.parameters[0] || ""
+        data[:note] << value
+        index -= 1
+        param = list[index]  
+      end      
+      if param.code == 108
+        value = param.parameters[0] || ""
+        data[:note] << value
+      end
+    end
+    
+    re = /<([^<>:]+)(:?)([^>]*)>/m
+    
+    data[:note].each do |i|
+      m = re.match(i)
+      meta = data[:meta]
+      if not m.nil?
+        if m[2] == ":"
+          name = m[1] || ""
+          meta[name.strip] = m[3]
+        else
+          name = m[1] || ""
+          meta[name.strip] = true
+        end
+      else
+        break
+      end
+    end
+    
+    meta
+    
+  end
+  
 end
 
 #==============================================================================
@@ -834,6 +911,7 @@ class Window_Message
     @util = RS::Face.new(self)
     create_balloon_sprite
     set_font(RS::LIST["폰트명"],RS::LIST["폰트크기"])
+    @windowskin_id = RS::LIST["윈도우스킨"].object_id
   end
   #--------------------------------------------------------------------------
   # * 폰트 설정
@@ -841,6 +919,17 @@ class Window_Message
   def set_font(name, size = Font.default_size )
     self.contents.font.name = name
     self.contents.font.size = size
+  end
+  #--------------------------------------------------------------------------
+  # * 윈도우스킨 적용
+  #--------------------------------------------------------------------------  
+  def update_windowskin
+    # 문자열의 오브젝트 ID 값이 변경할 때 마다 바뀝니다.
+    # 이 점을 이용하여 정확히 한 번만 업데이트 합니다.
+    return if @windowskin_id == RS::LIST["윈도우스킨"].object_id
+    bitmap = Cache.system(RS::LIST["윈도우스킨"])
+    self.windowskin = bitmap
+    @windowskin_id = RS::LIST["윈도우스킨"].object_id
   end
   #--------------------------------------------------------------------------
   # * 인스턴스 초기화
@@ -881,6 +970,7 @@ class Window_Message
   def update
     load_face_update
     update_balloon_sprite
+    update_windowskin
     @util.face_update if @fiber
   end
   #--------------------------------------------------------------------------
@@ -1290,6 +1380,7 @@ class RS::Window_Name < Window_Base
   # * 리프레쉬
   #--------------------------------------------------------------------------
   def refresh
+    self.windowskin = Cache.system(RS::LIST["이름윈도우스킨"])
     contents.clear
     @background = $game_message.background
     self.opacity = @background == 0 ? RS::LIST["투명도"] : 0
@@ -1667,6 +1758,22 @@ end
 # ** 게임 인터프리터
 #==============================================================================
 class Game_Interpreter
+  
+  def process_message_params
+    event_id = @event_id
+    index = @index
+    meta = RS::EventComment.get(event_id, index - 1)
+    return if meta.nil?
+    if meta["대화창 투명도"]
+      RS::LIST["투명도"] = meta["대화창 투명도"].to_i
+    end
+    if meta["대화창 윈도우스킨"]
+      RS::LIST["윈도우스킨"] = meta["대화창 윈도우스킨"].strip
+    end
+    if meta["이름 윈도우스킨"]
+      RS::LIST["이름윈도우스킨"] = meta["이름 윈도우스킨"].strip
+    end    
+  end
   #--------------------------------------------------------------------------
   # * 문장의 표시(오버라이딩)
   #--------------------------------------------------------------------------
@@ -1677,6 +1784,7 @@ class Game_Interpreter
     $game_message.face_index = @params[1]
     $game_message.background = @params[2]
     $game_message.position = @params[3]
+    process_message_params
 
     # 라인 확장 여부 체크
     multi_line_flag? ? multi_line_add_message : default_add_message
