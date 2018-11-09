@@ -1046,7 +1046,17 @@ class Window_Message
   alias rs_extend_msg_convert_escape_characters convert_escape_characters
   def convert_escape_characters(text)
     f = rs_extend_msg_convert_escape_characters(text)
-    f.gsub!(RS::CODE["이름"]) { name_window_open($1.to_s); "" }
+    f.gsub!(RS::CODE["이름"]) {
+      name_text = $1.to_s
+      if (name_text =~ /(.*)(:)(.*)/i)
+        name = $1.strip
+        position = $3.strip
+        name_window_open(name, position)
+      else
+        name_window_open(name_text, 'left')  
+      end
+      ""
+    }
     f.gsub!(RS::CODE["말풍선"]) { $game_message.balloon = $1.to_i; "" }
     f
   end
@@ -1066,8 +1076,9 @@ class Window_Message
   #--------------------------------------------------------------------------
   # * 이름 윈도우 띄우기
   #--------------------------------------------------------------------------
-  def name_window_open(text)
+  def name_window_open(text, position)
     @name_window.draw_name(text)
+    @name_window.align = position
   end
   #--------------------------------------------------------------------------
   # * 이름 윈도우 생성
@@ -1092,18 +1103,24 @@ class Window_Message
   # * 이름 윈도우의 X좌표
   #--------------------------------------------------------------------------
   def namewindow_get_x
-    if @util.normal_face?
-      return self.x + 112 + RS::LIST["이름윈도우X1"]
+    if @name_window.align == 'right'
+      return self.x + self.width - @name_window.width
+    elsif @name_window.align == 'center'
+      return self.x + self.width / 2 - @name_window.width / 2
     else
-      if @util.bigface_valid?
-        if @util.bigface_right_alignment?
-          return self.x + RS::LIST["이름윈도우X1"]
-        else
-          return self.x + RS::LIST["이름윈도우X2"]
+      if @util.normal_face?
+        return self.x + 112 + RS::LIST["이름윈도우X1"]
+      else
+        if @util.bigface_valid?
+          if @util.bigface_right_alignment?
+            return self.x + RS::LIST["이름윈도우X1"]
+          else
+            return self.x + RS::LIST["이름윈도우X2"]
+          end
         end
       end
+      return self.x + RS::LIST["이름윈도우X1"]
     end
-    return self.x + RS::LIST["이름윈도우X1"]
   end
   #--------------------------------------------------------------------------
   # * 이름 윈도우 업데이트
@@ -1147,6 +1164,7 @@ end
 # 이름 윈도우가 구현되어있는 클래스입니다
 #==============================================================================
 class RS::Window_Name < Window_Base
+  attr_accessor :align
   #--------------------------------------------------------------------------
   # * 초기화
   #--------------------------------------------------------------------------
