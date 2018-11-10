@@ -396,6 +396,10 @@ module Input
   
   @@test = {}
   
+  @@pressed_time = 0
+  @@triggered = false
+  @@mouse_pressed = false
+  
   class << self
     alias rs_input_update update
     def update(*args, &block)
@@ -440,13 +444,17 @@ module Input
     
     def mouse_trigger?(*args, &block)
       index = args[0].is_a?(Symbol) ? MOUSE_BUTTON[args[0]] : args[0]
-      return @@mouse.map[index] == STATES[:DOWN]
+      return @@triggered > 0|| @@mouse.map[index] == STATES[:DOWN]
     end
     
     def mouse_press?(*args, &block)
       index = args[0].is_a?(Symbol) ? MOUSE_BUTTON[args[0]] : args[0]
-      return @@mouse.map[index] == STATES[:PRESS]
+      return @@mouse_pressed || @@mouse.map[index] == STATES[:PRESS]
     end    
+    
+    def mouse_long_press?(*args, &block)
+      @@pressed_time >= 24 && mouse_press?(*args, &block)
+    end        
     
     def mouse_release?(*args, &block)
       index = args[0].is_a?(Symbol) ? MOUSE_BUTTON[args[0]] : args[0]
@@ -462,7 +470,7 @@ module Input
       end
       return rs_input_press?(*args, &block)
     end
-    
+  
     def release?(*args, &block)
       keycode = get_keycode(args[0])
       key_status = @@keyboard.map[keycode]
@@ -509,21 +517,30 @@ module Input
       @@mouse.left_button = self.get_async_key_state(:VK_LBUTTON)
       @@mouse.right_button = self.get_async_key_state(:VK_RBUTTON)
       @@mouse.middle_button = self.get_async_key_state(:VK_MBUTTON)
+      
+      @@triggered = @@mouse.map[MOUSE_BUTTON[:LEFT]] if @@mouse.map
 
       for i in (0...8)
         old = @@mouse.old[i]
         cur = @@mouse.current[i]
         if old == 0 and cur == 1
           @@mouse.map[i] = STATES[:DOWN]
+          @@mouse_pressed = true
+          @@pressed_time = 0
         elsif old == 1 and cur == 1
           @@mouse.map[i] = STATES[:PRESS]
         elsif old == 1 and cur == 0
           @@mouse.map[i] = STATES[:UP]
+          @@mouse_pressed = false
         end
       end      
       
       update_mouse_point
-    
+      
+      if mouse_trigger?(:LEFT)
+        @@pressed_time += 1
+      end
+      
     end
     
     def update_mouse_point
@@ -547,6 +564,9 @@ module Input
   
 end
 
+#===============================================================================
+# TouchInput moudle
+#===============================================================================
 module TouchInput
   
   ShowCursor = Win32API.new("user32", "ShowCursor", "i", "i" )
@@ -559,10 +579,14 @@ module TouchInput
       Input.mouse_press?(*args, &block)
     end
     
+    def long_press?(*args, &block)
+      Input.mouse_long_press?(*args, &block)
+    end
+    
     def trigger?(*args, &block)
       Input.mouse_trigger?(*args, &block)
     end
-    
+        
     def release?(*args, &block); Input.mouse_release?(*args, &block); end
     def down?(key); Input.mouse_press?(key); end
     def up?(key); Input.mouse_release?(key); end
@@ -578,6 +602,9 @@ module TouchInput
   end
 end
 
+#===============================================================================
+# Window_Selectable
+#===============================================================================
 class Window_Selectable < Window_Base
   def process_cursor_move
     return unless cursor_movable?
@@ -626,6 +653,9 @@ class Window_Selectable < Window_Base
   end
 end
 
+#===============================================================================
+# TouchInput::Cursor
+#===============================================================================
 module TouchInput::Cursor
   def create_cursor(index)
     @cursor = Sprite.new
@@ -646,6 +676,9 @@ module TouchInput::Cursor
   end
 end
 
+#===============================================================================
+# Scene_Base
+#===============================================================================
 class Scene_Base
   include TouchInput::Cursor
   alias mouse_cursor_start start
@@ -665,6 +698,9 @@ class Scene_Base
   end
 end
 
+#===============================================================================
+# Scene_MenuBase
+#===============================================================================
 class Scene_MenuBase
   alias rs_open_menu_update update
   def update
@@ -686,14 +722,375 @@ class Scene_MenuBase
   end
 end
 
+#===============================================================================
+# Game_Map
+#===============================================================================
+class Game_Map
+  def delta_x(x1, x2)
+    result = x1 - x2
+    if $game_map.loop_horizontal? && result.abs > $game_map.width / 2
+      if result < 0
+        result += $game_map.width
+      else
+        result -= $game_map.width
+      end
+    end
+    result        
+  end
+  def delta_y(y1, y2)
+    result = y1 - y2
+    if $game_map.loop_vertical? && result.abs > $game_map.height / 2
+      if result < 0
+        result += $game_map.height
+      else
+        result -= $game_map.height
+      end
+    end
+    result        
+  end
+  def distance(x1, x2, y1, y2)
+    (delta_x(x1, x2) + delta_y(y1, y2)).abs
+  end
+
+  def canvas_to_map_x(x)
+    origin_x = @display_x * 32
+    map_x = ((origin_x + x) / 32).floor
+    round_x(map_x)
+  end
+  
+  def canvas_to_map_y(y)
+    origin_y = @display_y * 32
+    map_y = ((origin_y + y) / 32).floor
+    round_y(map_y)
+  end  
+  
+end
+
+#===============================================================================
+# Game_Character
+#===============================================================================
+class Game_Character < Game_CharacterBase
+  
+  # RPG Maker MV에서 마이그레이션
+  def find_direction_to(goal_x, goal_y)
+    search_limit = 12
+    map_width = $game_map.width
+    node_list = []
+    open_list = []
+    closed_list = []
+    start = {}
+    best = start
+    
+    return 0 if @x == goal_x and @y == goal_y
+    
+    start[:parent] = nil
+    start[:x] = @x
+    start[:y] = @y
+    
+    # F = G + H
+    # G = 시작점으로부터 목표 타일까지의 이동 비용; 생성된 경로 (장애물 피하는 경로)
+    # 대각선 방향은 0, 수평은 수직은 1
+    # H = 시작점으로부터 목표 타일까지의 이동 비용 (장애물 무시)
+    # 대각선 방향을 무시하고 수평, 수직 이동 비용만 계산 1
+    start[:g] = 0
+    
+    start[:f] = $game_map.distance(start[:x], start[:y], goal_x, goal_y)
+    
+    # 시작점을 열린 목록에 추가한다.    
+    node_list.push(start)
+    open_list.push(start[:y] * map_width + start[:x])
+    
+    
+    while node_list.size > 0
+      
+      base_index = 0
+      for i in (0...node_list.size)
+        # F 비용 값이 가장 작은 노드를 찾는다.
+        if node_list[i][:f] < node_list[base_index][:f]
+          base_index = i
+        end
+      end
+      
+      # 현재 기준 노드를 설정한다.
+      current = node_list[base_index]
+      x1 = current[:x]
+      y1 = current[:y]
+      pos1 = y1 * map_width + x1
+      g1 = current[:g]
+      
+      # F 비용이 가장 작은 노드를 열린 목록에서 빼고 닫힌 목록에 추가한다.
+      node_list.delete_at(base_index)
+      open_list.delete_at(open_list.index(pos1))
+      closed_list.push(pos1)
+      
+      # 현재 노드가 목적지라면 베스트이므로 빠져나간다.
+      if current[:x] == goal_x and current[:y] == goal_y
+        best = current
+        break
+      end
+      
+      # g 비용이 12보다 커지면 최적화 문제로 탐색하지 않는다
+      next if g1 >= search_limit
+      
+      # 인접한 4개의 타일을 열린 목록에 추가한다.
+      for j in (0...4)
+        direction = 2 + j * 2
+        x2 = $game_map.round_x_with_direction(x1, direction)
+        y2 = $game_map.round_y_with_direction(y1, direction)
+        pos2 = y2 * map_width + x2
+        
+        # 닫힌 목록에 이미 있으면 무시한다.
+        next if closed_list.include?(pos2)
+        # 지나갈 수 없는 경우 무시한다.
+        next if !passable?(x1, y1, direction)
+        
+        # g 비용을 1 늘린다 (이동 했다고 가정)
+        g2 = g1 + 1 || 0
+        # 열린 목록에서 해당 노드의 인덱스 값을 찾는다 (int or nil)
+        index2 = open_list.index(pos2) || -1
+        
+        # 노드를 찾을 수 없었거나, 새로운 찾은 노드의 이동 비용이 작을 경우
+        if (index2 < 0) or (g2 < node_list[index2][:g])
+          neighbor = {}
+          if index2 >= 0
+            # 이미 열린 목록에 있는 노드를 선택한다.
+            neighbor = node_list[index2]
+          else
+            # 열린 목록에 방금 찾은 인접 타일을 추가한다.
+            neighbor = {}
+            node_list.push(neighbor)
+            open_list.push(pos2)
+          end
+          
+          # 새로 찾은 인접 노드의 부모가 이전 타일로 설정된다.
+          neighbor[:parent] = current
+          
+          # 인접 타일의 F 비용이 계산된다.
+          neighbor[:x] = x2
+          neighbor[:y] = y2
+          neighbor[:g] = g2
+          # F값 = 이동 비용 + 장애물을 무시한 실제 거리
+          neighbor[:f] = g2 + $game_map.distance(x2, y2, goal_x, goal_y)
+          
+          # best가 nil이거나, 인접 타일의 실제 거리 값이 더 짧으면
+          if !best or neighbor[:f] - neighbor[:g] < best[:f] - best[:g]
+            # 인접 타일을 베스트 노드로 설정
+            best = neighbor
+          end
+        end
+      end
+    end
+    
+    # 최단 거리 노드 값을 가져온다
+    node = best
+    
+    # 노드의 부모 노드로 거슬러 올라간다 (딱 한 칸만 거슬러 올라간다)
+    node = node[:parent] while node[:parent] and node[:parent] != start
+    
+    # 거리 차 계산
+    delta_x1 = $game_map.delta_x(node[:x], start[:x])
+    delta_y1 = $game_map.delta_y(node[:y], start[:y])
+    
+    # 최단 거리 노드가 아래 쪽에 있다.
+    if delta_y1 > 0
+      return 2     
+    # 최단 거리 노드가 왼쪽에 있다
+    elsif delta_x1 < 0
+      return 4
+    # 최단 거리 노드가 오른쪽 쪽에 있다.
+    elsif delta_x1 > 0
+      return 6
+    # 최단 거리 노드가 위 쪽에 있다.
+    elsif delta_y1 < 0
+      return 8
+    end
+    
+    # 그래도 찾지 못했다면, 장애물을 고려하지 않는 거리가 가장 가까운 곳으로 이동한다.
+    delta_x2 = distance_x_from(goal_x)
+    delta_y2 = distance_y_from(goal_y)
+    if delta_x2.abs > delta_y2.abs
+      return delta_x2 > 0 ? 4 : 6
+    elsif delta_y2 != 0
+      return delta_y2 > 0 ? 8 : 2
+    end
+    
+    # 이동 불가능
+    return 0      
+      
+  end
+end
+
+#===============================================================================
+# Game_Temp
+#===============================================================================
+class Game_Temp
+  attr_reader :destination_x
+  attr_reader :destination_y
+  alias rs_map_touch_initialize initialize
+  def initialize
+    rs_map_touch_initialize
+    @destination_x = nil
+    @destination_y = nil  
+  end
+  def set_destination(x, y)
+    @destination_x = x
+    @destination_y = y
+  end
+  def clear_destination
+    @destination_x = nil
+    @destination_y = nil  
+  end
+  def destination_valid?
+    return @destination_x != nil
+  end
+end
+
+#===============================================================================
+# Game_Player
+#===============================================================================
+class Game_Player < Game_Character
+  def can_move?
+    return false if @move_route_forcing || @followers.gathering?
+    return false if @vehicle_getting_on || @vehicle_getting_off
+    return false if $game_message.busy? || $game_message.visible
+    return false if vehicle && !vehicle.movable?
+    return true    
+  end
+  def check_touch_event
+    if can_move?
+      return false if in_airship?
+      check_event_trigger_here([1,2])
+      $game_map.setup_starting_event
+    end
+  end  
+  def update_nonmoving(last_moving)
+    return if $game_map.interpreter.running?
+    if last_moving
+      $game_party.on_player_walk
+      return if check_touch_event
+    end
+    return if can_move? and trigger_touch_action
+    if movable? && Input.trigger?(:C)
+      return if get_on_off_vehicle
+      return if check_action_event
+    end
+    update_encounter if last_moving
+  end  
+  def trigger_touch_action
+    if $game_temp.destination_valid?
+      dir = @direction
+      x1 = @x
+      y1 = @y
+      x2 = $game_map.round_x_with_direction(x1, dir)
+      y2 = $game_map.round_y_with_direction(y1, dir)
+      x3 = $game_map.round_x_with_direction(x2, dir)
+      y3 = $game_map.round_y_with_direction(y2, dir)
+      dest_x = $game_temp.destination_x
+      dest_y = $game_temp.destination_y
+      if dest_x == x1 and dest_y == y1
+        return trigger_touch_action_d1(x1, y1)
+      elsif dest_x == x2 and dest_y == y2
+        return trigger_touch_action_d2(x2, y2)
+      elsif dest_x == x3 and dest_y == y3
+        return trigger_touch_action_d3(x2, y2)
+      end
+    end
+    
+    return false
+    
+  end
+  def trigger_touch_action_d1(x1, y1)
+    if $game_map.airship.pos?(x1, y1)
+      if TouchInput.trigger?(:LEFT) && get_on_off_vehicle
+          return true
+      end
+    end
+    check_event_trigger_here([0])
+    return $game_map.setup_starting_event
+  end
+  def trigger_touch_action_d2(x2, y2)
+    if $game_map.boat.pos?(x2, y2) || $game_map.ship.pos?(x2, y2)
+      if TouchInput.trigger?(:LEFT) and this.get_on_vehicle
+        return true
+      end
+    end
+    if in_boat? or in_ship?
+      if TouchInput.trigger?(:LEFT) and this.get_off_vehicle
+        return true
+      end
+    end
+    check_event_trigger_there([0,1,2])
+    return $game_map.setup_starting_event   
+  end
+  def trigger_touch_action_d3(x2, y2)
+    if $game_map.counter?(x2, y2)
+      check_event_trigger_there([0,1,2])
+    end
+    return $game_map.setup_starting_event
+  end
+  def move_by_input
+    return if !movable? || $game_map.interpreter.running?
+    direction = Input.dir4
+    if direction > 0
+      $game_temp.clear_destination
+    elsif $game_temp.destination_valid?
+      x = $game_temp.destination_x
+      y = $game_temp.destination_y
+      direction = find_direction_to(x, y)
+    end
+    if direction > 0
+      move_straight(direction)
+    end
+  end  
+end
+
+#===============================================================================
+# Scene_Map
+#===============================================================================
 class Scene_Map
+  
+  alias rs_map_touch_start start
+  def start
+    rs_map_touch_start
+    @touch_count = 0
+  end
+  
   alias rs_open_menu_update update
   def update
     rs_open_menu_update
     update_when_starting_with_menu_scene
+    update_destination
   end
   
   def update_when_starting_with_menu_scene
     call_menu if TouchInput.trigger?(:RIGHT)
+  end
+  
+  def update_destination
+    if map_touch_ok?
+      process_map_touch
+    else
+      $game_temp.clear_destination
+      @touch_count = 0
+    end
+  end
+  
+  def map_touch_ok?
+    $game_player.can_move?
+  end
+  
+  def process_map_touch
+    if TouchInput.trigger?(:LEFT) || @touch_count > 0
+      if TouchInput.press?(:LEFT)
+        if @touch_count == 0 or (@touch_count >= 15)
+          x = $game_map.canvas_to_map_x(TouchInput.x)
+          y = $game_map.canvas_to_map_y(TouchInput.y)
+          $game_temp.set_destination(x, y)
+        end
+        @touch_count += 1
+      else
+        @touch_count = 0
+      end
+    end
   end
 end
