@@ -1063,6 +1063,12 @@ class Game_Player < Game_Character
       move_straight(direction)
     end
   end  
+  def dash?
+    return false if @move_route_forcing
+    return false if $game_map.disable_dash?
+    return false if vehicle
+    return Input.press?(:A) || $game_temp.destination_valid?
+  end
 end
 
 class Spriteset_Map
