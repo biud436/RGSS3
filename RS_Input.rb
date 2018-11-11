@@ -9,6 +9,9 @@
 # - Fixed the bug that causes an error when clicking the right button of the mouse.
 # - Added the TouchInput feature that is the same as RPG Maker MV.
 # - Fixed the issue that did not play the cursor sound when selecting the button using mouse
+# v1.0.2 (2018.11.11)
+# - Added the feature such as a path finding in RPG Maker MV
+# - Added the destination sprite such as RPG Maker MV
 #-------------------------------------------------------------------------------
 # How to use
 #-------------------------------------------------------------------------------
@@ -654,6 +657,28 @@ class Window_Selectable < Window_Base
 end
 
 #===============================================================================
+# Window_Message
+#===============================================================================
+class Window_Message < Window_Base
+  def cancelled?
+    Input.trigger?(:B) || TouchInput.trigger?(:RIGHT)
+  end
+  def triggered?
+    Input.trigger?(:C) || TouchInput.trigger?(:LEFT)
+  end
+  def update_show_fast
+    @show_fast = true if cancelled?
+  end
+  def input_pause
+    self.pause = true
+    wait(10)
+    Fiber.yield until triggered?
+    Input.update
+    self.pause = false
+  end
+end
+
+#===============================================================================
 # TouchInput::Cursor
 #===============================================================================
 module TouchInput::Cursor
@@ -723,6 +748,15 @@ class Scene_MenuBase
 end
 
 #===============================================================================
+# Numeric
+#===============================================================================
+class Numeric
+  def clamp min, max
+    [[self, max].min, min].max
+  end
+end
+
+#===============================================================================
 # Game_Map
 #===============================================================================
 class Game_Map
@@ -739,7 +773,7 @@ class Game_Map
   end
   def delta_y(y1, y2)
     result = y1 - y2
-    if $game_map.loop_vertical? && result.abs > $game_map.height / 2
+    if $game_map.loop_vertical? && result.abs > ($game_map.height / 2)
       if result < 0
         result += $game_map.height
       else
@@ -748,20 +782,20 @@ class Game_Map
     end
     result        
   end
-  def distance(x1, x2, y1, y2)
-    (delta_x(x1, x2) + delta_y(y1, y2)).abs
+  def distance(x1, y1, x2, y2)
+    delta_x(x1, x2).abs + delta_y(y1, y2).abs
   end
 
   def canvas_to_map_x(x)
     origin_x = @display_x * 32
     map_x = ((origin_x + x) / 32).floor
-    round_x(map_x)
+    return round_x(map_x)
   end
   
   def canvas_to_map_y(y)
     origin_y = @display_y * 32
     map_y = ((origin_y + y) / 32).floor
-    round_y(map_y)
+    return round_y(map_y)
   end  
   
 end
@@ -771,7 +805,13 @@ end
 #===============================================================================
 class Game_Character < Game_CharacterBase
   
-  # RPG Maker MV에서 마이그레이션
+  #--------------------------------------------------------------------------
+  # * find_direction_to
+  # RPG Maker MV의 findDirectionTo(goalX, goalY)를 그대로 루비로 옮김
+  # @param {Integer} goal_x
+  # @param {Integer} goal_y
+  # @return {Integer} direction
+  #--------------------------------------------------------------------------
   def find_direction_to(goal_x, goal_y)
     search_limit = 12
     map_width = $game_map.width
@@ -845,7 +885,7 @@ class Game_Character < Game_CharacterBase
         next if !passable?(x1, y1, direction)
         
         # g 비용을 1 늘린다 (이동 했다고 가정)
-        g2 = g1 + 1 || 0
+        g2 = g1 + 1
         # 열린 목록에서 해당 노드의 인덱스 값을 찾는다 (int or nil)
         index2 = open_list.index(pos2) || -1
         
@@ -873,7 +913,7 @@ class Game_Character < Game_CharacterBase
           neighbor[:f] = g2 + $game_map.distance(x2, y2, goal_x, goal_y)
           
           # best가 nil이거나, 인접 타일의 실제 거리 값이 더 짧으면
-          if !best or (neighbor[:f] - neighbor[:g]) < (best[:f] - best[:g])
+          if best.nil? or (neighbor[:f] - neighbor[:g]) < (best[:f] - best[:g])
             # 인접 타일을 베스트 노드로 설정
             best = neighbor
           end
@@ -885,7 +925,9 @@ class Game_Character < Game_CharacterBase
     node = best
     
     # 노드의 부모 노드로 거슬러 올라간다 (딱 한 칸만 거슬러 올라간다)
-    node = node[:parent] while node[:parent] and node[:parent] != start
+    while node[:parent] and node[:parent] != start
+      node = node[:parent] 
+    end
     
     # 거리 차 계산
     delta_x1 = $game_map.delta_x(node[:x], start[:x])
@@ -953,13 +995,19 @@ end
 # Game_Player
 #===============================================================================
 class Game_Player < Game_Character
+  #--------------------------------------------------------------------------
+  # * can_move?
+  #--------------------------------------------------------------------------  
   def can_move?
+    return false if $game_map.interpreter.running? || $game_message.busy?
     return false if @move_route_forcing || @followers.gathering?
     return false if @vehicle_getting_on || @vehicle_getting_off
-    return false if $game_message.busy? || $game_map.interpreter.running?
     return false if vehicle && !vehicle.movable?
     return true    
   end
+  #--------------------------------------------------------------------------
+  # * check_touch_event
+  #--------------------------------------------------------------------------   
   def check_touch_event
     if can_move?
       return false if in_airship?
@@ -967,6 +1015,9 @@ class Game_Player < Game_Character
       $game_map.setup_starting_event
     end
   end  
+  #--------------------------------------------------------------------------
+  # * update_nonmoving
+  #--------------------------------------------------------------------------   
   def update_nonmoving(last_moving)
     return if $game_map.interpreter.running?
     if last_moving
@@ -980,6 +1031,9 @@ class Game_Player < Game_Character
       $game_temp.clear_destination
     end
   end  
+  #--------------------------------------------------------------------------
+  # * trigger_action
+  #--------------------------------------------------------------------------    
   def trigger_action
     if can_move?
       return true if trigger_button_action
@@ -987,6 +1041,9 @@ class Game_Player < Game_Character
     end    
     return false
   end
+  #--------------------------------------------------------------------------
+  # * trigger_button_action
+  #--------------------------------------------------------------------------     
   def trigger_button_action
     if Input.trigger?(:C)
       return true if get_on_off_vehicle
@@ -997,21 +1054,30 @@ class Game_Player < Game_Character
     end    
     return false
   end  
+  #--------------------------------------------------------------------------
+  # * trigger_touch_action
+  #--------------------------------------------------------------------------   
   def trigger_touch_action
     if $game_temp.destination_valid?
       dir = @direction
       x1 = @x
       y1 = @y
+      # 한 칸 앞의 좌표
       x2 = $game_map.round_x_with_direction(x1, dir)
       y2 = $game_map.round_y_with_direction(y1, dir)
+      # 두 칸 앞의 좌표
       x3 = $game_map.round_x_with_direction(x2, dir)
       y3 = $game_map.round_y_with_direction(y2, dir)
+      # 목적지 좌표
       dest_x = $game_temp.destination_x
       dest_y = $game_temp.destination_y
+    
       if dest_x == x1 and dest_y == y1
         return trigger_touch_action_d1(x1, y1)
+      # 한 칸 앞에 이벤트가 있다.
       elsif dest_x == x2 and dest_y == y2
         return trigger_touch_action_d2(x2, y2)
+      # 두 칸 앞에 이벤트가 있다 (책상 : 카운터 속성)
       elsif dest_x == x3 and dest_y == y3
         return trigger_touch_action_d3(x2, y2)
       end
@@ -1020,49 +1086,75 @@ class Game_Player < Game_Character
     return false
     
   end
+  #--------------------------------------------------------------------------
+  # * trigger_touch_action_d1
+  #--------------------------------------------------------------------------   
   def trigger_touch_action_d1(x1, y1)
+    # 현재 좌표에 바로 위에 비행선이 놓여 있으면
     if $game_map.airship.pos?(x1, y1)
+      # 마우스 왼쪽 버튼을 클릭하고 비행선 탑승 또는 하차 처리
       if TouchInput.trigger?(:LEFT) && get_on_off_vehicle
           return true
       end
     end
+    # 현재 좌표 위에 이벤트가 있으면 실행한다.
     check_event_trigger_here([0])
     return $game_map.setup_starting_event
   end
+  #--------------------------------------------------------------------------
+  # * trigger_touch_action_d2
+  #--------------------------------------------------------------------------   
   def trigger_touch_action_d2(x2, y2)
+    # 보트나 배가 있으면
     if $game_map.boat.pos?(x2, y2) || $game_map.ship.pos?(x2, y2)
+      # 마우스 왼쪽 버튼 눌렀을 때 탑승 처리
       if TouchInput.trigger?(:LEFT) and get_on_vehicle
         return true
       end
     end
+    # 이미 보트나 배에 탑승 중이면
     if in_boat? or in_ship?
+      # 마우스 왼쪽 버튼 눌렀을 때 하차 처리
       if TouchInput.trigger?(:LEFT) and get_off_vehicle
         return true
       end
     end
+    # 현재 방향 바로 앞에 이벤트가 있으면 실행한다.
     check_event_trigger_there([0,1,2])
     return $game_map.setup_starting_event   
   end
+  #--------------------------------------------------------------------------
+  # * trigger_touch_action_d3
+  #--------------------------------------------------------------------------   
   def trigger_touch_action_d3(x2, y2)
-    if $game_map.counter?(x2, y2)
+    # 앞에 책상이 있는가?
+    if $game_map.counter?(x2, y2)   
+      # 두 칸 앞에 있는 이벤트를 실행한다.
       check_event_trigger_there([0,1,2])
     end
     return $game_map.setup_starting_event
   end
+  #--------------------------------------------------------------------------
+  # * move_by_input
+  #--------------------------------------------------------------------------  
   def move_by_input
-    return if !movable? || $game_map.interpreter.running?
-    direction = Input.dir4
-    if direction > 0
-      $game_temp.clear_destination
-    elsif $game_temp.destination_valid?
-      x = $game_temp.destination_x
-      y = $game_temp.destination_y
-      direction = find_direction_to(x, y)
-    end
-    if direction > 0
-      move_straight(direction)
+    if (!moving?) && (can_move?)
+      direction = Input.dir4
+      if direction > 0
+        $game_temp.clear_destination
+      elsif $game_temp.destination_valid?
+        x = $game_temp.destination_x
+        y = $game_temp.destination_y
+        direction = find_direction_to(x, y)
+      end
+      if direction > 0
+        move_straight(direction)
+      end
     end
   end  
+  #--------------------------------------------------------------------------
+  # * dash?
+  #--------------------------------------------------------------------------    
   def dash?
     return false if @move_route_forcing
     return false if $game_map.disable_dash?
@@ -1157,7 +1249,7 @@ class Scene_Map
   end
   
   def update_when_starting_with_menu_scene
-    call_menu if TouchInput.trigger?(:RIGHT)
+    call_menu if TouchInput.trigger?(:RIGHT) and !$game_message.busy?
   end
   
   def update_destination
