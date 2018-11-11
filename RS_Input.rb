@@ -9,7 +9,7 @@
 # v1.0.1 (2018.10.29) : 
 # - Fixed the bug that causes an error when clicking the right button of the mouse.
 # - Added the TouchInput feature that is the same as RPG Maker MV.
-# - Fixed the issue that did not play the cursor sound when selecting the button using mouse
+# - Fixed the issue that di.d not play the cursor sound when selecting the button using mouse
 # v1.0.2 (2018.11.11)
 # - Added the feature such as a path finding in RPG Maker MV
 # - Added the destination sprite such as RPG Maker MV
