@@ -668,8 +668,8 @@ module TouchInput::Cursor
     @contents.blt(x, y, bitmap, rect, enabled ? 255 : 128)}
     @draw_icon.(index,0,0,true)
     @cursor.z = 500
-    @cursor.ox = -12
-    @cursor.oy = -12
+    @cursor.ox = 0
+    @cursor.oy = 0
     @update_cursor = lambda {|pos| return false if @cursor.nil?
     @cursor.x, @cursor.y = pos }
     @dispose_cursor = lambda {@contents.dispose; @cursor.dispose}
@@ -873,7 +873,7 @@ class Game_Character < Game_CharacterBase
           neighbor[:f] = g2 + $game_map.distance(x2, y2, goal_x, goal_y)
           
           # best가 nil이거나, 인접 타일의 실제 거리 값이 더 짧으면
-          if !best or neighbor[:f] - neighbor[:g] < best[:f] - best[:g]
+          if !best or (neighbor[:f] - neighbor[:g]) < (best[:f] - best[:g])
             # 인접 타일을 베스트 노드로 설정
             best = neighbor
           end
@@ -926,19 +926,23 @@ end
 class Game_Temp
   attr_reader :destination_x
   attr_reader :destination_y
+  attr_accessor :destination_time
   alias rs_map_touch_initialize initialize
   def initialize
     rs_map_touch_initialize
     @destination_x = nil
     @destination_y = nil  
+    @destination_time = 0
   end
   def set_destination(x, y)
     @destination_x = x
     @destination_y = y
+    @destination_time = 60
   end
   def clear_destination
     @destination_x = nil
     @destination_y = nil  
+    @destination_time = 0
   end
   def destination_valid?
     return @destination_x != nil
@@ -952,7 +956,7 @@ class Game_Player < Game_Character
   def can_move?
     return false if @move_route_forcing || @followers.gathering?
     return false if @vehicle_getting_on || @vehicle_getting_off
-    return false if $game_message.busy? || $game_message.visible
+    return false if $game_message.busy? || $game_map.interpreter.running?
     return false if vehicle && !vehicle.movable?
     return true    
   end
@@ -969,12 +973,29 @@ class Game_Player < Game_Character
       $game_party.on_player_walk
       return if check_touch_event
     end
-    return if can_move? and trigger_touch_action
-    if movable? && Input.trigger?(:C)
-      return if get_on_off_vehicle
-      return if check_action_event
+    return if trigger_action
+    if last_moving
+      update_encounter 
+    else
+      $game_temp.clear_destination
     end
-    update_encounter if last_moving
+  end  
+  def trigger_action
+    if can_move?
+      return true if trigger_button_action
+      return true if trigger_touch_action
+    end    
+    return false
+  end
+  def trigger_button_action
+    if Input.trigger?(:C)
+      return true if get_on_off_vehicle
+      check_event_trigger_here([0])
+      return true  if $game_map.setup_starting_event
+      check_event_trigger_there([0,1,2])
+      return true  if $game_map.setup_starting_event
+    end    
+    return false
   end  
   def trigger_touch_action
     if $game_temp.destination_valid?
@@ -1010,12 +1031,12 @@ class Game_Player < Game_Character
   end
   def trigger_touch_action_d2(x2, y2)
     if $game_map.boat.pos?(x2, y2) || $game_map.ship.pos?(x2, y2)
-      if TouchInput.trigger?(:LEFT) and this.get_on_vehicle
+      if TouchInput.trigger?(:LEFT) and get_on_vehicle
         return true
       end
     end
     if in_boat? or in_ship?
-      if TouchInput.trigger?(:LEFT) and this.get_off_vehicle
+      if TouchInput.trigger?(:LEFT) and get_off_vehicle
         return true
       end
     end
@@ -1042,6 +1063,73 @@ class Game_Player < Game_Character
       move_straight(direction)
     end
   end  
+end
+
+class Spriteset_Map
+  alias rs_input_initialize initialize
+  def initialize
+    rs_input_initialize
+    create_destination
+  end
+  alias rs_input_update update
+  def update
+    rs_input_update
+    update_destination
+  end
+  alias rs_input_dispose dispose
+  def dispose
+    rs_input_dispose
+    dispose_destination
+  end  
+  def create_destination
+    @destination = Sprite.new(@viewport1)
+    @destination.bitmap = Bitmap.new(32, 32)
+    @des_normal_color = Color.new(255, 255, 255, 255)
+    @des_red_color = Color.new(255, 0, 0, 255)
+    @destination.bitmap.fill_rect(0, 0, 32, 32, @des_normal_color)
+    @destination.opacity = 128
+    @destination.z = 500
+    @destination.visible = false
+    @destination_zoom_effect = 1
+    @destination.ox = 16
+    @destination.oy = 16
+  end
+  def update_destination
+    return if not @destination
+    @destination.visible = true
+    if $game_temp.destination_valid? and $game_temp.destination_time > 0
+      @destination.x = ($game_map.adjust_x($game_temp.destination_x) * 32) + 16
+      @destination.y = ($game_map.adjust_y($game_temp.destination_y) * 32) + 16
+      @destination_zoom_effect = (@destination_zoom_effect + 1) % 10
+      @destination.zoom_x = @destination_zoom_effect / 10.0
+      @destination.zoom_y = @destination_zoom_effect / 10.0
+      $game_temp.destination_time -= 1
+      $game_temp.destination_time = 0 if $game_temp.destination_time <= 0
+    else
+      @destination.x = ((TouchInput.x / 32).floor * 32) + 16
+      @destination.y = ((TouchInput.y / 32).floor * 32) + 16
+      @destination.zoom_x = 1
+      @destination.zoom_y = 1
+    end
+    if $game_player.moving? and $game_temp.destination_valid?
+      @destination.color = @des_red_color 
+    else
+      x = $game_map.canvas_to_map_x(TouchInput.x)
+      y = $game_map.canvas_to_map_y(TouchInput.y)
+      if $game_map.airship_land_ok?(x, y)
+        @destination.color = @des_normal_color 
+      else
+        @destination.color = @des_red_color
+      end
+    end
+    @destination.update
+
+  end
+  def dispose_destination
+    return if not @destination
+    @destination.bitmap.dispose
+    @destination.dispose
+  end
 end
 
 #===============================================================================
@@ -1085,7 +1173,9 @@ class Scene_Map
         if @touch_count == 0 or (@touch_count >= 15)
           x = $game_map.canvas_to_map_x(TouchInput.x)
           y = $game_map.canvas_to_map_y(TouchInput.y)
-          $game_temp.set_destination(x, y)
+          if $game_map.airship_land_ok?(x, y)
+            $game_temp.set_destination(x, y) 
+          end
         end
         @touch_count += 1
       else
