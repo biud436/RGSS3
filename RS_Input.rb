@@ -1,7 +1,8 @@
 #===============================================================================
 # Name : RS_Input
 # Author : biud436
-# Version : 1.0.1 (2018.10.29)
+# Version : 1.0.2 (2018.10.29)
+# Link : https://biud436.blog.me/220289463681
 # Description : This script provides the extension keycode and easy to use.
 # Version Log : 
 # v1.0.0 (2018.10.29) - First Release.
