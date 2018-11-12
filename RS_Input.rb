@@ -4,7 +4,9 @@
 # Version : 1.0.2 (2018.11.11)
 # Link : https://biud436.blog.me/220289463681
 # Description : This script provides the extension keycode and easy to use.
-# Version Log : 
+#-------------------------------------------------------------------------------
+# Version Log
+#-------------------------------------------------------------------------------
 # v1.0.0 (2018.10.29) - First Release.
 # v1.0.1 (2018.10.29) : 
 # - Fixed the bug that causes an error when clicking the right button of the mouse.
@@ -14,7 +16,7 @@
 # - Added the feature such as a path finding in RPG Maker MV
 # - Added the destination sprite such as RPG Maker MV
 #-------------------------------------------------------------------------------
-# How to use
+# 사용법 / How to use
 #-------------------------------------------------------------------------------
 # To use this code called 'p', You can output the string to the console for debug.
 # These functions are checking whether certain key is pressed.
@@ -45,7 +47,7 @@
 # p"backspace" if Input.press?(:VK_BACK)
 #
 #-------------------------------------------------------------------------------
-# Funcions : 
+# API / Funcions : 
 #-------------------------------------------------------------------------------
 # Please available virtual key codes refer to the line 164 (a.k.a KEY CONSTANT)
 #
@@ -77,12 +79,63 @@
 # TouchInput.release?(:LEFT)
 # TouchInput.release?(:RIGHT)
 # TouchInput.release?(:MIDDLE)
+# TouchInput.show_mouse_cursor
+# TouchInput.hide_mouse_cursor
 #
 #===============================================================================
 $imported = {} if $imported.nil?
 $imported["RS_Input"] = true
+module RS; end
 #===============================================================================
-# Unicode module
+# 설정 / Config
+#===============================================================================
+module RS::Input
+  Config = {
+
+    # 커서 아이콘
+    :CURSOR_ICON => 397,
+    
+    # 기본 마우스 커서를 표시하려면 true, 감추려면 false
+    :SHOW_MOUSE_CURSOR => false,
+
+    # 패스 파인딩 알고리즘 최적화 설정
+    # 목표 지점까지의 최단 경로 계산 시, 이동 불가 지역을 피해가게 된다.
+    # 시작 지점부터 목표 지점까지의 이동 비용이 최적화 값보다 커지게 되면,
+    # 알고리즘을 즉각 끝내고 지금까지 계산된 경로를 반환한다. 
+    :SEARCH_LIMIT => 12,
+
+    # 목적지 표시 그래픽의 뷰포트 설정
+    # 1로 설정하면 타일맵, 원경, 캐릭터들과 동일한 뷰포트를 사용한다.
+    # 2로 설정하면 그림, 타이머, 날씨 효과 등과 동일한 뷰포트를 사용한다
+    # 3으로 설정하면 화면 밝기 뷰포트와 동일한 뷰포트를 사용한다.
+    # 4로 설정하면 윈도우와 동일한 뷰포트를 사용한다.
+    :DESTINATION_VIEWPORT => 1,
+
+    # 목적지 표시 그래픽의 Z좌표 설정
+    # 스프라이트 생성 시 동일한 뷰포트로 설정될 수 있다.
+    # 이때 Z좌표 설정으로 같은 뷰포트 내에서도 우선 순위를 나눌 수 있다.
+    # 뷰포트를 1로 설정했다면, 
+    # 캐릭터 스프라이트의 Z좌표는 각 0, 100, 200이 되므로,
+    # 이 값을 500 정도로 설정해야 머리 위에 뜨게 된다.
+    # 50 정도로 설정하면 캐릭터가 목적지 표시 스프라이트를 밟게 된다.
+    :DESTINATION_Z => 500,
+
+    # 목적지 표시 그래픽 - 기본 색상 (기본색 : 흰색)
+    :DESTINATION_NORMAL_COLOR => Color.new(255,255,255,255),
+
+    # 목적지 표시 그래픽 - 이동 중일 때 색상 (기본색 : 빨강)
+    :DESTINATION_MOVING_FORWARD_COLOR => Color.new(255,0,0,255),
+
+    # 목적지 표시 그래픽 - 이동 불가 지형 색상 (기본색 : 빨강)
+    :DESTINATION_UNABLE_PASSABLE_TILE_COLOR => Color.new(255,0,0,255),
+
+    # 목적지 표시 그래픽 - 줌 이펙트 속도
+    :DESTINATION_ZOOM_EFFECT_SPEED => 10,
+
+  }
+end
+#===============================================================================
+# 유니코드 모듈 / Unicode module
 #===============================================================================
 if not defined?(Unicode)
   module Unicode
@@ -574,9 +627,7 @@ end
 module TouchInput
   
   ShowCursor = Win32API.new("user32", "ShowCursor", "i", "i" )
-  ShowCursor.call(0)
-  
-  MOUSE_ICON = 397
+  ShowCursor.call(RS::Input::Config[:SHOW_MOUSE_CURSOR] ? 1 : 0)
   
   class << self
     def press?(*args, &block)
@@ -602,6 +653,12 @@ module TouchInput
     end
     def get_pos
       [x, y]
+    end
+    def show_mouse_cursor
+      ShowCursor.call(1)
+    end
+    def hide_mouse_cursor
+      ShowCursor.call(0)
     end
   end
 end
@@ -712,7 +769,7 @@ class Scene_Base
   alias mouse_cursor_terminate terminate
   def start
     mouse_cursor_start
-    create_cursor(TouchInput::MOUSE_ICON)
+    create_cursor(RS::Input::Config[:CURSOR_ICON])
   end
   def update
     mouse_cursor_update
@@ -807,14 +864,15 @@ end
 class Game_Character < Game_CharacterBase
   
   #--------------------------------------------------------------------------
-  # * find_direction_to
+  # * 패스 파인딩
   # RPG Maker MV의 findDirectionTo(goalX, goalY)를 그대로 루비로 옮김
+  # @author Yoji Ojima (KADOKAWA, RPG Maker MV)
   # @param {Integer} goal_x
   # @param {Integer} goal_y
   # @return {Integer} direction
   #--------------------------------------------------------------------------
   def find_direction_to(goal_x, goal_y)
-    search_limit = 12
+    search_limit = RS::Input::Config[:SEARCH_LIMIT]
     map_width = $game_map.width
     node_list = []
     open_list = []
@@ -1154,7 +1212,7 @@ class Game_Player < Game_Character
     end
   end  
   #--------------------------------------------------------------------------
-  # * dash?
+  # * 대시가 가능한 상태인가
   #--------------------------------------------------------------------------    
   def dash?
     return false if @move_route_forcing
@@ -1164,44 +1222,95 @@ class Game_Player < Game_Character
   end
 end
 
+#===============================================================================
+# Spriteset_Map
+#===============================================================================
 class Spriteset_Map
+
+  #--------------------------------------------------------------------------
+  # * 생성자
+  #--------------------------------------------------------------------------      
   alias rs_input_initialize initialize
   def initialize
     rs_input_initialize
     create_destination
   end
+  #--------------------------------------------------------------------------
+  # * 업데이트
+  #--------------------------------------------------------------------------   
   alias rs_input_update update
   def update
     rs_input_update
     update_destination
   end
+  #--------------------------------------------------------------------------
+  # * 소멸자
+  #--------------------------------------------------------------------------   
   alias rs_input_dispose dispose
   def dispose
     rs_input_dispose
     dispose_destination
-  end  
+  end
+  #--------------------------------------------------------------------------
+  # * 뷰포트 설정
+  #--------------------------------------------------------------------------   
+  alias rs_input_create_viewports create_viewports
+  def create_viewports
+    rs_input_create_viewports
+    @viewport_destination = Viewport.new
+    @viewport_destination.z = 200
+  end
+  alias rs_input_update_viewports update_viewports
+  def update_viewports
+    rs_input_update_viewports
+    @viewport_destination.update
+  end
+  alias rs_input_dispose_viewports dispose_viewports
+  def dispose_viewports
+    @viewport_destination.dispose
+  end   
+  def destination_viewport
+    viewport = case RS::Input::Config[:DESTINATION_VIEWPORT]
+    when 1
+      @viewport1
+    when 2
+      @viewport2
+    when 3
+      @viewport3
+    when 4
+      @viewport_destination
+    else
+      @viewport1
+    end    
+  end
+  #--------------------------------------------------------------------------
+  # * create_destination
+  #--------------------------------------------------------------------------    
   def create_destination
-    @destination = Sprite.new(@viewport1)
+  
+    @destination = Sprite.new(destination_viewport)
     @destination.bitmap = Bitmap.new(32, 32)
-    @des_normal_color = Color.new(255, 255, 255, 255)
-    @des_red_color = Color.new(255, 0, 0, 255)
-    @destination.bitmap.fill_rect(0, 0, 32, 32, @des_normal_color)
+    @destination.bitmap.fill_rect(0, 0, 32, 32, RS::Input::Config[:DESTINATION_NORMAL_COLOR])
     @destination.opacity = 128
-    @destination.z = 500
+    @destination.z = RS::Input::Config[:DESTINATION_Z]
     @destination.visible = false
     @destination_zoom_effect = 1
     @destination.ox = 16
     @destination.oy = 16
   end
+  #--------------------------------------------------------------------------
+  # * update_destination
+  #--------------------------------------------------------------------------     
   def update_destination
     return if not @destination
     @destination.visible = true
     if $game_temp.destination_valid? and $game_temp.destination_time > 0
+      speed = RS::Input::Config[:DESTINATION_ZOOM_EFFECT_SPEED]
       @destination.x = ($game_map.adjust_x($game_temp.destination_x) * 32) + 16
       @destination.y = ($game_map.adjust_y($game_temp.destination_y) * 32) + 16
-      @destination_zoom_effect = (@destination_zoom_effect + 1) % 10
-      @destination.zoom_x = @destination_zoom_effect / 10.0
-      @destination.zoom_y = @destination_zoom_effect / 10.0
+      @destination_zoom_effect = (@destination_zoom_effect + 1) % speed.to_i
+      @destination.zoom_x = @destination_zoom_effect / speed.to_f
+      @destination.zoom_y = @destination_zoom_effect / speed.to_f
       $game_temp.destination_time -= 1
       $game_temp.destination_time = 0 if $game_temp.destination_time <= 0
     else
@@ -1211,19 +1320,23 @@ class Spriteset_Map
       @destination.zoom_y = 1
     end
     if $game_player.moving? and $game_temp.destination_valid?
-      @destination.color = @des_red_color 
+      @destination.color = RS::Input::Config[:DESTINATION_MOVING_FORWARD_COLOR]
     else
       x = $game_map.canvas_to_map_x(TouchInput.x)
       y = $game_map.canvas_to_map_y(TouchInput.y)
       if $game_map.airship_land_ok?(x, y)
-        @destination.color = @des_normal_color 
+        @destination.color = RS::Input::Config[:DESTINATION_NORMAL_COLOR]
       else
-        @destination.color = @des_red_color
+        @destination.color = RS::Input::Config[:DESTINATION_UNABLE_PASSABLE_TILE_COLOR]
       end
     end
+
     @destination.update
 
   end
+  #--------------------------------------------------------------------------
+  # * dispose_destination
+  #--------------------------------------------------------------------------     
   def dispose_destination
     return if not @destination
     @destination.bitmap.dispose
