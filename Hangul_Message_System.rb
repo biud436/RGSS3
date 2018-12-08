@@ -1,9 +1,9 @@
 #==============================================================================
-# ** Hangul Message System 1.5.9 (RPG Maker VX Ace)
+# ** Hangul Message System 1.5.10 (RPG Maker VX Ace)
 #==============================================================================
 # Name       : Hangul Message System
 # Author     : biud436
-# Version    : 1.5.9
+# Version    : 1.5.10
 # Link       : http://biud436.blog.me/220251747366
 #==============================================================================
 # ** 업데이트 로그
@@ -170,7 +170,7 @@ module RS
   # 이름 윈도우 Y. 
   # 메시지 윈도우 Y좌표 값을 기준으로 위(+) 또는 아래(-)로 내릴 수 있습니다.
   # 위는 메시지 박스의 위쪽을 말하며, 아래는 메시지 박스와 겹쳐지는 방향을 말합니다.
-  LIST["이름윈도우Y"] = 36
+  LIST["이름윈도우Y"] = 0
   
   # 얼굴 이미지가 설정되어있을 때 텍스트 시작 좌표입니다.
   LIST["텍스트시작X"] = 202
@@ -189,7 +189,7 @@ module RS
   # 정규 표현식 (잘 아시는 분들만 건드리십시오)
   CODE["16진수"] = /#([a-zA-Z^\d]*)/i
   CODE["색상추출"] = /^\p{hangul}+|c_[a-zA-z]+$/
-  CODE["명령어"] = /^[\$\.\|\^!><\{\}\\]|^[A-Z]|^[가-힣]+[!]*/i
+  CODE["명령어"] = /^[\$\.\|\^!><\{\}\\]|^[A-Z가-힣]+[!]*/i
   CODE["이름색상코드"] = /\[(\p{hangul}+[\d]*|c_[\p{Latin}]+)\]/
   CODE["웹색상"] = /([\p{Latin}\d]+)!/
   CODE["추출"] = /^(\p{hangul}+)/
@@ -1216,8 +1216,16 @@ class Window_Message
   # * 이름 윈도우 업데이트
   #--------------------------------------------------------------------------
   def update_name_windows
+    
     @name_window.x = namewindow_get_x
-    @name_window.y = self.y - RS::LIST["이름윈도우Y"]
+
+    if $game_message.position == 0 and $game_message.balloon == -2
+      @name_window.y = 0
+      self.y = @name_window.open? ? (@name_window.height) : 0
+    else
+      @name_window.y = self.y - @name_window.height - RS::LIST["이름윈도우Y"]
+    end
+
     @name_window.update
   end
   #--------------------------------------------------------------------------
@@ -1235,11 +1243,6 @@ class Window_Message
   def update_placement
     update_name_windows
     if @name_window.open?
-      @position = $game_message.position
-      case @position
-      when 0 then self.y = 25
-      else; self.y = @position * (Graphics.height - height) / 2
-      end
       @gold_window.y = y > 0 ? 0 : Graphics.height - @gold_window.height
     else
       self.ox = $game_message.ox
@@ -1847,6 +1850,10 @@ class Game_Interpreter
   end
 end
 
+class Window_Message < Window_Base
+  attr_accessor :name_window
+end
+
 #==============================================================================
 # ** Window_ChoiceList (선택지 Z좌표)
 #==============================================================================
@@ -1858,6 +1865,41 @@ class Window_ChoiceList < Window_Command
   def initialize(message_window)
     choicelist_initialize(message_window)
     self.z = @message_window.z + 5
+  end
+  alias rs_message_update_placement update_placement
+  def update_placement
+    rs_message_update_placement
+    update_normal_placement
+  end
+  def update_normal_placement
+
+    message_x = @message_window.x    
+    message_y = @message_window.y
+    message_width = @message_window.width
+    message_height = @message_window.height
+    position_type = $game_message.position
+
+    # 메시지 윈도우가 화면 하단에 위치한다면
+    if message_y >= Graphics.height / 2
+
+      name_window = @message_window.name_window
+      name_window_align = name_window.align 
+
+      # 이름 윈도우가 가운데 또는 오른쪽에 있으면 패딩 값이 추가된다.
+      if name_window.open? and ['center', 'right'].include?(name_window_align)
+        self.y = message_y - name_window.height - self.height
+      else 
+        self.y = message_y - self.height
+      end
+        
+    else
+      # 메시지 윈도우가 상단에 있으면 선택지 윈도우는 메시지 윈도우 하단으로 오게 된다.
+      self.y = message_y + message_height
+    end
+
+    self.x = message_x + message_width - self.width
+    
+
   end
 end
 
