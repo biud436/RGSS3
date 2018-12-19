@@ -3,45 +3,45 @@
 # Author : biud436
 # Date : 2014-08-13
 # Version : 1.1 (2015-02-18)
+# Description : 
+# This script allows you to show up the simple menu image in the menu scene.
 #==============================================================================
-# ** 스크립트 소개
+# ** Introduction
 #==============================================================================
-# 인게임 메뉴를 그래픽으로 표시하는 스크립트입니다.
+# This script allows you to chnage the in-game menu as graphics image.
 #
 #==============================================================================
-# ** 스크린샷
+# ** Needs to install resources
 #==============================================================================
-# http://postfiles9.naver.net/20140813_264/biud436_1407933418618ig1Rw_PNG/8.PNG?type=w1
-# ▲ 예제 스샷에 사용된 UI 그래픽 : http://cafe.naver.com/sonnysoft2004/47269 (By 제스킨)
+# http://cafe.naver.com/sonnysoft2004/47269 (By 제스킨)
 #
 #==============================================================================
-# ** 설치법
+# ** How to install script and resources.
 #==============================================================================
-# - 스크립트를 추가한다.
-# - 하나의 통 이미지가 필요한데 그 이미지의 이름은'inter'로 정하고 Graphics/pictures 폴더로 불러온다.
-#
+# Add the script after there is to add a new section in between below materials 
+# below and above the main section. Next, you need to download a one sprite 
+# sheet and then its name sets as the filename called 'inter' and place it 
+# in your Graphics/pictures folder.
 #==============================================================================
-# ** 사용법
+# ** How to use
 #==============================================================================
 #
-# - 통 이미지 제작 방법
-# W는 버튼(그림)의 가로 크기를 말한다.
-# H는 버튼(그림)의 세로 크기를 말한다.
-# 가로로 5열, 세로로 2행이다,
-# 첫번째 행은 선택이 되지 않은 상태이다.
-# 나머지는 선택이 된 그래픽으로 제작한다.
+# - How to create a sprite sheet.
+# The value named 'W' is to the width value of the image and 'H' is the height value of it.
+# The image consists of 5 cols x 2 rows.
+# in case of the first row in the sprite sheet, it means the image is not selected by user.
+# In other cases, it means the image is a selected as current menu index by user.
 #
-# - Scene 수정 방법
-# RECT_SRC 의 MENU 부분을 수정해주면 된다.
+# - How to modify the scene class.
+# You have to change the MENU constant of RECT_SRC module.
 #
-# - 시작 위치 조절 방법
-# START_X 와 START_Y 상수값을 변경해주면 된다.
+# - How to set the initial area.
+# You have to change constant values called 'START_X' and START_Y.
 #
 #==============================================================================
 # ** 버전 로그
 #==============================================================================
-# 1.1 (2015-02-18) - 코드가 정리되고 재정의 관련 버그가 수정됨.
-#
+# 1.1 (2015-02-18) - Fixed bugs and has been completed the refactoring.
 #==============================================================================
 # ** Terms of Use
 #==============================================================================

@@ -1,5 +1,10 @@
 #==============================================================================
-# ** HUD, biud436
+# Name : HUD
+# Anthor : biud436
+# Description : 
+# This script allows you to show up the hud and provides fundamental gauge bars.
+# and then it can display hp and mp and exp gauges and the level text fast, 
+# until max level value.
 #==============================================================================
 # ** Change Log
 #==============================================================================
@@ -20,28 +25,33 @@ $imported = {} if $imported.nil?
 $imported["RS_HUD"] = true
 
 module HUD
-  # 스크린
+  # This value would set the anchor of the hud in the game screen.
+  # You must choose desired anchor in one of below list.
+  #   :TOP_RIGHT
+  #   :BOTTOM_RIGHT
+  #   :BOTTOM_LEFT
+  #   :TOP_LEFT
   SCREEN = :BOTTOM_LEFT
 
-  # 가로 크기
+  # The width value of hud image from Graphics/pictures folder.
   W = 317
 
-  # 세로 크기
+  # The height value of hud iamge from Graphics/pictures folder.
   H = 101
 
-  # 간격
+  # This is the padding value between screen border and hud image
   PD = 0
 
-  # 페이스칩의 가장자리를 다듬어 부드럽게 묘화합니다
+  # Set whether the edge of the face image would change smoothly.
   SmoothEdge = true
   
-  # 초기 가시 상태
+  # Set the visible value in all hud images
   VISIBLE = true
 
-  # 라디안
+  # Set the rotation value of the hud, as the radian.
   F_Angle = Math::PI/180
 
-  # 스크린의 좌표
+  # This calculates the position of the hud from the one of four hud anchor.
   POS = case SCREEN
   when :TOP_RIGHT then Proc.new{[Graphics.width - W - PD,PD]}
   when :BOTTOM_RIGHT then Proc.new{[Graphics.width - W - PD,Graphics.height - H - PD]}
