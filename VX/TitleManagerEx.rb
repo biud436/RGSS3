@@ -97,7 +97,6 @@ module Header
   end
   def self.choose_background?
     if [load[0],load[1]] == [1000,ENV["USERNAME"]]
-			p load
       load_background(load[2])
       return true
     else
