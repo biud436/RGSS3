@@ -1,7 +1,7 @@
 #===============================================================================
 # Name : RS_Input
 # Author : biud436
-# Version : 1.0.2 (2018.11.11)
+# Version : 1.0.3 (2019.01.20)
 # Link : https://biud436.blog.me/220289463681
 # Description : This script provides the extension keycode and easy to use.
 #-------------------------------------------------------------------------------
@@ -15,6 +15,8 @@
 # v1.0.2 (2018.11.11)
 # - Added the feature such as a path finding in RPG Maker MV
 # - Added the destination sprite such as RPG Maker MV
+# v1.0.3 (2019.01.20)
+# - Added the feature that can use the mouse wheel in the Save and Load scenes.
 #-------------------------------------------------------------------------------
 # 사용법 / How to use
 #-------------------------------------------------------------------------------
@@ -70,6 +72,8 @@
 # Input.mouse_y
 # TouchInput.x
 # TouchInput.y
+# TouchInput.z
+# TouchInput.wheel
 # TouchInput.trigger?(:LEFT)
 # TouchInput.trigger?(:RIGHT)
 # TouchInput.trigger?(:MIDDLE)
@@ -220,6 +224,8 @@ module Input
   GetAsyncKeyState = Win32API.new('user32.dll', 'GetAsyncKeyState', 'i', 'i')
   GetKeyNameTextW = Win32API.new('user32.dll', 'GetKeyNameText', 'lpi', 'i')
   MapVirtualKey = Win32API.new('user32.dll', 'MapVirtualKey', 'll', 'l')
+  RSGetWheelDelta = Win32API.new('RS-InputCore.dll', 'RSGetWheelDelta', 'v', 'l')
+  RSResetWheelDelta = Win32API.new('RS-InputCore.dll', 'RSResetWheelDelta', 'v', 'v')
   
   MAPVK_VSC_TO_VK_EX = 3
   
@@ -457,6 +463,8 @@ module Input
   @@triggered = false
   @@mouse_pressed = false
   
+  @@wheel = 0
+  
   class << self
     alias rs_input_update update
     def update(*args, &block)
@@ -598,6 +606,9 @@ module Input
         @@pressed_time += 1
       end
       
+      @@wheel = RSGetWheelDelta.call
+      clear_wheel
+      
     end
     
     def update_mouse_point
@@ -616,6 +627,14 @@ module Input
     def mouse_y
       @@mouse.point.y rescue 0
     end    
+    
+    def mouse_wheel
+      @@wheel
+    end
+    
+    def clear_wheel
+      RSResetWheelDelta.call
+    end
     
   end
   
@@ -650,6 +669,12 @@ module TouchInput
     end
     def y
       Input.mouse_y
+    end
+    def z
+      Input.mouse_wheel
+    end
+    def wheel
+      Input.mouse_wheel
     end
     def get_pos
       [x, y]
@@ -1394,5 +1419,62 @@ class Scene_Map
         @touch_count = 0
       end
     end
+  end
+end
+
+class Scene_Battle
+  alias rs_battle_update update
+  def update
+    rs_battle_update
+    Input.update
+  end
+end
+
+class Scene_File
+  alias xlrs_start start
+  def start
+    xlrs_start
+    @wheel_time = 120
+  end
+  alias x1rs_update update
+  def update
+    x1rs_update
+  end
+  def update_savefile_selection
+    return on_savefile_ok     if Input.trigger?(:C) or TouchInput.trigger?(:LEFT)
+    return on_savefile_cancel if Input.trigger?(:B)
+    update_cursor
+  end  
+  def update_cursor
+    last_index = @index
+    cursor_down (Input.trigger?(:DOWN))  if Input.repeat?(:DOWN)
+    cursor_up   (Input.trigger?(:UP))    if Input.repeat?(:UP)
+    cursor_pagedown   if Input.trigger?(:R)
+    cursor_pageup     if Input.trigger?(:L)
+    update_mouse
+    if @index != last_index
+      Sound.play_cursor
+      @savefile_windows[last_index].selected = false
+      @savefile_windows[@index].selected = true
+    end
+  end  
+  def update_mouse
+    mx = TouchInput.x
+    my = TouchInput.y
+    item_height = savefile_height
+    index = ((my - @help_window.height) / item_height).floor
+    if my < @help_window.height
+    elsif my > Graphics.height
+    else
+      @index = (top_index + index) % item_max
+    end
+    
+    if TouchInput.wheel > 0
+      cursor_pageup
+    elsif TouchInput.wheel < 0
+      cursor_pagedown
+    end    
+        
+    ensure_cursor_visible
   end
 end
