@@ -15,9 +15,10 @@
 # v1.0.2 (2018.11.11)
 # - Added the feature such as a path finding in RPG Maker MV
 # - Added the destination sprite such as RPG Maker MV
-# v1.0.4 (2019.01.20)
+# v1.0.3 (2019.01.20) :
 # - Added the feature that can use the mouse wheel in the Save and Load scenes.
-# - Added the feature that can use the mouse wheel in all of selectable windows.
+# v1.0.4 (2019.01.21) :
+# - In the selectable window, Added the feature that can use the mouse wheel.
 #-------------------------------------------------------------------------------
 # 사용법 / How to use
 #-------------------------------------------------------------------------------
