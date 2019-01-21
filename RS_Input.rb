@@ -1,7 +1,7 @@
 #===============================================================================
 # Name : RS_Input
 # Author : biud436
-# Version : 1.0.3 (2019.01.20)
+# Version : 1.0.4 (2019.01.20)
 # Link : https://biud436.blog.me/220289463681
 # Description : This script provides the extension keycode and easy to use.
 #-------------------------------------------------------------------------------
@@ -15,8 +15,9 @@
 # v1.0.2 (2018.11.11)
 # - Added the feature such as a path finding in RPG Maker MV
 # - Added the destination sprite such as RPG Maker MV
-# v1.0.3 (2019.01.20)
+# v1.0.4 (2019.01.20)
 # - Added the feature that can use the mouse wheel in the Save and Load scenes.
+# - Added the feature that can use the mouse wheel in all of selectable windows.
 #-------------------------------------------------------------------------------
 # 사용법 / How to use
 #-------------------------------------------------------------------------------
@@ -692,6 +693,12 @@ end
 # Window_Selectable
 #===============================================================================
 class Window_Selectable < Window_Base
+  alias xrx1s_update update
+  def update
+    xrx1s_update
+    process_wheel
+    process_touch
+  end
   def process_cursor_move
     return unless cursor_movable?
     last_index = @index
@@ -702,9 +709,9 @@ class Window_Selectable < Window_Base
     cursor_pagedown   if !handle?(:pagedown) && Input.trigger?(:R)
     cursor_pageup     if !handle?(:pageup)   && Input.trigger?(:L)
     Sound.play_cursor if @index != last_index
-    check_mouse_button if defined? TouchInput
   end
-  def check_mouse_button
+  def process_touch
+    return unless open? and active
     mx = TouchInput.x
     my = TouchInput.y
     _self = self
@@ -735,6 +742,28 @@ class Window_Selectable < Window_Base
     if (mx - tx) >= rect.x && (mx - tx) <= rect.x + rect.width &&
     (my - ty) >= rect.y && (my - ty) <= rect.y + rect.height
       yield
+    end
+  end
+  def process_wheel
+    if open? and active
+      if TouchInput.wheel > 0
+        scroll_up
+      elsif TouchInput.wheel < 0
+        scroll_down
+      end          
+    end
+  end
+  def max_rows
+    [(item_max / col_max).ceil, 1].max
+  end
+  def scroll_down
+    if top_row + 1 < max_rows
+      self.top_row = top_row + 1 
+    end
+  end
+  def scroll_up
+    if top_row > 0
+      self.top_row = top_row - 1 
     end
   end
 end
@@ -1436,29 +1465,28 @@ class Scene_File
     xlrs_start
     @wheel_time = 120
   end
-  alias x1rs_update update
-  def update
-    x1rs_update
-  end
+  
   def update_savefile_selection
     return on_savefile_ok     if Input.trigger?(:C) or TouchInput.trigger?(:LEFT)
-    return on_savefile_cancel if Input.trigger?(:B)
+    return on_savefile_cancel if Input.trigger?(:B)      
+    update_touch          
     update_cursor
   end  
-  def update_cursor
-    last_index = @index
-    cursor_down (Input.trigger?(:DOWN))  if Input.repeat?(:DOWN)
-    cursor_up   (Input.trigger?(:UP))    if Input.repeat?(:UP)
-    cursor_pagedown   if Input.trigger?(:R)
-    cursor_pageup     if Input.trigger?(:L)
-    update_mouse
-    if @index != last_index
-      Sound.play_cursor
-      @savefile_windows[last_index].selected = false
-      @savefile_windows[@index].selected = true
+  
+  def scroll_up
+    if top_index > 0
+      self.top_index = top_index - 1
     end
-  end  
-  def update_mouse
+  end
+  
+  def scroll_down
+    if top_index < item_max
+      self.top_index = top_index + 1
+    end
+  end
+  
+  def update_touch
+    last_index = @index
     mx = TouchInput.x
     my = TouchInput.y
     item_height = savefile_height
@@ -1474,7 +1502,14 @@ class Scene_File
     elsif TouchInput.wheel < 0
       cursor_pagedown
     end    
-        
+    
     ensure_cursor_visible
+    
+    if @index != last_index
+      Sound.play_cursor
+      @savefile_windows[last_index].selected = false
+      @savefile_windows[@index].selected = true
+    end    
+    
   end
 end
