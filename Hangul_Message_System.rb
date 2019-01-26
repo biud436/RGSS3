@@ -1,13 +1,16 @@
 #==============================================================================
-# ** Hangul Message System 1.5.10 (RPG Maker VX Ace)
+# ** Hangul Message System 1.5.11 (RPG Maker VX Ace)
 #==============================================================================
 # Name       : Hangul Message System
 # Author     : biud436
-# Version    : 1.5.10
+# Version    : 1.5.11
 # Link       : http://biud436.blog.me/220251747366
 #==============================================================================
 # ** 업데이트 로그
 #==============================================================================
+# 2019.01.27 (v1.5.11) :
+# - 크기 및 오프셋 설정 추가
+# - 노트 태그 읽는 중 생기는 오류 현상 수정
 # 2018.11.09 (v1.5.9) :
 # - 말풍선 모드 Background 타입에 Dim 지원
 # - 노트 태그 기능 추가
@@ -131,7 +134,7 @@ module RS
   # -1이면 대화창 뒤
   # 나중에 변경하려면 스크립트 커맨드로 변경이 가능합니다.
   # 예를 들어, RS::LIST["Z"] = -1 라고 입력하면 대화창 뒤로 얼굴 이미지가 가려집니다.
-  LIST["Z"] = 1
+  LIST["Z"] = -1
   
   LIST["높이"] = Graphics.height - LIST["Y"]
   
@@ -185,6 +188,11 @@ module RS
   # 이 옵션을 설정하면 캐릭터가 가장 자리에 있을 경우, 
   # 말풍선의 중앙 지점(anchor)이 옮겨질 수 있습니다.
   LIST["화면영역내표시"] = true
+  
+  # 크기 및 오프셋 설정
+  LIST["가로"] = (Graphics.width / 2 + Graphics.width / 3).floor
+  LIST["오프셋X"] = 0
+  LIST["오프셋Y"] = 0
 
   # 정규 표현식 (잘 아시는 분들만 건드리십시오)
   CODE["16진수"] = /#([a-zA-Z^\d]*)/i
@@ -238,13 +246,13 @@ module RS::EventComment
     list = $game_map.events[event_id].list
     param = list[index]
     
-    while param.code == 408
+    while param and param.code == 408
       value = param.parameters[0] || ""
       data[:note] << value
       index -= 1
       param = list[index]  
     end
-    if param.code == 108
+    if param and param.code == 108
       value = param.parameters[0] || ""
       data[:note] << value
       index -= 1
@@ -791,6 +799,19 @@ class Window_Base
     text.slice!(RS::CODE["이름색상코드"])[$1]
   end
   #--------------------------------------------------------------------------
+  # * 색상 변환 (MV Feature to v0.1.32)
+  #--------------------------------------------------------------------------  
+  alias rs_message_system_change_color change_color
+  def change_color(color, enabled = true)
+    if color.is_a?(String)
+      c = color.to_i
+      if c.between?(0, 32)
+        color = text_color(c)
+      end
+    end
+    rs_message_system_change_color(color, enabled)
+  end
+  #--------------------------------------------------------------------------
   # * 웹 색상 코드 처리
   #--------------------------------------------------------------------------
   def to_hex(text)
@@ -913,6 +934,12 @@ class Window_Message
     set_font(RS::LIST["폰트명"],RS::LIST["폰트크기"])
     @windowskin_id = RS::LIST["윈도우스킨"].object_id
   end
+  #--------------------------------------------------------------------------
+  # * 윈도우의 폭 (가로 길이)
+  #--------------------------------------------------------------------------
+  def window_width
+    RS::LIST["가로"]
+  end  
   #--------------------------------------------------------------------------
   # * 폰트 설정
   #--------------------------------------------------------------------------
@@ -1218,8 +1245,10 @@ class Window_Message
   def update_name_windows
     
     @name_window.x = namewindow_get_x
+    
+    position = $game_message.position
 
-    if $game_message.position == 0 and $game_message.balloon == -2
+    if position == 0 and $game_message.balloon == -2
       @name_window.y = 0
       self.y = @name_window.open? ? (@name_window.height) : 0
     else
@@ -1227,6 +1256,7 @@ class Window_Message
     end
 
     @name_window.update
+    
   end
   #--------------------------------------------------------------------------
   # * 이름 윈도우 제거
@@ -1241,13 +1271,17 @@ class Window_Message
   #--------------------------------------------------------------------------
   alias namewindow_update_placement update_placement
   def update_placement
-    update_name_windows
-    if @name_window.open?
-      @gold_window.y = y > 0 ? 0 : Graphics.height - @gold_window.height
-    else
+    position = $game_message.position 
+    if $game_message.balloon == -2
+      self.x = (Graphics.width / 2) - self.width / 2 + RS::LIST["오프셋X"]
+      self.y = position * (Graphics.height - self.height) + RS::LIST["오프셋Y"]
+    end
+    @gold_window.y = y > 0 ? 0 : Graphics.height - @gold_window.height
+    if not @name_window.open?
       self.ox = $game_message.ox
       namewindow_update_placement
     end
+    update_name_windows if @name_window.open? || settings_changed?    
   end
 end
 
@@ -1522,6 +1556,7 @@ class Window_Message < Window_Base
     get_balloon_text_rect($game_message.all_text.dup)
     text = convert_escape_characters($game_message.all_text)
     pos = {}
+    create_contents    
     new_page(text, pos)
     process_character(text.slice!(0, 1), text, pos) until text.empty?
   end
@@ -1712,11 +1747,14 @@ class Window_Message < Window_Base
     # 대화창의 위치
     @position = $game_message.position
 
+    # 대화창의 X좌표
+    x = (Graphics.width / 2) - (window_width / 2) + RS::LIST["오프셋X"]
+    
     # 대화창의 Y좌표
-    y = @position * (Graphics.height - window_height) / 2
+    y = @position * (Graphics.height - window_height) / 2 + RS::LIST["오프셋Y"]
 
     # 위치 및 크기 설정
-    self.move(0, y, window_width, fitting_height($game_message.line || RS::LIST["라인"]) )
+    self.move(x, y, window_width, fitting_height($game_message.line || RS::LIST["라인"]) )
 
     # Dim
     create_back_bitmap
