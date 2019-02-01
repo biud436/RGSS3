@@ -1,7 +1,7 @@
 #===============================================================================
 # Name : RS_Input
 # Author : biud436
-# Version : 1.0.4 (2019.01.21)
+# Version : 1.0.5 (2019.02.02)
 # Link : https://biud436.blog.me/220289463681
 # Description : This script provides the extension keycode and easy to use.
 #-------------------------------------------------------------------------------
@@ -19,6 +19,8 @@
 # - Added the feature that can use the mouse wheel in the Save and Load scenes.
 # v1.0.4 (2019.01.21) :
 # - In the selectable window, Added the feature that can use the mouse wheel.
+# v1.0.5 (2019.02.02) :
+# - Added feature that can use the mouse left button in the Window_DebugRight
 #-------------------------------------------------------------------------------
 # 사용법 / How to use
 #-------------------------------------------------------------------------------
@@ -792,6 +794,22 @@ class Window_Message < Window_Base
 end
 
 #===============================================================================
+# Window_DebugRight
+#===============================================================================
+class Window_DebugRight < Window_Selectable
+  #--------------------------------------------------------------------------
+  # * Update During Switch Mode
+  #--------------------------------------------------------------------------
+  def update_switch_mode
+    if Input.trigger?(:C) or TouchInput.trigger?(:LEFT)
+      Sound.play_ok
+      $game_switches[current_id] = !$game_switches[current_id]
+      redraw_current_item
+    end
+  end
+end
+
+#===============================================================================
 # TouchInput::Cursor
 #===============================================================================
 module TouchInput::Cursor
@@ -1403,24 +1421,32 @@ end
 # Scene_Map
 #===============================================================================
 class Scene_Map
-  
+  #--------------------------------------------------------------------------
+  # * 시작
+  #--------------------------------------------------------------------------  
   alias rs_map_touch_start start
   def start
     rs_map_touch_start
     @touch_count = 0
   end
-  
+  #--------------------------------------------------------------------------
+  # * 업데이트
+  #--------------------------------------------------------------------------   
   alias rs_open_menu_update update
   def update
     rs_open_menu_update
     update_when_starting_with_menu_scene
     update_destination
   end
-  
+  #--------------------------------------------------------------------------
+  # * 메뉴 호출 여부
+  #--------------------------------------------------------------------------   
   def update_when_starting_with_menu_scene
     call_menu if TouchInput.trigger?(:RIGHT) and !$game_message.busy?
   end
-  
+  #--------------------------------------------------------------------------
+  # * 자동 이동 업데이트
+  #--------------------------------------------------------------------------  
   def update_destination
     if map_touch_ok?
       process_map_touch
@@ -1429,11 +1455,15 @@ class Scene_Map
       @touch_count = 0
     end
   end
-  
+  #--------------------------------------------------------------------------
+  # * 이동 가능한가?
+  #--------------------------------------------------------------------------   
   def map_touch_ok?
     $game_player.can_move?
   end
-  
+  #--------------------------------------------------------------------------
+  # * 맵 터치 업데이트
+  #--------------------------------------------------------------------------     
   def process_map_touch
     if TouchInput.trigger?(:LEFT) || @touch_count > 0
       if TouchInput.press?(:LEFT)
@@ -1452,7 +1482,13 @@ class Scene_Map
   end
 end
 
+#===============================================================================
+# Scene_Battle
+#===============================================================================
 class Scene_Battle
+  #--------------------------------------------------------------------------
+  # * update
+  #--------------------------------------------------------------------------    
   alias rs_battle_update update
   def update
     rs_battle_update
@@ -1460,32 +1496,46 @@ class Scene_Battle
   end
 end
 
+#===============================================================================
+# Scene_File
+#===============================================================================
 class Scene_File
+  #--------------------------------------------------------------------------
+  # * start
+  #--------------------------------------------------------------------------    
   alias xlrs_start start
   def start
     xlrs_start
     @wheel_time = 120
   end
-  
+  #--------------------------------------------------------------------------
+  # * update_savefile_selection
+  #--------------------------------------------------------------------------    
   def update_savefile_selection
     return on_savefile_ok     if Input.trigger?(:C) or TouchInput.trigger?(:LEFT)
     return on_savefile_cancel if Input.trigger?(:B)      
     update_touch          
     update_cursor
   end  
-  
+  #--------------------------------------------------------------------------
+  # * scroll_up
+  #--------------------------------------------------------------------------   
   def scroll_up
     if top_index > 0
       self.top_index = top_index - 1
     end
   end
-  
+  #--------------------------------------------------------------------------
+  # * scroll_down
+  #--------------------------------------------------------------------------   
   def scroll_down
     if top_index < item_max
       self.top_index = top_index + 1
     end
   end
-  
+  #--------------------------------------------------------------------------
+  # * update_touch
+  #--------------------------------------------------------------------------  
   def update_touch
     last_index = @index
     mx = TouchInput.x
