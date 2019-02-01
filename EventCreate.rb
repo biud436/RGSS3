@@ -1,6 +1,7 @@
 #==============================================================================
 # Author       : biud436
 # Change Log   :
+#   2019.02.01 - 이벤트 이름 설정 방식 변경
 #   2018.08.30 - 이벤트 삭제 방법 변경
 #   2015.07.10 - 그래픽 설정 수정
 #   2015.07.07 - 일괄 삭제 메소드(열거자 형식) 추가
@@ -22,10 +23,18 @@ class Game_Event
   def get_pages
     @event.pages
   end
+  def name
+    @event.name
+  end
+  def name=(val)
+    ret = val
+    ret = "" if not ret.is_a?(String)
+    @event.name = ret
+  end
 end
 
 module OPT
-  EVData = Struct.new(:sprite_name,:sprite_index,:pages)
+  EVData = Struct.new(:sprite_name,:sprite_index,:pages, :name)
   #--------------------------------------------------------------------------
   # * Init Struct
   #--------------------------------------------------------------------------
@@ -97,6 +106,7 @@ module OPT
     ev_data.sprite_name = page.graphic.character_name
     ev_data.sprite_index = page.graphic.character_index
     ev_data.pages = events[index].get_pages
+    ev_data.name = events[index].name
     ev_data
   end
 end
@@ -119,7 +129,11 @@ class Object
     end
 
     # 이벤트의 이름입니다
-    m_event.name = "EV#{m_event.id.to_s}"
+    if data.name.empty?
+      m_event.name = "EV#{m_event.id.to_s}"
+    else 
+      m_event.name = data.name
+    end
 
     # 페이지 설정
     data.pages.each_with_index { |page,i| m_event.pages[i] = page }
