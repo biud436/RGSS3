@@ -1,13 +1,15 @@
 #==============================================================================
-# ** Hangul Message System 1.5.11 (RPG Maker VX Ace)
+# ** Hangul Message System 1.5.12 (RPG Maker VX Ace)
 #==============================================================================
 # Name       : Hangul Message System
 # Author     : biud436
-# Version    : 1.5.11
+# Version    : 1.5.12
 # Link       : http://biud436.blog.me/220251747366
 #==============================================================================
 # ** 업데이트 로그
 #==============================================================================
+# 2019.02.16 (v1.5.12) :
+# - 말풍선 사용 후 일반 메시지 사용 시 글자가 잘리는 현상 수정
 # 2019.01.27 (v1.5.11) :
 # - 크기 및 오프셋 설정 추가
 # - 노트 태그 읽는 중 생기는 오류 현상 수정
@@ -970,25 +972,50 @@ class Window_Message
   # * 피버 메인
   #--------------------------------------------------------------------------
   def fiber_main
+    
+    # Fiber는 Thread와는 비슷하지만,
+    # 쓰레드와는 달리 Ruby VM이 쓰레드 간의 전환을 수행하지 않는다.
+    # Fiber는 프로그래머가 직접 명시적으로 실행과 쓰레드 간의 전환을 지시할 수 있다.
+
+    # 따라서 프로그래머가 원하는 타이밍에 재진입, 인자 전달이 가능하다.
+    # Fiber.yield를 만나면 메인 쓰레드(또는 부모)의 업데이트(프레임 업데이트, 게임 업데이트 등) 등이 수행된다.
+    # Fiber.resume을 만나면 이전에 정지한 위치로 재진입하여 처리를 재개한다.
+
+    # 배경 업데이트
     update_background
+    # 말풍선 위치 업데이트
     update_balloon_position
+    # 큰 얼굴 이미지 업데이트
     @util.face_update
-    $game_message.visible = true    
+    # 메시지를 보여지는 상태로 설정
+    $game_message.visible = true   
+    
     loop do
       process_all_text if $game_message.has_text?
       process_input
       $game_message.clear
       @name_window.close
       @gold_window.close
+
+      # 루프를 빠져나가고, 메인 쓰레드의 게임 업데이트를 처리한다 (이후 다음 라인부터 재진입)
+      # (fiber_main -> Main Frame Work의 업데이트 코드 -> 다시 fiber_main 진입)
       Fiber.yield
+
       break unless text_continue?
     end
+
+    # 모든 창이 닫힐 때 까지 메인 프레임워크의 게임 업데이트를 수행한다 (반복 루프)
     close_and_wait
+
     $game_message.visible = false
+    # 큰 얼굴 이미지 투명도 재설정
     @util.reset_opacity
     @util.face_update
+    # 메시지창 크기 재설정
     resize_message_system
+    # 큰 얼굴 이미지 이름 재설정
     @util.reset_face_name
+    # Fiber를 끝낸다.
     @fiber = nil
   end
   #--------------------------------------------------------------------------
@@ -1163,13 +1190,19 @@ class Window_Message
   alias rs_extend_msg_convert_escape_characters convert_escape_characters
   def convert_escape_characters(text)
     f = rs_extend_msg_convert_escape_characters(text)
+
+    # 이름 윈도우 띄우기 텍스트 코드를 정규 표현식으로 찾아내 텍스트 코드를 없애고
+    # 괄호 안에 있는 특정 문자열만 추출합니다.
     f.gsub!(RS::CODE["이름"]) {
       name_text = $1.to_s
+      # 콜론과 정렬 위치 문자가 포함되어있으면 해당 위치에 이름 윈도우를 띄웁니다.
       if (name_text =~ /(.*)(:)(.*)/i)
+        # strip은 공백 제거를 뜻함
         name = $1.strip
         position = $3.strip
         name_window_open(name, position)
       else
+        # 왼쪽에 이름 윈도우를 띄웁니다.
         name_window_open(name_text, 'left')  
       end
       ""
@@ -1539,7 +1572,7 @@ class Window_Message < Window_Base
   # * 말풍선 설정
   #--------------------------------------------------------------------------
   def open_balloon(sign=$game_message.balloon)
-    # return nil if $game_message.face_name.size > 0
+    # 말풍선 모드가 아니라면 메시지 재설정 후 반환된다.
     if sign == -2
       resize_message_system
       return nil
@@ -1556,7 +1589,13 @@ class Window_Message < Window_Base
     get_balloon_text_rect($game_message.all_text.dup)
     text = convert_escape_characters($game_message.all_text)
     pos = {}
+
+    # 이 라인으로 인하여 fiber_main에 재진입 시 텍스트 컨텐츠 영역이 백지화된다.
+    # self.contents는 contents_width와 contents_height만큼 설정된다.
+    # 다만 메시지 영역을 재설정 해줄 필요성이 있다.
+    resize_message_system
     create_contents    
+
     new_page(text, pos)
     process_character(text.slice!(0, 1), text, pos) until text.empty?
   end
