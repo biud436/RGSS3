@@ -1,13 +1,15 @@
 #==============================================================================
-# ** Hangul Message System 1.5.12 (RPG Maker VX Ace)
+# ** Hangul Message System 1.5.13 (RPG Maker VX Ace)
 #==============================================================================
 # Name       : Hangul Message System
 # Author     : biud436
-# Version    : 1.5.12
+# Version    : 1.5.13
 # Link       : http://biud436.blog.me/220251747366
 #==============================================================================
 # ** 업데이트 로그
 #==============================================================================
+# 2019.02.19 (v1.5.13) :
+# - 폰트 크기 변경 시 말풍선의 폭과 높이가 제대로 계산되지 않는 현상 수정
 # 2019.02.16 (v1.5.12) :
 # - 말풍선 사용 후 일반 메시지 사용 시 글자가 잘리는 현상 수정
 # 2019.01.27 (v1.5.11) :
@@ -840,6 +842,7 @@ class Window_Base
   #--------------------------------------------------------------------------
   def reset_font_settings
     change_color(normal_color)
+    contents.font.name = RS::LIST["폰트명"]
     contents.font.size = RS::LIST["폰트크기"]
     contents.font.bold = Font.default_bold
     contents.font.italic = Font.default_italic
@@ -904,7 +907,7 @@ class Window_Base
   #--------------------------------------------------------------------------
   def text_width_ex(text)
     save
-    temp_width = draw_text_ex(0, contents_height, text)
+    temp_width = draw_text_ex(0, contents_height + 6, text)
     restore
     return temp_width
   end
@@ -1586,6 +1589,7 @@ class Window_Message < Window_Base
   #--------------------------------------------------------------------------
   def process_all_text
     open_and_wait
+    set_font(RS::LIST["폰트명"],RS::LIST["폰트크기"])
     get_balloon_text_rect($game_message.all_text.dup)
     text = convert_escape_characters($game_message.all_text)
     pos = {}
@@ -1600,19 +1604,50 @@ class Window_Message < Window_Base
     process_character(text.slice!(0, 1), text, pos) until text.empty?
   end
   #--------------------------------------------------------------------------
+  # * 말풍선 높이
+  #--------------------------------------------------------------------------  
+  def calc_balloon_rect_height(text)
+    temp_font_size = contents.font.size
+    text2 = convert_escape_characters(text)
+    height = calc_line_height(text2)
+    self.contents.font.size = temp_font_size
+    return height
+  end
+  #--------------------------------------------------------------------------
   # * 말풍선 영역 계산
   #--------------------------------------------------------------------------
-  def get_balloon_text_rect(text)
+  def get_balloon_text_rect(text)    
+    
+    # 라인 갯수를 구하기 위해 텍스트를 줄바꿈 문자를 기준으로 나눈다.
     tmp_text = text_processing(text)
     tmp_text = tmp_text.split("\n")
     tmp_text.sort! {|a,b| b.size - a.size }
-    _rect = contents.text_size(tmp_text[0])
-    @_width = (_rect.width) + standard_padding * 2
-    @_height = tmp_text.size * FONT_SIZE + standard_padding * 2
+    num_of_lines = tmp_text.size
+    
+    height = 0
+    pad = standard_padding * 2
+    
+    # 높이를 구한다.
+    tmp_text.each do |i|
+      height += calc_balloon_rect_height(i)
+    end
+    
+    if height <= 0
+      # 높이를 구할 수 없었다면,
+      height = fitting_height(num_of_lines)
+    else
+      # 높이를 구했다면
+      height = height + pad
+    end
+    
+    @_width = text_width_ex(text.dup) + pad + 6
+    @_height = height
+
     if $game_message.face_name.size > 0
       @_width += new_line_x
       @_height = [@_height, fitting_height(4)].max
     end
+    
   end
   #--------------------------------------------------------------------------
   # * 텍스트 매칭 (모든 명령어 제거)
