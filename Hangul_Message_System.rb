@@ -10,6 +10,7 @@
 #==============================================================================
 # 2019.02.19 (v1.5.13) :
 # - 폰트 크기 변경 시 말풍선의 폭과 높이가 제대로 계산되지 않는 현상 수정
+# - 폰트 변경 부분 호환성 패치
 # 2019.02.16 (v1.5.12) :
 # - 말풍선 사용 후 일반 메시지 사용 시 글자가 잘리는 현상 수정
 # 2019.01.27 (v1.5.11) :
@@ -110,10 +111,10 @@ module RS
   # Fonts 폴더에 해당 폰트 파일에 있어야 합니다.
   # 폰트 파일과 글꼴명은 다를 수 있습니다.
   # 여기에 적는 것은 해당 폰트의 실제 글꼴명입니다.
-  LIST["폰트명"] = Font.default_name
+  LIST["폰트명"] = ["나눔손글씨 펜"]
   
   # 폰트 크기를 변경합니다. 예:) Font.default_size는 기본 폰트 사이즈입니다.
-  LIST["폰트크기"] = Font.default_size
+  LIST["폰트크기"] = 32
   
   # 얼굴 이미지의 X좌표 설정 
   # 기준 좌표값 RS::LIST["왼쪽"] 또는 RS::LIST["오른쪽"]로부터 상대적입니다.
@@ -1599,7 +1600,7 @@ class Window_Message < Window_Base
     # 다만 메시지 영역을 재설정 해줄 필요성이 있다.
     resize_message_system
     create_contents    
-
+    set_font(RS::LIST["폰트명"],RS::LIST["폰트크기"])
     new_page(text, pos)
     process_character(text.slice!(0, 1), text, pos) until text.empty?
   end
@@ -2050,6 +2051,7 @@ class Window_Message
     $game_message.line = n
     self.height = fitting_height(n)
     create_contents
+    set_font(RS::LIST["폰트명"],RS::LIST["폰트크기"])
     update_placement
   end
   #--------------------------------------------------------------------------
