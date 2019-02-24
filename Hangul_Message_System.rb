@@ -1476,8 +1476,16 @@ class RS::Window_Name < Window_Base
     @text = text
     @_width = window_width
     get_balloon_text_rect(text.dup) if $game_message.background != 1
+    set_font(RS::LIST["폰트명"],RS::LIST["폰트크기"])    
     open
   end
+  #--------------------------------------------------------------------------
+  # * 폰트 설정
+  #--------------------------------------------------------------------------
+  def set_font(name, size = Font.default_size )
+    self.contents.font.name = name
+    self.contents.font.size = size
+  end  
   #--------------------------------------------------------------------------
   # * 기본색 처리
   #--------------------------------------------------------------------------
