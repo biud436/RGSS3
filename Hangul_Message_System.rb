@@ -1,13 +1,15 @@
 #==============================================================================
-# ** Hangul Message System 1.5.13 (RPG Maker VX Ace)
+# ** Hangul Message System 1.5.14 (RPG Maker VX Ace)
 #==============================================================================
 # Name       : Hangul Message System
 # Author     : biud436
-# Version    : 1.5.13
+# Version    : 1.5.14
 # Link       : http://biud436.blog.me/220251747366
 #==============================================================================
 # ** 업데이트 로그
 #==============================================================================
+# 2019.02.24 (v1.5.14) :
+# - 오류 내용이 더 자세하게 표시됩니다.
 # 2019.02.19 (v1.5.13) :
 # - 폰트 크기 변경 시 말풍선의 폭과 높이가 제대로 계산되지 않는 현상 수정
 # - 폰트 변경 부분 호환성 패치
@@ -1589,20 +1591,25 @@ class Window_Message < Window_Base
   # * 텍스트 처리
   #--------------------------------------------------------------------------
   def process_all_text
-    open_and_wait
-    set_font(RS::LIST["폰트명"],RS::LIST["폰트크기"])
-    get_balloon_text_rect($game_message.all_text.dup)
-    text = convert_escape_characters($game_message.all_text)
-    pos = {}
+    begin
+      open_and_wait
+      set_font(RS::LIST["폰트명"],RS::LIST["폰트크기"])
+      get_balloon_text_rect($game_message.all_text.dup)
+      text = convert_escape_characters($game_message.all_text)
+      pos = {}
 
-    # 이 라인으로 인하여 fiber_main에 재진입 시 텍스트 컨텐츠 영역이 백지화된다.
-    # self.contents는 contents_width와 contents_height만큼 설정된다.
-    # 다만 메시지 영역을 재설정 해줄 필요성이 있다.
-    resize_message_system
-    create_contents    
-    set_font(RS::LIST["폰트명"],RS::LIST["폰트크기"])
-    new_page(text, pos)
-    process_character(text.slice!(0, 1), text, pos) until text.empty?
+      # 이 라인으로 인하여 fiber_main에 재진입 시 텍스트 컨텐츠 영역이 백지화된다.
+      # self.contents는 contents_width와 contents_height만큼 설정된다.
+      # 다만 메시지 영역을 재설정 해줄 필요성이 있다.
+      resize_message_system
+      create_contents    
+      set_font(RS::LIST["폰트명"],RS::LIST["폰트크기"])
+      new_page(text, pos)
+      process_character(text.slice!(0, 1), text, pos) until text.empty?
+    rescue => e
+      puts e.backtrace.join("\n\t")
+      raise e.message + "\n\t" + e.backtrace.join("\n\t")
+    end
   end
   #--------------------------------------------------------------------------
   # * 말풍선 높이
