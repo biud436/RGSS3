@@ -9,6 +9,7 @@
 # ** 업데이트 로그
 #==============================================================================
 # 2019.02.24 (v1.5.14) :
+# - 말풍선이 2줄 이상일 때 폭이 제대로 계산되지 않던 문제 수정.
 # - 오류 내용이 더 자세하게 표시됩니다.
 # 2019.02.19 (v1.5.13) :
 # - 폰트 크기 변경 시 말풍선의 폭과 높이가 제대로 계산되지 않는 현상 수정
@@ -1628,7 +1629,7 @@ class Window_Message < Window_Base
     
     # 라인 갯수를 구하기 위해 텍스트를 줄바꿈 문자를 기준으로 나눈다.
     tmp_text = text_processing(text)
-    tmp_text = tmp_text.split("\n")
+    tmp_text = tmp_text.split(/[\r\n]+/)
     tmp_text.sort! {|a,b| b.size - a.size }
     num_of_lines = tmp_text.size
     
@@ -1648,9 +1649,18 @@ class Window_Message < Window_Base
       height = height + pad
     end
     
-    @_width = text_width_ex(text.dup) + pad + 6
+    # 폭을 계산한다.
+    pw = 0
+    for i in (0...num_of_lines)
+      x = text_width_ex(tmp_text[i])
+      if x >= pw
+        pw = x
+      end
+    end
+    
+    @_width = pw + pad + 6
     @_height = height
-
+  
     if $game_message.face_name.size > 0
       @_width += new_line_x
       @_height = [@_height, fitting_height(4)].max
