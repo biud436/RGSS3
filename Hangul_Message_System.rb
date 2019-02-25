@@ -1,13 +1,15 @@
 #==============================================================================
-# ** Hangul Message System 1.5.14 (RPG Maker VX Ace)
+# ** Hangul Message System 1.5.15 (RPG Maker VX Ace)
 #==============================================================================
 # Name       : Hangul Message System
 # Author     : biud436
-# Version    : 1.5.14
+# Version    : 1.5.15
 # Link       : http://biud436.blog.me/220251747366
 #==============================================================================
 # ** 업데이트 로그
 #==============================================================================
+# 2019.02.25 (v1.5.15) :
+# - 자동 개행 관련 버그 수정
 # 2019.02.24 (v1.5.14) :
 # - 말풍선이 2줄 이상일 때 폭이 제대로 계산되지 않던 문제 수정.
 # - 오류 내용이 더 자세하게 표시됩니다.
@@ -910,10 +912,7 @@ class Window_Base
   # * text_width_ex
   #--------------------------------------------------------------------------
   def text_width_ex(text)
-    save
-    temp_width = draw_text_ex(0, contents_height + 6, text)
-    restore
-    return temp_width
+    draw_text_ex(0, contents_height + 6, text)
   end
 end
 
@@ -932,6 +931,9 @@ class Window_Message
   alias load_face_initialize initialize
   alias load_face_update update
   alias load_face_dispose dispose
+  
+  attr_reader :is_used_text_width_ex
+  
   #--------------------------------------------------------------------------
   # * 초기화
   #--------------------------------------------------------------------------
@@ -942,6 +944,7 @@ class Window_Message
     create_balloon_sprite
     set_font(RS::LIST["폰트명"],RS::LIST["폰트크기"])
     @windowskin_id = RS::LIST["윈도우스킨"].object_id
+    $game_message.used_text_width_ex = false
   end
   #--------------------------------------------------------------------------
   # * 윈도우의 폭 (가로 길이)
@@ -1125,9 +1128,13 @@ class Window_Message
         color = Color.gm_color(obtain_name_color(text))
         change_out_color(color)
       when '그림!'
-        process_draw_picture(obtain_escape_sound(text).to_s,pos)
+        if not @is_used_text_width_ex
+          process_draw_picture(obtain_escape_sound(text).to_s,pos)
+        end
       when '효과음!'
-        $game_map.se_play = obtain_escape_sound(text).to_s
+        if not @is_used_text_width_ex
+          $game_map.se_play = obtain_escape_sound(text).to_s
+        end
       when '자동개행!'
         $game_message.word_wrap_enabled = true
       else
@@ -1521,6 +1528,7 @@ class Game_Message
   attr_accessor :texts
   attr_accessor :ox
   attr_accessor :word_wrap_enabled
+  attr_accessor :used_text_width_ex
   #--------------------------------------------------------------------------
   # * 초기화
   #--------------------------------------------------------------------------
@@ -1539,6 +1547,7 @@ class Game_Message
     @balloon = -2
     @ox = 0
     @word_wrap_enabled = RS::LIST["자동개행"]
+    @used_text_width_ex = false
   end
 end
 
@@ -1635,6 +1644,8 @@ class Window_Message < Window_Base
   #--------------------------------------------------------------------------
   def get_balloon_text_rect(text)    
     
+    save
+    
     # 라인 갯수를 구하기 위해 텍스트를 줄바꿈 문자를 기준으로 나눈다.
     tmp_text = text_processing(text)
     tmp_text = tmp_text.split(/[\r\n]+/)
@@ -1660,7 +1671,9 @@ class Window_Message < Window_Base
     # 폭을 계산한다.
     pw = 0
     for i in (0...num_of_lines)
+      @is_used_text_width_ex = true
       x = text_width_ex(tmp_text[i])
+      @is_used_text_width_ex = false
       if x >= pw
         pw = x
       end
@@ -1673,6 +1686,8 @@ class Window_Message < Window_Base
       @_width += new_line_x
       @_height = [@_height, fitting_height(4)].max
     end
+    
+    restore
     
   end
   #--------------------------------------------------------------------------
@@ -1871,6 +1886,7 @@ class Window_Message < Window_Base
   # * Input Pause Processing (말풍선 모드)
   #--------------------------------------------------------------------------
   def input_pause
+    return if @is_used_text_width_ex
     self.pause = @balloon_pause
     wait(10)
     Fiber.yield until Input.trigger?(:B) || Input.trigger?(:C)
@@ -2116,14 +2132,38 @@ class Window_Message
   #--------------------------------------------------------------------------
   alias process_word_wrap_character process_normal_character
   def process_normal_character(c, pos, text)
+    
+    valid = !@is_used_text_width_ex
 
     # 자동 개행 여부 판단
-    if $game_message.word_wrap_enabled
+    if $game_message.word_wrap_enabled and valid and $game_message.balloon == -2
       tw = text_size(c).width
       if pos[:x] + (tw * 2) > contents_width
         process_new_line(text, pos)
       end
     end
+    
     process_word_wrap_character(c, pos)
+    
+  end
+  #--------------------------------------------------------------------------
+  # * 대기
+  #--------------------------------------------------------------------------  
+  def wait(duration)
+    return if @is_used_text_width_ex
+    duration.times { Fiber.yield }
+  end  
+end
+
+#==============================================================================
+# ** Window_Gold
+#==============================================================================
+class Window_Gold < Window_Base
+  alias rs_message_system_text_width_ex_open open
+  def open
+    if SceneManager.scene_is?(Scene_Map) || SceneManager.scene_is?(Scene_Battle)
+      return if $game_message.used_text_width_ex
+    end
+    rs_message_system_text_width_ex_open
   end
 end
