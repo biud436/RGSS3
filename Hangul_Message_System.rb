@@ -930,10 +930,7 @@ class Window_Message
   #--------------------------------------------------------------------------
   alias load_face_initialize initialize
   alias load_face_update update
-  alias load_face_dispose dispose
-  
-  attr_reader :is_used_text_width_ex
-  
+  alias load_face_dispose dispose  
   #--------------------------------------------------------------------------
   # * 초기화
   #--------------------------------------------------------------------------
