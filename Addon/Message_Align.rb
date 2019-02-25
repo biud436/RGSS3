@@ -1,10 +1,13 @@
 #==============================================================================
-# ** 메시지 정렬 1.0.0 (RPG Maker VX Ace)
+# ** 메시지 정렬 1.0.1 (RPG Maker VX Ace)
 #==============================================================================
 # Name        : 메시지 정렬
 # Author      : 러닝은빛(biud436)
-# Version     : 1.0.0
+# Version     : 1.0.1
 # Description : 한글 메시지 시스템 스크립트가 필요합니다.
+# Version Log : 
+# 2019.02.25 (v1.0.1) : 
+# text_width_ex 메서드의 이름을 text_width_ex2로 변경하였습니다.
 #==============================================================================
 # ** Game_Message
 #------------------------------------------------------------------------------
@@ -66,14 +69,14 @@ class Window_Message < Window_Base
   # * set_align_center
   #--------------------------------------------------------------------------
   def set_align_center(text, pos)
-    tx = text_width_ex(text)
+    tx = text_width_ex2(text)
     pos[:x] = (new_line_x + contents_width + self.padding) / 2 - (tx / 2)
   end
   #--------------------------------------------------------------------------
   # * set_align_right
   #--------------------------------------------------------------------------
   def set_align_right(text, pos)
-    tx = text_width_ex(text)
+    tx = text_width_ex2(text)
     pos[:x] = (contents_width - self.padding) - tx
   end
   #--------------------------------------------------------------------------
@@ -107,7 +110,7 @@ class Window_Message < Window_Base
   #--------------------------------------------------------------------------
   # * text_width_ex
   #--------------------------------------------------------------------------
-  def text_width_ex(text)
+  def text_width_ex2(text)
     temp_text = text_processing(text)
     text_size(temp_text.split(/[\n]+/)[0]).width
   end
