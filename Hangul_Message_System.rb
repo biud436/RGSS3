@@ -1,13 +1,16 @@
 #==============================================================================
-# ** Hangul Message System 1.5.15 (RPG Maker VX Ace)
+# ** Hangul Message System 1.5.16 (RPG Maker VX Ace)
 #==============================================================================
 # Name       : Hangul Message System
 # Author     : biud436
-# Version    : 1.5.15
+# Version    : 1.5.16
 # Link       : http://biud436.blog.me/220251747366
 #==============================================================================
 # ** 업데이트 로그
 #==============================================================================
+# 2019.03.03 (v1.5.16) :
+# - 배경 투명도 조절 기능 추가
+# - 희미한 배경 x좌표 수정
 # 2019.02.25 (v1.5.15) :
 # - 자동 개행 관련 버그 수정
 # 2019.02.24 (v1.5.14) :
@@ -173,6 +176,7 @@ module RS
   # 투명도의 경우, 배경 창의 투명도, 텍스트의 투명도가 따로 나뉘지만
   # 여기에서는 그 둘을 포함한 전체 투명도를 조절합니다.
   LIST["투명도"] = 250
+  LIST["배경투명도"] = 255
   
   # 이름 윈도우의 X좌표는 얼굴 이미지가 왼쪽에 표시되면 왼쪽에 표시되고,
   # 오른쪽에 표시되면 오른쪽에 표시합니다.
@@ -976,6 +980,16 @@ class Window_Message
     @util.reset_face_name if @util
   end
   #--------------------------------------------------------------------------
+  # * 배경 스프라이트의 업데이트
+  #--------------------------------------------------------------------------
+  def update_back_sprite
+    @back_sprite.visible = (@background == 1)
+    @back_sprite.x = x 
+    @back_sprite.y = y
+    @back_sprite.opacity = openness
+    @back_sprite.update
+  end  
+  #--------------------------------------------------------------------------
   # * 피버 메인
   #--------------------------------------------------------------------------
   def fiber_main
@@ -989,9 +1003,11 @@ class Window_Message
     # Fiber.resume을 만나면 이전에 정지한 위치로 재진입하여 처리를 재개한다.
 
     # 배경 업데이트
-    update_background
+    update_background    
+    
     # 말풍선 위치 업데이트
-    update_balloon_position
+    update_balloon_position 
+    
     # 큰 얼굴 이미지 업데이트
     @util.face_update
     # 메시지를 보여지는 상태로 설정
@@ -1381,8 +1397,8 @@ class RS::Window_Name < Window_Base
   # * 배경 스프라이트의 업데이트
   #--------------------------------------------------------------------------
   def update_back_sprite
-    @back_sprite.visible = (@background == 1)
-    @back_sprite.x = x
+    @back_sprite.visible = ($game_message.background == 1)
+    @back_sprite.x = x 
     @back_sprite.y = y
     @back_sprite.opacity = openness
     @back_sprite.update
@@ -1401,6 +1417,8 @@ class RS::Window_Name < Window_Base
   def update
     super
     update_back_sprite
+    self.opacity = (@background == 1) ? 0 : RS::LIST["투명도"]
+    self.back_opacity = RS::LIST["배경투명도"]
   end
   #--------------------------------------------------------------------------
   # * 말풍선 영역 계산
@@ -1905,6 +1923,7 @@ class Window_Message < Window_Base
     update_balloon_sprite
     @background = $game_message.background
     self.opacity = @background == 0 ? RS::LIST["투명도"] : 0
+    self.back_opacity = RS::LIST["배경투명도"]
   end
 end
 
