@@ -27,7 +27,6 @@ class Scene_Title < Scene_Base
       create_title_graphic              # 타이틀 그래픽을 작성
       create_command_window
       play_title_music                  # 타이틀 화면의 음악을 연주
-    
     end
     #--------------------------------------------------------------------------
     # ● 트란지션 실행
