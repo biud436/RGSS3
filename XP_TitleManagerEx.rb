@@ -1,7 +1,7 @@
 #==============================================================================
 # ** TitleManagerEx (RPG Maker XP)
 #==============================================================================
-# Name    : TitleManagerEx v1.0.1
+# Name    : TitleManagerEx
 # Desc    : This script allows you to set up various title image to title screen
 # Author  : biud436
 # Usage   :
@@ -12,6 +12,10 @@
 # EndingManager.ending_setup("ENDING1")
 # EndingManager.ending_setup("ENDING2")
 # EndingManager.ending_setup("ENDING3")
+#
+# Version Log :
+# 2016.07.27 (v1.0.0) - First Release.
+# 2019.03.23 (v1.0.1) - Fixed the issue that can not start the game in the battle test mode.
 #
 #==============================================================================
 # ** Tool
@@ -92,7 +96,7 @@ end
 #==============================================================================
 # ** Header
 #------------------------------------------------------------------------------
-# 엔딩값을 외부파일에서 불러옵니다
+# Load the ending settings from 'temp.dat' file.
 #==============================================================================
 module Header
   @@background = nil
