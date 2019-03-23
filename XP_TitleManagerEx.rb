@@ -1,7 +1,7 @@
 #==============================================================================
 # ** TitleManagerEx (RPG Maker XP)
 #==============================================================================
-# Name    : TitleManagerEx
+# Name    : TitleManagerEx v1.0.1
 # Desc    : This script allows you to set up various title image to title screen
 # Author  : biud436
 # Usage   :
@@ -9,7 +9,9 @@
 # The parameters are the name of an ending within a game and its name can set
 # in Tool module.
 #
-# EndingManager.ending_setup("엔딩1")
+# EndingManager.ending_setup("ENDING1")
+# EndingManager.ending_setup("ENDING2")
+# EndingManager.ending_setup("ENDING3")
 #
 #==============================================================================
 # ** Tool
@@ -122,15 +124,13 @@ end
 #==============================================================================
 class Scene_Title
   def main
-    pre_title
-    update_title
-    dispose_title
-  end
-  def battle_test
     if $BTEST
       battle_test
       return
-    end
+    end    
+    pre_title
+    update_title
+    dispose_title
   end
   def load_database
     $data_actors        = load_data("Data/Actors.rxdata")
@@ -181,7 +181,6 @@ class Scene_Title
     $game_system.bgm_play($data_system.title_bgm)
   end
   def pre_title
-    battle_test
     load_database
     $game_system = Game_System.new
     create_background
