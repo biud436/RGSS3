@@ -1,13 +1,15 @@
 #==============================================================================
-# ** Hangul Message System 1.5.16 (RPG Maker VX Ace)
+# ** Hangul Message System 1.5.17 (RPG Maker VX Ace)
 #==============================================================================
 # Name       : Hangul Message System
 # Author     : biud436
-# Version    : 1.5.16
+# Version    : 1.5.17
 # Link       : http://biud436.blog.me/220251747366
 #==============================================================================
 # ** 업데이트 로그
 #==============================================================================
+# 2019.03.23 (v1.5.17) :
+# - 오프셋 조절 기능 추가
 # 2019.03.03 (v1.5.16) :
 # - 배경 투명도 조절 기능 추가
 # - 희미한 배경 x좌표 수정
@@ -1398,7 +1400,7 @@ class RS::Window_Name < Window_Base
   #--------------------------------------------------------------------------
   def update_back_sprite
     @back_sprite.visible = ($game_message.background == 1)
-    @back_sprite.x = x 
+    @back_sprite.x = x
     @back_sprite.y = y
     @back_sprite.opacity = openness
     @back_sprite.update
@@ -1803,8 +1805,8 @@ class Window_Message < Window_Base
     end
 
     # 말풍선 위치 및 크기 설정
-    self.x = dx
-    self.y = dy
+    self.x = dx + RS::LIST["오프셋X"]
+    self.y = dy + RS::LIST["오프셋Y"]
     self.width = @_width
     self.height = @_height
 
@@ -1818,8 +1820,8 @@ class Window_Message < Window_Base
     @back_sprite.update    
 
     # pause 커서의 좌표
-    @b_cursor.x = dx + tx
-    @b_cursor.y = dy + ty
+    @b_cursor.x = dx + RS::LIST["오프셋X"] + tx
+    @b_cursor.y = dy + RS::LIST["오프셋Y"] + ty
     @b_cursor.mirror = (scale_y == -1) ? true : false
 
     # 이름 윈도우 좌표 수정
@@ -2036,14 +2038,37 @@ class Window_ChoiceList < Window_Command
     choicelist_initialize(message_window)
     self.z = @message_window.z + 5
   end
+  #--------------------------------------------------------------------------
+  # * update_placement
+  #--------------------------------------------------------------------------  
   alias rs_message_update_placement update_placement
   def update_placement
     rs_message_update_placement
     update_normal_placement
   end
+  #--------------------------------------------------------------------------
+  # * start
+  #--------------------------------------------------------------------------    
+  alias rs_message_system_choice_list_start start
+  def start
+    rs_message_system_choice_list_start
+    update_background
+  end
+  #--------------------------------------------------------------------------
+  # * 배경 업데이트
+  #--------------------------------------------------------------------------  
+  def update_background
+    self.opacity = (@background == 1) ? 0 : RS::LIST["투명도"]
+    self.back_opacity = RS::LIST["배경투명도"]      
+  end
+  #--------------------------------------------------------------------------
+  # * update_normal_placement
+  #--------------------------------------------------------------------------   
   def update_normal_placement
 
-    message_x = @message_window.x    
+    @background = $game_message.background
+
+    message_x = @message_window.x
     message_y = @message_window.y
     message_width = @message_window.width
     message_height = @message_window.height
@@ -2067,7 +2092,7 @@ class Window_ChoiceList < Window_Command
       self.y = message_y + message_height
     end
 
-    self.x = message_x + message_width - self.width
+    self.x = message_x + message_width - self.width 
     
 
   end
