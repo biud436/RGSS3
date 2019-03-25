@@ -1,7 +1,7 @@
 #===============================================================================
 # Name : RS_Input
 # Author : biud436
-# Version : 1.0.5 (2019.02.02)
+# Version : 1.0.6 (2019.03.25)
 # Link : https://biud436.blog.me/220289463681
 # Description : This script provides the extension keycode and easy to use.
 #-------------------------------------------------------------------------------
@@ -21,6 +21,8 @@
 # - In the selectable window, Added the feature that can use the mouse wheel.
 # v1.0.5 (2019.02.02) :
 # - Added feature that can use the mouse left button in the Window_DebugRight
+# v1.0.6 (2019.03.25) :
+# - Added the repeat? method into Input class.
 #-------------------------------------------------------------------------------
 # 사용법 / How to use
 #-------------------------------------------------------------------------------
@@ -57,10 +59,12 @@
 #-------------------------------------------------------------------------------
 # Please available virtual key codes refer to the line 164 (a.k.a KEY CONSTANT)
 #
-# Input.trigger?(symbol)
-# Input.release?(symbol)
-# Input.press?(symbol)
+# Input.trigger?(Symbol)
+# Input.repeat?(Symbol)
+# Input.release?(Symbol)
+# Input.press?(Symbol)
 # Input.trigger?(String)
+# Input.repeat?(String)
 # Input.release?(String)
 # Input.press?(String)
 # Input.mouse_trigger?(0)
@@ -139,6 +143,12 @@ module RS::Input
 
     # 목적지 표시 그래픽 - 줌 이펙트 속도
     :DESTINATION_ZOOM_EFFECT_SPEED => 10,
+    
+    # 지정한 프레임까지 대기
+    :KEY_REPEAT_WAIT => 24,
+    
+    # 지정한 프레임이 지나면 키를 다시 체크
+    :KEY_REPEAT_INTERVAL => 6,    
 
   }
 end
@@ -423,6 +433,30 @@ module Input
       
   }  
   
+  # 기본 심볼
+  DEFEAULT_SYM = [
+  :DOWN,
+  :LEFT,
+  :RIGHT,
+  :UP,
+  :F5,
+  :F6,
+  :F7,
+  :F8,
+  :F9,
+  :SHIFT,
+  :CTRL,
+  :ALT,
+  :A, 
+  :B, 
+  :C, 
+  :X, 
+  :Y,
+  :Z, 
+  :L, 
+  :R
+  ]
+  
   # 기호 키
   SPECIFIC_KEY = {
     "~" => 192,
@@ -469,6 +503,14 @@ module Input
   
   @@wheel = 0
   
+  # repeat settings
+  @@repeat_type = {
+  :latest_button => 0,
+  :pressed_time => 0,
+  :key_repeat_wait => RS::Input::Config[:KEY_REPEAT_WAIT],
+  :key_repeat_interval => RS::Input::Config[:KEY_REPEAT_INTERVAL]
+  }
+  
   class << self
     alias rs_input_update update
     def update(*args, &block)
@@ -505,6 +547,14 @@ module Input
     def trigger?(*args, &block)
       keycode = get_keycode(args[0])
       key_status = @@keyboard.map[keycode]
+      latest_button = @@repeat_type[:latest_button]
+      pressed_time = @@repeat_type[:pressed_time]      
+      if latest_button == 0
+        return false
+      end
+      if (latest_button == keycode and pressed_time == 0)
+        return true
+      end
       if key_status and key_status == STATES[:DOWN]
         return true
       end
@@ -547,7 +597,41 @@ module Input
         return true
       end      
     end
+    
+    alias rs_input_repeat? repeat?
+    def repeat?(*args, &block)
+      if DEFEAULT_SYM.include?(args[0])
+        return rs_input_repeat?(*args, &block)
+      end
+      
+      keycode = get_keycode(args[0])
+      
+      latest_button = @@repeat_type[:latest_button]
+      pressed_time = @@repeat_type[:pressed_time]
+      key_repeat_wait = @@repeat_type[:key_repeat_wait]
+      key_repeat_interval = @@repeat_type[:key_repeat_interval]
+      
+      if latest_button == 0
+        return false
+      end
+      
+      if latest_button == keycode
+        if pressed_time == 0
+          return true
+        end
         
+        if (pressed_time >= key_repeat_wait)
+          if ((pressed_time % key_repeat_interval) == 0)
+            return true
+          end
+        end        
+      
+      end
+    
+      return false
+
+    end
+    
     def update_keyboard
       @@keyboard.old = @@keyboard.current.dup
       @@keyboard.current = "\0" * 256
@@ -556,14 +640,24 @@ module Input
 
       @@keyboard.current = @@keyboard.current.unpack('c*')
       
+      # repeat
+      if (@@keyboard.current[@@repeat_type[:latest_button]] & 0x80) > 0
+        @@repeat_type[:pressed_time] += 1
+      else
+        @@repeat_type[:latest_button] = 0        
+      end
+      
+      # update map
       for i in (0...256)
         @@keyboard.current[i] = ((@@keyboard.current[i] & 0x80) > 0) ? 1 : 0
         old = @@keyboard.old[i]
         cur = @@keyboard.current[i]
         if old == 0 and cur == 1
           @@keyboard.map[i] = STATES[:DOWN]
+          @@repeat_type[:latest_button] = i
+          @@repeat_type[:pressed_time] = 0
         elsif old == 1 and cur == 1
-          @@keyboard.map[i] = STATES[:PRESS]        
+          @@keyboard.map[i] = STATES[:PRESS] 
         elsif old == 1 and cur == 0
           @@keyboard.map[i] = STATES[:UP]
         else
@@ -571,6 +665,7 @@ module Input
         end
         
       end
+      
     end
     
     def get_async_key_state(symbol)
