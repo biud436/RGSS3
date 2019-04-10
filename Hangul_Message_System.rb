@@ -10,6 +10,7 @@
 #==============================================================================
 # 2019.04.10 (v1.5.18) :
 # - 라인 확장 관련 버그 수정
+# - 라인 확장 시 선택지 위치
 # 2019.03.23 (v1.5.17) :
 # - 오프셋 조절 기능 추가
 # 2019.03.03 (v1.5.16) :
@@ -156,7 +157,7 @@ module RS
   LIST["높이"] = Graphics.height - LIST["Y"]
   
   # 기본 라인 갯수
-  LIST["라인"] = 5
+  LIST["라인"] = 4
   
   LIST["효과음"] = "Attack3"
   
@@ -2216,5 +2217,36 @@ class Window_Gold < Window_Base
       return if $game_message.used_text_width_ex
     end
     rs_message_system_text_width_ex_open
+  end
+end
+
+#==============================================================================
+# ** Window_ChoiceList
+#==============================================================================
+class Window_ChoiceList < Window_Command
+  #--------------------------------------------------------------------------
+  # * Update Window Position
+  #--------------------------------------------------------------------------
+  def update_placement
+    self.width = [max_choice_width + 12, 96].max + padding * 2
+    self.width = [width, Graphics.width].min
+    self.height = fitting_height($game_message.choices.size)
+    self.x = Graphics.width - width
+    name_window = @message_window.name_window
+    pad = 0
+    if name_window.open? and ['center','right'].include?(name_window.align)
+        pad = name_window.height
+    end
+    if @message_window.y >= Graphics.height / 2
+      self.y = @message_window.y - pad - height
+    else
+      nh = @message_window.y + @message_window.height
+      if nh > Graphics.height - self.height 
+        self.y = @message_window.y - pad - height
+      else
+        self.y = nh
+      end
+    end
+    self.x = @message_window.x + @message_window.width - self.width
   end
 end
