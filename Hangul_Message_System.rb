@@ -1,13 +1,15 @@
 #==============================================================================
-# ** Hangul Message System 1.5.17 (RPG Maker VX Ace)
+# ** Hangul Message System 1.5.18 (RPG Maker VX Ace)
 #==============================================================================
 # Name       : Hangul Message System
 # Author     : biud436
-# Version    : 1.5.17
+# Version    : 1.5.18
 # Link       : http://biud436.blog.me/220251747366
 #==============================================================================
 # ** 업데이트 로그
 #==============================================================================
+# 2019.04.10 (v1.5.18) :
+# - 라인 확장 관련 버그 수정
 # 2019.03.23 (v1.5.17) :
 # - 오프셋 조절 기능 추가
 # 2019.03.03 (v1.5.16) :
@@ -154,7 +156,7 @@ module RS
   LIST["높이"] = Graphics.height - LIST["Y"]
   
   # 기본 라인 갯수
-  LIST["라인"] = 4
+  LIST["라인"] = 5
   
   LIST["효과음"] = "Attack3"
   
@@ -1975,7 +1977,9 @@ class Game_Interpreter
       @index += 1
       setup_item_choice(@list[@index].parameters)
     end
-    wait_for_message
+    if not multi_line_flag? 
+      wait_for_message
+    end
   end
   #--------------------------------------------------------------------------
   # * 기본형 메시지 추가
@@ -1991,15 +1995,21 @@ class Game_Interpreter
   #--------------------------------------------------------------------------
   def multi_line_add_message
     init_line_height # 라인 초기화
-    until @line_height >= $game_message.line # 라인 읽기
+    until $game_message.texts.size >= $game_message.line # 라인 읽기
       while next_event_code == 401       # 텍스트 데이터
         @index += 1
         $game_message.add(@list[@index].parameters[0])
         add_line_height # 라인 추가
+        break if @line_height >= $game_message.line
       end
-        # 다음 이벤트가 대화창이 아니면 루프 탈출
-        break if next_event_code != 101
+      # 다음 이벤트가 대화창이 아니면 루프 탈출
+      break if next_event_code != 101
     end
+    
+    while next_event_code == 401
+      @index += 1
+    end
+
   end
   #--------------------------------------------------------------------------
   # * 라인 초기화
