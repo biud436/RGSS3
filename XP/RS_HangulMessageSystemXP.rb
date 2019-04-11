@@ -6,61 +6,61 @@
 # 색상 변경 명령을 수행하려면 다음과 같은 텍스트 코드를 사용하세요.
 # 한글 색상명은 색상테이블.ini 파일에서 나와있으며 새로 추가할 수도 있습니다.
 #
-#	\색[빨강]		: "청록","검은색","파란색","짙은회색","자홍색","회색","녹색","밝은녹색",
-#						  "밝은회색", "밤색","감청색","황록색","주황색","주황색","보라색","빨간색",
-#						  "민트색","노란색", "기본색"
-# \색[c_red]	: c_aqua, c_black, c_blue, c_dkgray, c_fuchsia, c_gray, c_green,
-#						  c_lime, c_ltgray, c_maroon, c_navy, c_olive, c_orange, c_purple,
-#						  c_red, c_silver, c_teal, c_white, c_yellow, c_normal
-# \색[기본색]	: 텍스트 색상을 기본색으로 바꿉니다.
-#	\C[0-7]
-#	\#FFFFFF!		: 웹 색상 변환입니다. (예제는 흰색이며 16진수 기준으로 RRGGBB 형식입니다)
+#  \색[빨강]    : "청록","검은색","파란색","짙은회색","자홍색","회색","녹색","밝은녹색",
+#              "밝은회색", "밤색","감청색","황록색","주황색","주황색","보라색","빨간색",
+#              "민트색","노란색", "기본색"
+# \색[c_red]  : c_aqua, c_black, c_blue, c_dkgray, c_fuchsia, c_gray, c_green,
+#              c_lime, c_ltgray, c_maroon, c_navy, c_olive, c_orange, c_purple,
+#              c_red, c_silver, c_teal, c_white, c_yellow, c_normal
+# \색[기본색]  : 텍스트 색상을 기본색으로 바꿉니다.
+#  \C[0-7]
+#  \#FFFFFF!    : 웹 색상 변환입니다. (예제는 흰색이며 16진수 기준으로 RRGGBB 형식입니다)
 #   
-#	\변수[변수 인덱스]
-#	\주인공[주인공 번호]
-#	\파티원[파티원 번호]
+#  \변수[변수 인덱스]
+#  \주인공[주인공 번호]
+#  \파티원[파티원 번호]
 #
-#	\G			: 골드를 표시합니다.
-#	\$			: 골드 윈도우를 띄웁니다.
-#	\!			: 결정키 입력을 받는 퍼지 모드로 전환합니다.
-#	\.			: 10 프레임을 대기합니다 (60프레임에선 15 프레임 대기)
-#	\|			: 40 프레임을 대기합니다 (60프레임에선 60 프레임 대기)
-# \^	  	: 결정키 입력을 받지 않고 다음 텍스트로 넘깁니다.
-#	\<			:  텍스트를 스킵 모드로 전환하여 대기 없이 빠르게 표시합니다.
-#	\>			:  텍스트 스킵 모드를 끄고 원래 속도로 표시합니다.
+#  \G      : 골드를 표시합니다.
+#  \$      : 골드 윈도우를 띄웁니다.
+#  \!      : 결정키 입력을 받는 퍼지 모드로 전환합니다.
+#  \.      : 10 프레임을 대기합니다 (60프레임에선 15 프레임 대기)
+#  \|      : 40 프레임을 대기합니다 (60프레임에선 60 프레임 대기)
+# \^      : 결정키 입력을 받지 않고 다음 텍스트로 넘깁니다.
+#  \<      :  텍스트를 스킵 모드로 전환하여 대기 없이 빠르게 표시합니다.
+#  \>      :  텍스트 스킵 모드를 끄고 원래 속도로 표시합니다.
 #
 # 스킬, 아이템, 무기구, 방어구의 아이콘과 이름을 표시하려면 다음과 같은 명령을 사용하세요.
 #
-#	\SI[스킬 인덱스]
-#	\스킬아이콘[스킬 인덱스]
+#  \SI[스킬 인덱스]
+#  \스킬아이콘[스킬 인덱스]
 #
-#	\II[아이템 인덱스]
-#	\아이템아이콘[아이템 인덱스]
+#  \II[아이템 인덱스]
+#  \아이템아이콘[아이템 인덱스]
 #
-#	\WI[아이템 인덱스]
-#	\무기구아이콘[아이템 인덱스]
+#  \WI[아이템 인덱스]
+#  \무기구아이콘[아이템 인덱스]
 #
-#	\AI[아이템 인덱스]
-#	\방어구아이콘[아이템 인덱스]
+#  \AI[아이템 인덱스]
+#  \방어구아이콘[아이템 인덱스]
 #
-#	\속도![대기프레임]			: 대기 카운트를 설정합니다.
-#	\S[대기프레임]				  : 대기 카운트를 설정합니다.
+#  \속도![대기프레임]      : 대기 카운트를 설정합니다.
+#  \S[대기프레임]          : 대기 카운트를 설정합니다.
 # 
-#	\크기![텍스트크기]			: 텍스트 크기를 변경합니다.
-#	\H[텍스트크기]					: 텍스트 크기를 변경합니다.
-#	<B>텍스트</B>					  : 텍스트를 굵게 표시합니다.
-#	<I>텍스트</I>						: 텍스트를 기울임꼴로 표시합니다.
+#  \크기![텍스트크기]      : 텍스트 크기를 변경합니다.
+#  \H[텍스트크기]          : 텍스트 크기를 변경합니다.
+#  <B>텍스트</B>           : 텍스트를 굵게 표시합니다.
+#  <I>텍스트</I>           : 텍스트를 기울임꼴로 표시합니다.
 #
-#	\이름<러닝은빛>					  : 이름 윈도우를 메시지 윈도우의 왼쪽에 정렬하여 표시합니다.
-# \이름<러닝은빛:left>		: 이름 윈도우를 메시지 윈도우의 왼쪽에 정렬하여 표시합니다.
-#	\이름<러닝은빛:right>			: 이름 윈도우를 메시지 윈도우의 오른쪽에 정렬하여 표시합니다.
-#	\이름<러닝은빛:center>		: 이름 윈도우를 메시지 윈도우의 중앙에 정렬하여 표시합니다.
+#  \이름<러닝은빛>        : 이름 윈도우를 메시지 윈도우의 왼쪽에 정렬하여 표시합니다.
+# \이름<러닝은빛:left>    : 이름 윈도우를 메시지 윈도우의 왼쪽에 정렬하여 표시합니다.
+#  \이름<러닝은빛:right>  : 이름 윈도우를 메시지 윈도우의 오른쪽에 정렬하여 표시합니다.
+#  \이름<러닝은빛:center> : 이름 윈도우를 메시지 윈도우의 중앙에 정렬하여 표시합니다.
 #
 # 메시지 윈도우를 말풍선 모드로 전환하는 명령어입니다.
 #
-#	\말풍선[-1] : 플레이어			:  플레이어 위에 말풍선을 띄웁니다.
-#	\말풍선[0] : 이 이벤트			:  이 이벤트 위에 말풍선을 띄웁니다.
-#	\말풍선[이벤트ID]				    :  이벤트 ID에 해당하는 이벤트 위에 말풍선을 띄웁니다.
+#  \말풍선[-1] : 플레이어      :  플레이어 위에 말풍선을 띄웁니다.
+#  \말풍선[0] : 이 이벤트      :  이 이벤트 위에 말풍선을 띄웁니다.
+#  \말풍선[이벤트ID]           :  이벤트 ID에 해당하는 이벤트 위에 말풍선을 띄웁니다.
 #==============================================================================
 #  ** 버전 로그
 #==============================================================================
@@ -103,7 +103,7 @@ module Graphics
   unless method_defined? :width
     define_method(:width) { @width }
   end
-  unless method_defined? :height	
+  unless method_defined? :height  
     define_method(:height) { @height } 
   end
   
@@ -384,7 +384,7 @@ module RS
     else
       ::Color.new(255, 255, 255, 255)
     end
-  end	
+  end  
 end
 
 #==============================================================================
@@ -582,7 +582,7 @@ class Game_Temp
   end
   #--------------------------------------------------------------------------
   # *  메시지 클리어
-  #--------------------------------------------------------------------------  	
+  #--------------------------------------------------------------------------    
   def message_clear
     @name_position = 0
     @msg_owner = nil
@@ -590,7 +590,7 @@ class Game_Temp
     @line = RS::LIST["라인"]
     @message_speed = 1
     @balloon = -2
-    @ox = 0		
+    @ox = 0    
     
     # XP의 경우, 메시지가 끝나도 메시지 창 표시 위치가 따로 바뀌지 않는다.
     #~ $game_system.message_position = 2
@@ -654,7 +654,7 @@ class Window_Base
   
   #--------------------------------------------------------------------------
   # * 초기화
-  #--------------------------------------------------------------------------	
+  #--------------------------------------------------------------------------  
   alias rs_message_system_window_initialize initialize 
   def initialize(x, y, width, height)
     rs_message_system_window_initialize(x, y, width, height)
@@ -663,17 +663,17 @@ class Window_Base
   end
   #--------------------------------------------------------------------------
   # * 컨텐츠 투명도 조절
-  #--------------------------------------------------------------------------		
+  #--------------------------------------------------------------------------    
   def openness=(n)
     n = [[255, n].min, 0].max 
     self.contents_opacity = n
   end
-  def openness() self.contents_opacity end	
+  def openness() self.contents_opacity end  
   def open?() @opening end
   def close?() @closing end
   #--------------------------------------------------------------------------
   # * 열기
-  #--------------------------------------------------------------------------		
+  #--------------------------------------------------------------------------    
   def open
     @opening = true if self.openness < 255
     @closing = false
@@ -681,7 +681,7 @@ class Window_Base
   end
   #--------------------------------------------------------------------------
   # * 닫기
-  #--------------------------------------------------------------------------		
+  #--------------------------------------------------------------------------    
   def close
     @closing = true if self.openness > 0
     @opening = false
@@ -689,23 +689,23 @@ class Window_Base
   end
   #--------------------------------------------------------------------------
   # * 여는 중
-  #--------------------------------------------------------------------------		
+  #--------------------------------------------------------------------------    
   def update_open
     return if not @opening
     self.openness += 32
     @opening = false if self.openness >= 255
-  end	
+  end  
   #--------------------------------------------------------------------------
   # * 닫는 중
-  #--------------------------------------------------------------------------		
+  #--------------------------------------------------------------------------    
   def update_close
     return if not @closing
     self.openness -= 32
     @closing = false if self.openness <= 0
-  end		
+  end    
   #--------------------------------------------------------------------------
   # * 업데이트
-  #--------------------------------------------------------------------------			
+  #--------------------------------------------------------------------------      
   alias rs_message_system_window_update update
   def update
     rs_message_system_window_update
@@ -731,11 +731,11 @@ class Window_Name < Window_Base
   end
   #--------------------------------------------------------------------------
   # * 업데이트
-  #--------------------------------------------------------------------------   	
+  #--------------------------------------------------------------------------     
   def update
     super
     update_opacity
-    update_position		
+    update_position    
   end
   #--------------------------------------------------------------------------
   # * 투명도 업데이트
@@ -886,7 +886,7 @@ end
 #------------------------------------------------------------------------------
 #  윈도우 메시지 객체를 용도에 맞게 캡슐화 한다.
 #==============================================================================
-class Window_Message < Window_Selectable	
+class Window_Message < Window_Selectable  
   
   include RS::Color
 
@@ -924,15 +924,15 @@ class Window_Message < Window_Selectable
   end
   #--------------------------------------------------------------------------
   # * 플래그 초기화
-  #--------------------------------------------------------------------------   		
+  #--------------------------------------------------------------------------       
   def clear_flags
     @show_fast = false
     @line_show_fast = false
-    @pause_skip = false		
+    @pause_skip = false    
   end  
   #--------------------------------------------------------------------------
   # * 대기
-  #--------------------------------------------------------------------------   	
+  #--------------------------------------------------------------------------     
   def wait(count)
     @wait_count = count
   end
@@ -947,7 +947,7 @@ class Window_Message < Window_Selectable
   #--------------------------------------------------------------------------   
   def window_height
     fitting_height(visible_line_number)
-  end	
+  end  
   #--------------------------------------------------------------------------
   # * 라인 높이
   #--------------------------------------------------------------------------     
@@ -996,7 +996,7 @@ class Window_Message < Window_Selectable
   def set_font(name, size = Font.default_size )
     self.contents.font.name = name
     self.contents.font.size = size
-  end	
+  end  
   #--------------------------------------------------------------------------
   # * 이름 윈도우 생성하기
   #--------------------------------------------------------------------------   
@@ -1016,7 +1016,7 @@ class Window_Message < Window_Selectable
   end
   #--------------------------------------------------------------------------
   # * 이름 윈도우 업데이트
-  #--------------------------------------------------------------------------    	
+  #--------------------------------------------------------------------------      
   def update_name_window
     @name_window.update
   end
@@ -1032,7 +1032,7 @@ class Window_Message < Window_Selectable
   end
   #--------------------------------------------------------------------------
   # * 골드 윈도우 생성
-  #-------------------------------------------------------------------------- 	
+  #--------------------------------------------------------------------------   
   def create_gold_window
     @gold_window = Window_MessageGold.new
     @gold_window.x = Graphics.width - @gold_window.width
@@ -1043,26 +1043,26 @@ class Window_Message < Window_Selectable
       @gold_window.y = 192
     else
       pos = $game_system.message_position || 0
-      @gold_window.y = (pos == 0) ? (Graphics.height - @gold_window.height) : 0			
+      @gold_window.y = (pos == 0) ? (Graphics.height - @gold_window.height) : 0      
     end
     @gold_window.opacity = self.opacity
-    @gold_window.back_opacity = self.back_opacity		
+    @gold_window.back_opacity = self.back_opacity    
     
   end
   #--------------------------------------------------------------------------
   # * 골드 윈도우 업데이트
-  #-------------------------------------------------------------------------- 		
+  #--------------------------------------------------------------------------     
   def update_gold_window
     return if not @gold_window
     @gold_window.update
   end
   #--------------------------------------------------------------------------
   # * 골드 윈도우 제거
-  #-------------------------------------------------------------------------- 		
+  #--------------------------------------------------------------------------     
   def dispose_gold_window
     return if not @gold_window
     @gold_window.dispose
-  end	
+  end  
   #--------------------------------------------------------------------------
   # * 이스케이프 문자 변환
   #--------------------------------------------------------------------------   
@@ -1151,7 +1151,7 @@ class Window_Message < Window_Selectable
   #--------------------------------------------------------------------------
   def to_hex(text)
     text.slice!(RS::CODE["웹색상"])[$1] rescue "#FFFFFF"
-  end	
+  end  
   #--------------------------------------------------------------------------
   # * 기본 폰트 설정
   #--------------------------------------------------------------------------
@@ -1184,7 +1184,7 @@ class Window_Message < Window_Selectable
     contents.font.italic = @message_desc[:font_italic]
     contents.font.color = @message_desc[:font_color]
     @message_desc = nil
-  end	
+  end  
   #--------------------------------------------------------------------------
   # * draw_text_ex
   #--------------------------------------------------------------------------
@@ -1194,13 +1194,13 @@ class Window_Message < Window_Selectable
     pos = {:x => x, :y => y, :new_x => x, :height => calc_line_height(text)}
     process_character(text.slice!(/./m), text, pos) until text.empty?
     return pos[:x] - x
-  end	
+  end  
   #--------------------------------------------------------------------------
   # * text_width_ex
   #--------------------------------------------------------------------------
   def text_width_ex(text)
     draw_text_ex(0, contents_height + 6, text)
-  end	
+  end  
   #--------------------------------------------------------------------------
   # * 라인 높이 계산
   #--------------------------------------------------------------------------
@@ -1221,13 +1221,13 @@ class Window_Message < Window_Selectable
   end
   #--------------------------------------------------------------------------
   # * 텍스트 크기 설정
-  #--------------------------------------------------------------------------      	
+  #--------------------------------------------------------------------------        
   def set_text_size(n)
     self.contents.font.size = n
   end
   #--------------------------------------------------------------------------
   # * 스킬/무기구/방어구 아이콘 그리기
-  #--------------------------------------------------------------------------      	
+  #--------------------------------------------------------------------------        
   def draw_item(pos, item)
     return if not item
     bitmap = RPG::Cache.icon(item.icon_name)
@@ -1256,13 +1256,13 @@ class Window_Message < Window_Selectable
       draw_item(pos, data)
     when 'WI','무기구아이콘'
       data = $data_weapons[obtain_escape_param(text)]
-      draw_item(pos, data)				
+      draw_item(pos, data)        
     when 'AI','방어구아이콘'
       data = $data_weapons[obtain_escape_param(text)]
       draw_item(pos, data)
     when '#'
       color = "##{to_hex(text)}".hex_to_color
-      change_color(color)			    
+      change_color(color)          
     when '$'
       @gold_window.refresh
       @gold_window.open
@@ -1279,7 +1279,7 @@ class Window_Message < Window_Selectable
     when '^' 
       @page_skip = true
     when '속도!','S'
-      set_text_speed(obtain_escape_param(text).to_i)			
+      set_text_speed(obtain_escape_param(text).to_i)      
     when '크기!','H'
       n = obtain_escape_param(text).to_i
       set_text_size(n)
@@ -1290,7 +1290,7 @@ class Window_Message < Window_Selectable
     when 'SI!'
       self.contents.font.italic = true
     when 'EI!'
-      self.contents.font.italic = false			
+      self.contents.font.italic = false      
     when '굵게!'
       self.contents.font.bold = !self.contents.font.bold
     when '이탤릭!'
@@ -1307,7 +1307,7 @@ class Window_Message < Window_Selectable
     else
       RS::LIST["텍스트속도-최소"]
     end
-  end	
+  end  
   #--------------------------------------------------------------------------
   # * 색상 변경
   #--------------------------------------------------------------------------    
@@ -1439,7 +1439,7 @@ class Window_Message < Window_Selectable
   end
   #--------------------------------------------------------------------------
   # * 새로운 페이지 표시
-  #--------------------------------------------------------------------------	
+  #--------------------------------------------------------------------------  
   def new_page(text_state)
         
     self.contents.clear
@@ -1462,7 +1462,7 @@ class Window_Message < Window_Selectable
   end
   #--------------------------------------------------------------------------
   # * 빠른 메시지 표시
-  #--------------------------------------------------------------------------	
+  #--------------------------------------------------------------------------  
   def update_show_fast
     @show_fast = true if Input.trigger?(Input::C)
   end
@@ -1473,7 +1473,7 @@ class Window_Message < Window_Selectable
     
     if @text_state
         
-      until @text.empty?	
+      until @text.empty?  
         
         # 새로운 페이지가 필요한가?
         if needs_new_page(@text_state)
@@ -1501,7 +1501,7 @@ class Window_Message < Window_Selectable
     
     end
     
-  end	
+  end  
   #--------------------------------------------------------------------------
   # * 위치 재설정
   #--------------------------------------------------------------------------
@@ -1545,10 +1545,10 @@ class Window_Message < Window_Selectable
       return false if @position != $game_system.message_position
     end
     return true
-  end	
+  end  
   #--------------------------------------------------------------------------
   # * 새로운 페이지가 필요한가?
-  #--------------------------------------------------------------------------	
+  #--------------------------------------------------------------------------  
   def needs_new_page(pos)
     (pos[:y] + pos[:height]) > self.contents.height
   end
@@ -1565,23 +1565,23 @@ class Window_Message < Window_Selectable
   end
   #--------------------------------------------------------------------------
   # * 특정 선택지 선택 및 취소
-  #--------------------------------------------------------------------------			
+  #--------------------------------------------------------------------------      
   def input_choice
     if Input.trigger?(Input::B)
       if $game_temp.choice_cancel_type > 0
         $game_system.se_play($data_system.cancel_se)
         $game_temp.choice_proc.call($game_temp.choice_cancel_type - 1)
         terminate_message
-      end		
+      end    
     elsif Input.trigger?(Input::C)
       $game_system.se_play($data_system.decision_se)
       $game_temp.choice_proc.call(self.index)
       terminate_message
-    end  			
+    end        
   end
   #--------------------------------------------------------------------------
   # * 숫자 입력
-  #--------------------------------------------------------------------------		
+  #--------------------------------------------------------------------------    
   def input_number
     if @input_number_window != nil
       @input_number_window.update
@@ -1595,12 +1595,12 @@ class Window_Message < Window_Selectable
         @input_number_window.dispose
         @input_number_window = nil
         terminate_message
-      end		
+      end    
     end
-  end	
+  end  
   #--------------------------------------------------------------------------
   # * 프레임 업데이트
-  #--------------------------------------------------------------------------		
+  #--------------------------------------------------------------------------    
   def update
     super
     
@@ -1610,13 +1610,13 @@ class Window_Message < Window_Selectable
     # 루비 계열에선 VXA가 가장 최상위 스타일이지만, 호환이 맞는 VX 스타일로 개편.
     unless @opening or @closing
       if @wait_count > 0 # 대기 카운트가 있는가?
-        @wait_count -= 1						
+        @wait_count -= 1            
       elsif self.pause
-        input_pause									
-      elsif self.active	# 선택지가 활성화되었는가?
+        input_pause                  
+      elsif self.active  # 선택지가 활성화되었는가?
         input_choice
       elsif @input_number_window != nil # 숫자 입력칸이 활성화되었는가?
-        input_number					
+        input_number          
       elsif @text != nil # 텍스트가 있는가?
         update_message
       elsif continue? 
@@ -1634,19 +1634,19 @@ class Window_Message < Window_Selectable
   end
   #--------------------------------------------------------------------------
   # * 선택지 또는 숫자 입력 받기
-  #--------------------------------------------------------------------------		
+  #--------------------------------------------------------------------------    
   def start_input
     if $game_temp.choice_max > 0
       self.active = true
-      self.index = 0			
+      self.index = 0      
       return true 
-    elsif $game_temp.num_input_variable_id > 0		
+    elsif $game_temp.num_input_variable_id > 0    
       digits_max = $game_temp.num_input_digits_max
       number = $game_variables[$game_temp.num_input_variable_id]
       @input_number_window = Window_InputNumber.new(digits_max)
       @input_number_window.number = number
       @input_number_window.x = self.x + 8
-      @input_number_window.y = self.y + $game_temp.num_input_start * 32					
+      @input_number_window.y = self.y + $game_temp.num_input_start * 32          
       return true 
     else
       return false
@@ -1654,14 +1654,14 @@ class Window_Message < Window_Selectable
   end
   #--------------------------------------------------------------------------
   # * 퍼지 시작
-  #--------------------------------------------------------------------------		
+  #--------------------------------------------------------------------------    
   def start_pause
-    @wait_count = 10		
-    self.pause = true				
+    @wait_count = 10    
+    self.pause = true        
   end
   #--------------------------------------------------------------------------
   # * 메시지 끝내기
-  #--------------------------------------------------------------------------	
+  #--------------------------------------------------------------------------  
   def finish_message
     
     unless start_input
@@ -1696,7 +1696,7 @@ class Window_Message < Window_Selectable
     else
       self.cursor_rect.empty
     end
-  end		
+  end    
 end
 
 #==============================================================================
@@ -1791,7 +1791,7 @@ class Window_Message
     setup_owner(sign.to_i)
     update_balloon_position
     $game_temp.word_wrap_enabled = false
-  end	
+  end  
   #--------------------------------------------------------------------------
   # * 말풍선 높이
   #--------------------------------------------------------------------------  
@@ -1801,10 +1801,10 @@ class Window_Message
     height = calc_line_height(text2)
     self.contents.font.size = temp_font_size
     return height
-  end	
+  end  
   #--------------------------------------------------------------------------
   # *  라인 시작 위치
-  #--------------------------------------------------------------------------  	
+  #--------------------------------------------------------------------------    
   def new_line_x
     0
   end
@@ -1859,7 +1859,7 @@ class Window_Message
     
     restore
     
-  end	
+  end  
   #--------------------------------------------------------------------------
   # * 텍스트 매칭 (모든 명령어 제거)
   #--------------------------------------------------------------------------
@@ -1887,7 +1887,7 @@ class Window_Message
     f.gsub!(/\e테두리!/) { "" }
     f.gsub!(/\e그림!\[(.+?)\]/) { "" }
     f
-  end	
+  end  
   #--------------------------------------------------------------------------
   # * 메시지 윈도우의 X좌표를 구합니다
   #--------------------------------------------------------------------------
@@ -1979,7 +1979,7 @@ class Window_Message
     self.opacity = @background == 0 ? RS::LIST["투명도"] : 0
     self.back_opacity = RS::LIST["배경투명도"]
     
-  end			
+  end      
   #--------------------------------------------------------------------------
   # * 소유자를 설정합니다
   #--------------------------------------------------------------------------
@@ -1995,7 +1995,7 @@ class Window_Message
   end
   #--------------------------------------------------------------------------
   # * Move
-  #--------------------------------------------------------------------------	
+  #--------------------------------------------------------------------------  
   def move(x, y, width, height)
     self.x = x
     self.y = y
@@ -2028,10 +2028,10 @@ class Window_Message
     height = fitting_height($game_temp.line || RS::LIST["라인"])
 
     # 위치 및 크기 설정
-    self.move(x, y, width, height)		
+    self.move(x, y, width, height)    
     self.contents = Bitmap.new(width - 32 , height - 32)
     @cursor_width = width - 32
-    update_cursor_rect		
+    update_cursor_rect    
  
-  end		
+  end    
 end
