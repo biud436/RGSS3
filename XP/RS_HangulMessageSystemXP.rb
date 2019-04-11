@@ -1,5 +1,5 @@
 #==============================================================================
-#  ** 한글 메시지 시스템 v1.0.0 (2019.04.11)
+#  ** 한글 메시지 시스템 v1.0.1 (2019.04.12)
 #==============================================================================
 #  ** 사용법
 #==============================================================================
@@ -61,10 +61,23 @@
 #  \말풍선[-1] : 플레이어      :  플레이어 위에 말풍선을 띄웁니다.
 #  \말풍선[0] : 이 이벤트      :  이 이벤트 위에 말풍선을 띄웁니다.
 #  \말풍선[이벤트ID]           :  이벤트 ID에 해당하는 이벤트 위에 말풍선을 띄웁니다.
+#
+# 다음 텍스트 코드로 들여쓰기가 가능합니다.
+#
+#  \들여쓰기[X] 
+#
+# 텍스트 정렬 코드는 다음과 같습니다.
+# <CENTER>가운데</CENTER>
+# <RIGHT>오른쪽</RIGHT>
+# <LEFT>왼쪽</LEFT>
+#
 #==============================================================================
 #  ** 버전 로그
 #==============================================================================
 # 2019.04.11 (v1.0.0) - First Release.
+# 2019.04.12 (v1.0.1) :
+# - 텍스트 들여쓰기 기능 추가
+# - 텍스트 정렬 기능 추가
 #==============================================================================
 # ** 사용 조건
 #==============================================================================
@@ -519,7 +532,7 @@ class Game_Temp
   attr_accessor :balloon
   
   attr_accessor :ox
-	
+  
   attr_accessor :used_text_width_ex
   
   alias rs_message_system_initialize initialize
@@ -528,14 +541,7 @@ class Game_Temp
   #--------------------------------------------------------------------------  
   def initialize
     rs_message_system_initialize
-    @name_position = 0
-    @msg_owner = nil
-    @word_wrap_enabled = RS::LIST["자동개행"]
-    @line = RS::LIST["라인"]
-    @message_speed = 1
-    @balloon = -2
-    @ox = 0
-		@texts = []
+    message_clear
   end
   #--------------------------------------------------------------------------
   # *  메시지 클리어
@@ -544,40 +550,59 @@ class Game_Temp
     @name_position = 0
     @msg_owner = nil
     @word_wrap_enabled = RS::LIST["자동개행"]
-		
-		# 메시지가 끝나면 초기 라인으로 다시 되돌린다.
     @line = RS::LIST["라인"]
     @message_speed = 1
     @balloon = -2
     @ox = 0    
-    
+    @align = []
+    @align_last = 0
     @used_text_width_ex = false
-    
   end
   #--------------------------------------------------------------------------
   # *  add
-  #--------------------------------------------------------------------------  	
-	def add_text(text)
-		text = text || ""
-		@message_text = "" if !@message_text 
-		@message_text += text + "\n"
-	end
+  #--------------------------------------------------------------------------    
+  def add_text(text)
+    text = text || ""
+    @message_text = "" if !@message_text 
+    @message_text += text + "\n"
+  end
   #--------------------------------------------------------------------------
   # *  message_size
-  #--------------------------------------------------------------------------  		
-	def message_size
-		@message_text.split(/[\r\n]+/i).size
-	end
+  #--------------------------------------------------------------------------      
+  def message_size
+    @message_text.split(/[\r\n]+/i).size
+  end
   #--------------------------------------------------------------------------
   # *  Set Line
-  #--------------------------------------------------------------------------  		
-	def line=(val)
-		RS::LIST["라인"] = val
-	end
+  #--------------------------------------------------------------------------      
+  def line=(val)
+    RS::LIST["라인"] = val
+  end
   #--------------------------------------------------------------------------
   # *  Get Line
-  #--------------------------------------------------------------------------  			
-	def line() RS::LIST["라인"] end
+  #--------------------------------------------------------------------------        
+  def line() RS::LIST["라인"] end
+  #--------------------------------------------------------------------------
+  # *  Set Align
+  #-------------------------------------------------------------------------- 
+  def align=(n)
+    @align = @align || []
+    @align_last = n
+    @align.push(n)
+  end
+  #--------------------------------------------------------------------------
+  # *  Get Align
+  #--------------------------------------------------------------------------     
+  def align
+    n = @align.shift
+    n ? n : @align_last
+  end
+  #--------------------------------------------------------------------------
+  # *  Clear Align Last
+  #--------------------------------------------------------------------------       
+  def clear_align_last
+    @align_last = 0
+  end
 end
 
 #==============================================================================
@@ -890,7 +915,7 @@ class Window_Message < Window_Selectable
     create_gold_window
     Color.set_base_color = text_color(0)
     init_color_table
-		set_height(RS::LIST["라인"])
+    set_height(RS::LIST["라인"])
   end
   #--------------------------------------------------------------------------
   # * 멤버 초기화
@@ -901,6 +926,7 @@ class Window_Message < Window_Selectable
     @wait_count = 0
     @opening = false
     @closing = false
+    @is_used_text_width_ex = false
     clear_flags
   end
   #--------------------------------------------------------------------------
@@ -968,12 +994,12 @@ class Window_Message < Window_Selectable
   #--------------------------------------------------------------------------
   # * 컨텐츠 생성
   #--------------------------------------------------------------------------
-	def create_contents
-		self.contents = Bitmap.new(contents_width, contents_height)
-	end
+  def create_contents
+    self.contents = Bitmap.new(contents_width, contents_height)
+  end
   #--------------------------------------------------------------------------
   # * 메시지 윈도우의 높이를 변경합니다
-  #--------------------------------------------------------------------------	
+  #--------------------------------------------------------------------------  
   def set_height(n)
     self.contents.clear
     $game_temp.line = n
@@ -981,7 +1007,7 @@ class Window_Message < Window_Selectable
     create_contents
     set_font(RS::LIST["폰트명"],RS::LIST["폰트크기"])
     reset_window
-  end	
+  end  
   #--------------------------------------------------------------------------
   # * 텍스트 크기
   #--------------------------------------------------------------------------     
@@ -1085,6 +1111,9 @@ class Window_Message < Window_Selectable
     text.gsub!(/<(?:\/B)>/i) { "\eEB!" }
     text.gsub!(/<(?:I)>/i) { "\eSI!" }
     text.gsub!(/<(?:\/I)>/i) { "\eEI!" }
+    text.gsub!(/(?:<LEFT>)/i) { "\eTA[0]" }
+    text.gsub!(/(?:<CENTER>)/i) { "\eTA[1]" }
+    text.gsub!(/(?:<RIGHT>)/i) { "\eTA[2]" }
     
     # 선택지가 있는 경우, 크기 변환을 할 수 없다.
     text.gsub!(/\e크기!\[\d+\]/) { "" } if $game_temp.choice_max > 0
@@ -1093,7 +1122,10 @@ class Window_Message < Window_Selectable
       @name_window.open($1.to_s)
       ""
     end
-    text.gsub!(RS::CODE["말풍선"]) { $game_temp.balloon = $1.to_i; "" }    
+        
+    text.gsub!(/<\/LEFT>|<\/CENTER>|<\/RIGHT>/i) { "\eAEND" }    
+    
+    text.gsub!(RS::CODE["말풍선"]) { $game_temp.balloon = $1.to_i; "" }
     text
   end
   #--------------------------------------------------------------------------
@@ -1190,6 +1222,7 @@ class Window_Message < Window_Selectable
     reset_font_settings
     text = convert_escape_characters(text)
     pos = {:x => x, :y => y, :new_x => x, :height => calc_line_height(text)}
+    do_first_line_align(pos, text)
     process_character(text.slice!(/./m), text, pos) until text.empty?
     return pos[:x] - x
   end  
@@ -1293,7 +1326,84 @@ class Window_Message < Window_Selectable
       self.contents.font.bold = !self.contents.font.bold
     when '이탤릭!'
       self.contents.font.italic = !self.contents.font.italic
+    when '들여쓰기'
+      set_text_indent(pos, obtain_escape_param(text).to_i)
+    when 'AEND'
+      $game_temp.clear_align_last
     end
+  end
+  #--------------------------------------------------------------------------
+  # * 텍스트 폭 계산
+  #--------------------------------------------------------------------------   
+  def calc_text_width(text)
+    temp_text = text.clone
+    temp_text = temp_text.split(/[\r\n]+/i)
+    text_width = 0
+    save
+    @is_used_text_width_ex = true
+    text_width = text_width_ex(temp_text[0])
+    restore
+    @is_used_text_width_ex = false
+    text_width
+  end
+  #--------------------------------------------------------------------------
+  # * 텍스트 정렬
+  #--------------------------------------------------------------------------  
+  def process_align(pos, text)
+    pos = pos || @text_state
+    case $game_temp.align
+    when 1
+      set_align_center(pos, text)
+    when 2
+      set_align_right(pos, text)
+    else
+      set_align_left(pos, text)
+    end
+  end  
+  #--------------------------------------------------------------------------
+  # * 텍스트 정렬
+  #--------------------------------------------------------------------------    
+  def set_align_left(pos, text)
+    padding = 6
+    padding = 8 if $game_temp.choice_max == 0
+    pos[:x] = padding
+    pos[:left] = pos[:x]
+  end
+  #--------------------------------------------------------------------------
+  # * 텍스트 정렬
+  #--------------------------------------------------------------------------    
+  def set_align_center(pos, text)
+    padding = 6
+    tx = calc_text_width(text)
+    pos[:x] = (contents_width + padding) / 2 - tx / 2
+    p contents_width, pos[:x], tx
+    pos[:left] = pos[:x]
+  end  
+  #--------------------------------------------------------------------------
+  # * 텍스트 정렬
+  #--------------------------------------------------------------------------    
+  def set_align_right(pos, text)
+    padding = 6
+    tx = calc_text_width(text)
+    pos[:x] = (contents_width - padding) - tx
+    pos[:left] = pos[:x]
+  end      
+  #--------------------------------------------------------------------------
+  # * 텍스트 정렬
+  #--------------------------------------------------------------------------    
+  def do_first_line_align(pos, text)
+    is_valid = !@is_used_text_width_ex
+    process_align(pos, text) if is_valid
+  end
+  #--------------------------------------------------------------------------
+  # * 텍스트 들여쓰기
+  #--------------------------------------------------------------------------  
+  def set_text_indent(pos, indent)
+    ret = pos[:x] + indent.abs
+    min = indent.abs
+    max = self.contents.width - indent.abs
+    ret = [[ret, indent].max, max].min if ret > self.contents.width
+    pos[:x] = ret
   end
   #--------------------------------------------------------------------------
   # * 텍스트 속도 조절
@@ -1336,6 +1446,8 @@ class Window_Message < Window_Selectable
     if (pos[:y] / line_height) >= $game_temp.choice_start   
       pos[:x] = 8 
     end
+    
+    process_align(pos, text)
     
     pos[:left] = pos[:x]
         
@@ -1412,8 +1524,22 @@ class Window_Message < Window_Selectable
     
   end
   #--------------------------------------------------------------------------
-  # * 메시지 시작
+  # * do_ruby_text_align
   #--------------------------------------------------------------------------
+  def do_ruby_text_align(text)
+    text.split(/[\r\n]+/i).each do |i|
+      i.gsub!(/\eTA\[(\d+)\]/i) { 
+        if !@is_used_text_width_ex
+          $game_temp.align = $1.to_i || 0
+        end
+        ""
+      }        
+    end
+    text.gsub!(/\eTA\[(\d+)\]/i) { "" }
+  end
+  #--------------------------------------------------------------------------
+  # * 메시지 시작
+  #--------------------------------------------------------------------------  
   def start_message
     return if $game_temp.message_text == nil
         
@@ -1422,19 +1548,22 @@ class Window_Message < Window_Selectable
     @item_max = $game_temp.choice_max
     set_font(RS::LIST["폰트명"],RS::LIST["폰트크기"])
     get_balloon_text_rect(@text.clone)
-    @text = convert_escape_characters(@text)
+    @text = convert_escape_characters(@text)  
+    
+    do_ruby_text_align(@text)
     
     @text_state = {}
     @text_state[:x] = 0
     @text_state[:y] = 0
     @text_state[:text] = @text
-		
+    
     reset_window
-		set_height(RS::LIST["라인"])				
-		resize_message_system
-		create_contents   
-		set_font(RS::LIST["폰트명"],RS::LIST["폰트크기"])
+    set_height(RS::LIST["라인"])        
+    resize_message_system
+    create_contents   
+    set_font(RS::LIST["폰트명"],RS::LIST["폰트크기"])
     new_page(@text_state)
+    process_align(@text_state, @text)
     open
     self.visible = true
   end
@@ -1448,7 +1577,7 @@ class Window_Message < Window_Selectable
     clear_flags
     
     @cursor_width = 0
-		
+    
     # 선택지가 있을 때 들여쓰기
     if $game_temp.choice_start == 0
       text_state[:x] = 8
@@ -1706,27 +1835,27 @@ end
 # 말풍선 시스템과 관련되어있습니다.
 #==============================================================================
 class Interpreter
-	def is_valid_multi_line?(line_count)
-		codes = []
-		prev_code = 401
-		for i in (1..7)
-			event_command = @list[@index+i]
-			if event_command
-				codes.push(event_command.code) 
-				prev_code = event_command.code
-				line_count += 1 if [101, 401].include? event_command.code
-			end
-		end
-		# 중간에 선택지가 있으면 멀티 라인이 아님.
-		return false if codes.include?(102)
-		# 숫자 입력 모드가 있으면 멀티 라인이 아님.
-		return false if codes.include?(103)
-		# 표시할 라인이 4이하면 멀티 라인이 아님.
-		return false if $game_temp.line <= 4
-		# 실제 라인이 4보다 작으면 멀티 라인이 아니다.
-		return false if line_count <= 4
-		return true
-	end
+  def is_valid_multi_line?(line_count)
+    codes = []
+    prev_code = 401
+    for i in (1..7)
+      event_command = @list[@index+i]
+      if event_command
+        codes.push(event_command.code) 
+        prev_code = event_command.code
+        line_count += 1 if [101, 401].include? event_command.code
+      end
+    end
+    # 중간에 선택지가 있으면 멀티 라인이 아님.
+    return false if codes.include?(102)
+    # 숫자 입력 모드가 있으면 멀티 라인이 아님.
+    return false if codes.include?(103)
+    # 표시할 라인이 4이하면 멀티 라인이 아님.
+    return false if $game_temp.line <= 4
+    # 실제 라인이 4보다 작으면 멀티 라인이 아니다.
+    return false if line_count <= 4
+    return true
+  end
   #--------------------------------------------------------------------------
   # * Show Text
   #--------------------------------------------------------------------------
@@ -1745,57 +1874,57 @@ class Interpreter
     # Set message text on first line
     $game_temp.message_text = @list[@index].parameters[0] + "\n"
     line_count = 1
-		
-		
-		if is_valid_multi_line?(line_count)
-			until $game_temp.message_size >= $game_temp.line
-				# 101, 401, 401, 401, 101, 401, 401, 401
-				while [101, 401].include?(@list[@index+1].code)
-					@index += 1
-					$game_temp.add_text(@list[@index].parameters[0])
-					line_count += 1
-					break if line_count >= $game_temp.line
-				end
-				break if not @list[@index+1]
-				break if not [101, 401].include? @list[@index+1].code
-			end
-		else
-			# 루프
-			loop do
-				if @list[@index+1].code == 401
-					$game_temp.message_text += @list[@index+1].parameters[0] + "\n"
-					line_count += 1
-				else
-					# 선택지
-					if @list[@index+1].code == 102
-						# 각 문자["예, 아니오"]가 메시지 창에 직적접으로 추가된다. (라인 하나씩을 차지한다)
-						if @list[@index+1].parameters[0].size <= 4 - line_count
-							# Advance index
-							@index += 1
-							# Choices setup
-							$game_temp.choice_start = line_count
-							setup_choices(@list[@index].parameters)
-						end										
-					# 숫자 입력 모드 (라인 하나를 차지한다)
-					elsif @list[@index+1].code == 103
-						# If number input window fits on screen
-						if line_count < 4
-							# Advance index
-							@index += 1
-							# Number input setup
-							$game_temp.num_input_start = line_count
-							$game_temp.num_input_variable_id = @list[@index].parameters[0]
-							$game_temp.num_input_digits_max = @list[@index].parameters[1]
-						end
-					end
-					# Continue
-					return true
-				end
-				# Advance index
-				@index += 1
-			end			
-		end
-	
+    
+    
+    if is_valid_multi_line?(line_count)
+      until $game_temp.message_size >= $game_temp.line
+        # 101, 401, 401, 401, 101, 401, 401, 401
+        while [101, 401].include?(@list[@index+1].code)
+          @index += 1
+          $game_temp.add_text(@list[@index].parameters[0])
+          line_count += 1
+          break if line_count >= $game_temp.line
+        end
+        break if not @list[@index+1]
+        break if not [101, 401].include? @list[@index+1].code
+      end
+    else
+      # 루프
+      loop do
+        if @list[@index+1].code == 401
+          $game_temp.message_text += @list[@index+1].parameters[0] + "\n"
+          line_count += 1
+        else
+          # 선택지
+          if @list[@index+1].code == 102
+            # 각 문자["예, 아니오"]가 메시지 창에 직적접으로 추가된다. (라인 하나씩을 차지한다)
+            if @list[@index+1].parameters[0].size <= 4 - line_count
+              # Advance index
+              @index += 1
+              # Choices setup
+              $game_temp.choice_start = line_count
+              setup_choices(@list[@index].parameters)
+            end                    
+          # 숫자 입력 모드 (라인 하나를 차지한다)
+          elsif @list[@index+1].code == 103
+            # If number input window fits on screen
+            if line_count < 4
+              # Advance index
+              @index += 1
+              # Number input setup
+              $game_temp.num_input_start = line_count
+              $game_temp.num_input_variable_id = @list[@index].parameters[0]
+              $game_temp.num_input_digits_max = @list[@index].parameters[1]
+            end
+          end
+          # Continue
+          return true
+        end
+        # Advance index
+        @index += 1
+      end      
+    end
+  
   end
 end
 
