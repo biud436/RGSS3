@@ -514,13 +514,12 @@ class Game_Temp
   attr_accessor :name_position
   attr_accessor :msg_owner
   attr_accessor :word_wrap_enabled
-  attr_accessor :line
   
   attr_accessor :message_speed
   attr_accessor :balloon
   
   attr_accessor :ox
-  
+	
   attr_accessor :used_text_width_ex
   
   alias rs_message_system_initialize initialize
@@ -536,6 +535,7 @@ class Game_Temp
     @message_speed = 1
     @balloon = -2
     @ox = 0
+		@texts = []
   end
   #--------------------------------------------------------------------------
   # *  메시지 클리어
@@ -555,6 +555,29 @@ class Game_Temp
     @used_text_width_ex = false
     
   end
+  #--------------------------------------------------------------------------
+  # *  add
+  #--------------------------------------------------------------------------  	
+	def add_text(text)
+		@message_text = "" if !@message_text 
+		@message_text += text + "\n"
+	end
+  #--------------------------------------------------------------------------
+  # *  message_size
+  #--------------------------------------------------------------------------  		
+	def message_size
+		@message_text.split(/[\r\n]+/i).size
+	end
+  #--------------------------------------------------------------------------
+  # *  Set Line
+  #--------------------------------------------------------------------------  		
+	def line=(val)
+		RS::LIST["라인"] = val
+	end
+  #--------------------------------------------------------------------------
+  # *  Get Line
+  #--------------------------------------------------------------------------  			
+	def line() RS::LIST["라인"] end
 end
 
 #==============================================================================
@@ -867,6 +890,7 @@ class Window_Message < Window_Selectable
     create_gold_window
     Color.set_base_color = text_color(0)
     init_color_table
+		set_height(RS::LIST["라인"])
   end
   #--------------------------------------------------------------------------
   # * 멤버 초기화
@@ -941,6 +965,23 @@ class Window_Message < Window_Selectable
   def fitting_height(line_number)
     line_number * line_height + standard_padding * 2
   end  
+  #--------------------------------------------------------------------------
+  # * 컨텐츠 생성
+  #--------------------------------------------------------------------------
+	def create_contents
+		self.contents = Bitmap.new(contents_width, contents_height)
+	end
+  #--------------------------------------------------------------------------
+  # * 메시지 윈도우의 높이를 변경합니다
+  #--------------------------------------------------------------------------	
+  def set_height(n)
+    self.contents.clear
+    $game_temp.line = n
+    self.height = fitting_height(n)
+    create_contents
+    set_font(RS::LIST["폰트명"],RS::LIST["폰트크기"])
+    reset_window
+  end	
   #--------------------------------------------------------------------------
   # * 텍스트 크기
   #--------------------------------------------------------------------------     
@@ -1387,9 +1428,12 @@ class Window_Message < Window_Selectable
     @text_state[:x] = 0
     @text_state[:y] = 0
     @text_state[:text] = @text
-    
+		
     reset_window
-    resize_message_system
+		set_height(RS::LIST["라인"])				
+		resize_message_system
+		create_contents   
+		set_font(RS::LIST["폰트명"],RS::LIST["폰트크기"])
     new_page(@text_state)
     open
     self.visible = true
@@ -1404,7 +1448,7 @@ class Window_Message < Window_Selectable
     clear_flags
     
     @cursor_width = 0
-    
+		
     # 선택지가 있을 때 들여쓰기
     if $game_temp.choice_start == 0
       text_state[:x] = 8
@@ -1662,6 +1706,27 @@ end
 # 말풍선 시스템과 관련되어있습니다.
 #==============================================================================
 class Interpreter
+	def is_valid_multi_line?(line_count)
+		codes = []
+		prev_code = 401
+		for i in (1..7)
+			event_command = @list[@index+i]
+			if event_command
+				codes.push(event_command.code) 
+				prev_code = event_command.code
+				line_count += 1 if [101, 401].include? event_command.code
+			end
+		end
+		# 중간에 선택지가 있으면 멀티 라인이 아님.
+		return false if codes.include?(102)
+		# 숫자 입력 모드가 있으면 멀티 라인이 아님.
+		return false if codes.include?(103)
+		# 표시할 라인이 4이하면 멀티 라인이 아님.
+		return false if $game_temp.line <= 4
+		# 실제 라인이 4보다 작으면 멀티 라인이 아니다.
+		return false if line_count <= 4
+		return true
+	end
   #--------------------------------------------------------------------------
   # * Show Text
   #--------------------------------------------------------------------------
@@ -1680,43 +1745,56 @@ class Interpreter
     # Set message text on first line
     $game_temp.message_text = @list[@index].parameters[0] + "\n"
     line_count = 1
-    # Loop
-    loop do
-      # If next event command text is on the second line or after
-      if @list[@index+1].code == 401
-        # Add the second line or after to message_text
-        $game_temp.message_text += @list[@index+1].parameters[0] + "\n"
-        line_count += 1
-      # If event command is not on the second line or after
-      else
-        # If next event command is show choices
-        if @list[@index+1].code == 102
-          # If choices fit on screen
-          if @list[@index+1].parameters[0].size <= 4 - line_count
-            # Advance index
-            @index += 1
-            # Choices setup
-            $game_temp.choice_start = line_count
-            setup_choices(@list[@index].parameters)
-          end
-        # If next event command is input number
-        elsif @list[@index+1].code == 103
-          # If number input window fits on screen
-          if line_count < 4
-            # Advance index
-            @index += 1
-            # Number input setup
-            $game_temp.num_input_start = line_count
-            $game_temp.num_input_variable_id = @list[@index].parameters[0]
-            $game_temp.num_input_digits_max = @list[@index].parameters[1]
-          end
-        end
-        # Continue
-        return true
-      end
-      # Advance index
-      @index += 1
-    end
+		
+		if is_valid_multi_line?(line_count)
+			until $game_temp.message_size >= $game_temp.line
+				while @list[@index+1].code == 401
+					@index += 1
+					$game_temp.add_text(@list[@index].parameters[0])
+					line_count += 1
+					@index += 1 if @list[@index+1].code == 101
+					break if line_count >= $game_temp.line
+				end
+				break if not @list[@index+1]
+				break if @list[@index+1].code != 101
+			end
+		else
+			# 루프
+			loop do
+				if @list[@index+1].code == 401
+					$game_temp.message_text += @list[@index+1].parameters[0] + "\n"
+					line_count += 1
+				else
+					# 선택지
+					if @list[@index+1].code == 102
+						# 각 문자["예, 아니오"]가 메시지 창에 직적접으로 추가된다. (라인 하나씩을 차지한다)
+						if @list[@index+1].parameters[0].size <= 4 - line_count
+							# Advance index
+							@index += 1
+							# Choices setup
+							$game_temp.choice_start = line_count
+							setup_choices(@list[@index].parameters)
+						end										
+					# 숫자 입력 모드 (라인 하나를 차지한다)
+					elsif @list[@index+1].code == 103
+						# If number input window fits on screen
+						if line_count < 4
+							# Advance index
+							@index += 1
+							# Number input setup
+							$game_temp.num_input_start = line_count
+							$game_temp.num_input_variable_id = @list[@index].parameters[0]
+							$game_temp.num_input_digits_max = @list[@index].parameters[1]
+						end
+					end
+					# Continue
+					return true
+				end
+				# Advance index
+				@index += 1
+			end			
+		end
+	
   end
 end
 
@@ -1988,7 +2066,7 @@ class Window_Message
     self.move(x, y, width, height)    
     self.contents = Bitmap.new(width - 32 , height - 32)
     @cursor_width = width - 32
-    update_cursor_rect    
+    update_cursor_rect
  
   end    
 end
