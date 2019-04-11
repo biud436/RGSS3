@@ -544,13 +544,12 @@ class Game_Temp
     @name_position = 0
     @msg_owner = nil
     @word_wrap_enabled = RS::LIST["자동개행"]
+		
+		# 메시지가 끝나면 초기 라인으로 다시 되돌린다.
     @line = RS::LIST["라인"]
     @message_speed = 1
     @balloon = -2
     @ox = 0    
-    
-    # XP의 경우, 메시지가 끝나도 메시지 창 표시 위치가 따로 바뀌지 않는다.
-    #~ $game_system.message_position = 2
     
     @used_text_width_ex = false
     
@@ -559,6 +558,7 @@ class Game_Temp
   # *  add
   #--------------------------------------------------------------------------  	
 	def add_text(text)
+		text = text || ""
 		@message_text = "" if !@message_text 
 		@message_text += text + "\n"
 	end
@@ -1746,17 +1746,18 @@ class Interpreter
     $game_temp.message_text = @list[@index].parameters[0] + "\n"
     line_count = 1
 		
+		
 		if is_valid_multi_line?(line_count)
 			until $game_temp.message_size >= $game_temp.line
-				while @list[@index+1].code == 401
+				# 101, 401, 401, 401, 101, 401, 401, 401
+				while [101, 401].include?(@list[@index+1].code)
 					@index += 1
 					$game_temp.add_text(@list[@index].parameters[0])
 					line_count += 1
-					@index += 1 if @list[@index+1].code == 101
 					break if line_count >= $game_temp.line
 				end
 				break if not @list[@index+1]
-				break if @list[@index+1].code != 101
+				break if not [101, 401].include? @list[@index+1].code
 			end
 		else
 			# 루프
