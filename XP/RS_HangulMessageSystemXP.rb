@@ -1111,9 +1111,6 @@ class Window_Message < Window_Selectable
     text.gsub!(/<(?:\/B)>/i) { "\eEB!" }
     text.gsub!(/<(?:I)>/i) { "\eSI!" }
     text.gsub!(/<(?:\/I)>/i) { "\eEI!" }
-    text.gsub!(/(?:<LEFT>)/i) { "\eTA[0]" }
-    text.gsub!(/(?:<CENTER>)/i) { "\eTA[1]" }
-    text.gsub!(/(?:<RIGHT>)/i) { "\eTA[2]" }
     
     # 선택지가 있는 경우, 크기 변환을 할 수 없다.
     text.gsub!(/\e크기!\[\d+\]/) { "" } if $game_temp.choice_max > 0
@@ -1222,7 +1219,7 @@ class Window_Message < Window_Selectable
     reset_font_settings
     text = convert_escape_characters(text)
     pos = {:x => x, :y => y, :new_x => x, :height => calc_line_height(text)}
-    do_first_line_align(pos, text)
+    do_first_line_align(pos, text) if not @is_used_text_width_ex
     process_character(text.slice!(/./m), text, pos) until text.empty?
     return pos[:x] - x
   end  
@@ -1231,7 +1228,7 @@ class Window_Message < Window_Selectable
   #--------------------------------------------------------------------------
   def text_width_ex(text)
     draw_text_ex(0, contents_height + 6, text)
-  end  
+  end
   #--------------------------------------------------------------------------
   # * 라인 높이 계산
   #--------------------------------------------------------------------------
@@ -1356,27 +1353,15 @@ class Window_Message < Window_Selectable
       set_align_center(pos, text)
     when 2
       set_align_right(pos, text)
-    else
-      set_align_left(pos, text)
     end
   end  
-  #--------------------------------------------------------------------------
-  # * 텍스트 정렬
-  #--------------------------------------------------------------------------    
-  def set_align_left(pos, text)
-    padding = 6
-    padding = 8 if $game_temp.choice_max == 0
-    pos[:x] = padding
-    pos[:left] = pos[:x]
-  end
   #--------------------------------------------------------------------------
   # * 텍스트 정렬
   #--------------------------------------------------------------------------    
   def set_align_center(pos, text)
     padding = 6
     tx = calc_text_width(text)
-    pos[:x] = (contents_width + padding) / 2 - tx / 2
-    p contents_width, pos[:x], tx
+    pos[:x] = (self.contents.width + padding) / 2 - tx / 2
     pos[:left] = pos[:x]
   end  
   #--------------------------------------------------------------------------
@@ -1385,9 +1370,9 @@ class Window_Message < Window_Selectable
   def set_align_right(pos, text)
     padding = 6
     tx = calc_text_width(text)
-    pos[:x] = (contents_width - padding) - tx
+    pos[:x] = (self.contents.width - padding) - tx
     pos[:left] = pos[:x]
-  end      
+  end
   #--------------------------------------------------------------------------
   # * 텍스트 정렬
   #--------------------------------------------------------------------------    
@@ -1446,14 +1431,14 @@ class Window_Message < Window_Selectable
     if (pos[:y] / line_height) >= $game_temp.choice_start   
       pos[:x] = 8 
     end
-    
-    process_align(pos, text)
-    
+        
     pos[:left] = pos[:x]
         
     if needs_new_page(pos) and !@text.empty?
       start_pause
     end
+    
+    process_align(pos, text) if !@is_used_text_width_ex
      
   end
   #--------------------------------------------------------------------------
@@ -1527,15 +1512,21 @@ class Window_Message < Window_Selectable
   # * do_ruby_text_align
   #--------------------------------------------------------------------------
   def do_ruby_text_align(text)
+    return text if @is_used_text_width_ex
     text.split(/[\r\n]+/i).each do |i|
+      i.gsub!(/(?:<LEFT>)/i) { "\eTA[0]" }
+      i.gsub!(/(?:<CENTER>)/i) { "\eTA[1]" }
+      i.gsub!(/(?:<RIGHT>)/i) { "\eTA[2]" }      
       i.gsub!(/\eTA\[(\d+)\]/i) { 
-        if !@is_used_text_width_ex
-          $game_temp.align = $1.to_i || 0
-        end
+        $game_temp.align = $1.to_i || 0
         ""
-      }        
+      }       
     end
+    text.gsub!(/(?:<LEFT>)/i) { "" }
+    text.gsub!(/(?:<CENTER>)/i) { "" }
+    text.gsub!(/(?:<RIGHT>)/i) { "" }         
     text.gsub!(/\eTA\[(\d+)\]/i) { "" }
+    text
   end
   #--------------------------------------------------------------------------
   # * 메시지 시작
@@ -1550,7 +1541,7 @@ class Window_Message < Window_Selectable
     get_balloon_text_rect(@text.clone)
     @text = convert_escape_characters(@text)  
     
-    do_ruby_text_align(@text)
+    @text = do_ruby_text_align(@text)
     
     @text_state = {}
     @text_state[:x] = 0
@@ -1563,8 +1554,8 @@ class Window_Message < Window_Selectable
     create_contents   
     set_font(RS::LIST["폰트명"],RS::LIST["폰트크기"])
     new_page(@text_state)
-    process_align(@text_state, @text)
-    open
+    process_align(@text_state, @text)        
+    open    
     self.visible = true
   end
   #--------------------------------------------------------------------------
@@ -1582,12 +1573,11 @@ class Window_Message < Window_Selectable
     if $game_temp.choice_start == 0
       text_state[:x] = 8
     else
-      text_state[:y] = 0
+      text_state[:x] = 0
     end
     
     text_state[:left] = 0
     text_state[:height] = calc_line_height(text_state[:text])
-  
     
   end
   #--------------------------------------------------------------------------
