@@ -1,5 +1,5 @@
 #==============================================================================
-#  ** 한글 메시지 시스템 v1.0.2 (2019.04.12)
+#  ** 한글 메시지 시스템 v1.0.3 (2019.04.12)
 #==============================================================================
 #  ** 사용법
 #==============================================================================
@@ -75,10 +75,11 @@
 #  ** 버전 로그
 #==============================================================================
 # 2019.04.11 (v1.0.0) - First Release.
-# 2019.04.12 (v1.0.2) :
+# 2019.04.12 (v1.0.3) :
 # - 텍스트 들여쓰기 기능 추가
 # - 텍스트 정렬 기능 추가
 # - new_page 메서드에서 y 값을 0으로 설정
+# - 이름 윈도우에서 색상 변경 등 일부 텍스트 코드 사용 가능 (들여쓰기 제외)
 #==============================================================================
 # ** 사용 조건
 #==============================================================================
@@ -840,25 +841,149 @@ class Window_Name < Window_Base
     self.visible = false
   end
   #--------------------------------------------------------------------------
+  # * 액터 명 반환
+  #--------------------------------------------------------------------------
+  def actor_name(n)
+    actor = n >= 1 ? $game_actors[n] : nil
+    actor ? actor.name : ""
+  end  
+  #--------------------------------------------------------------------------
+  # * 파티 멤버명 반환
+  #--------------------------------------------------------------------------
+  def party_member_name(n)
+    actor = n >= 1 ? $game_party.actors[n - 1] : nil
+    actor ? actor.name : ""
+  end    
+  #--------------------------------------------------------------------------
   # * 텍스트 폭
   #--------------------------------------------------------------------------    
   def text_width(text)
+    text.gsub!(/\\/)            { "\e" }
+    text.gsub!(/\e\e/)          { "\\" }    
+    text.gsub!(/(?:\eV|\e변수)\[(\d+)\]/i) { $game_variables[$1.to_i] }
+    text.gsub!(/(?:\eV|\e변수)\[(\d+)\]/i) { $game_variables[$1.to_i] }    
+    text.gsub!(/(?:\eN|\e주인공)\[(\d+)\]/i) { actor_name($1.to_i) }
+    text.gsub!(/(?:\eP|\e파티원)\[(\d+)\]/i) { party_member_name($1.to_i) }
+    text.gsub!(/(?:\eG|\e골드)/i) { $data_system.words.gold }
+    text.gsub!(/(?:\e아이템)\[(\d+)\]/i) { $data_items[$1.to_i].name || "" }
+    text.gsub!(/(?:\e스킬)\[(\d+)\]/i) { $data_skills[$1.to_i].name || "" }
+    text.gsub!(/(?:\e무기구)\[(\d+)\]/i) { $data_weapons[$1.to_i].name || "" }
+    text.gsub!(/(?:\e방어구)\[(\d+)\]/i) { $data_armors[$1.to_i].name || "" }
+    text.gsub!(/(?:\e적)\[(\d+)\]/i) { $data_enemies[$1.to_i].name || "" }
+    text.gsub!(/(?:\e직업)\[(\d+)\]/i) { $data_classes[$1.to_i].name || "" }
+    text.gsub!(/(?:\e상태)\[(\d+)\]/i) { $data_states[$1.to_i].name || "" }
+    text.gsub!(/<(?:B)>/i) { "\eSB!" }
+    text.gsub!(/<(?:\/B)>/i) { "\eEB!" }
+    text.gsub!(/<(?:I)>/i) { "\eSI!" }
+    text.gsub!(/<(?:\/I)>/i) { "\eEI!" }
     self.contents.text_size(text).width
   end
   #--------------------------------------------------------------------------
-  # * 이름 묘화
+  # * 문자 처리
+  #--------------------------------------------------------------------------
+  def obtain_escape_code(text)
+    text.slice!(RS::CODE["명령어"])
+  end
+  #--------------------------------------------------------------------------
+  # * 텍스트 코드에서 정수 값 취득
+  #--------------------------------------------------------------------------
+  def obtain_escape_param(text)
+    text.slice!(/^\[\d+\]/)[/\d+/].to_i rescue 0
+  end  
+  #--------------------------------------------------------------------------
+  # * 색상 코드 처리
+  #--------------------------------------------------------------------------
+  def obtain_name_color(text)
+    text.slice!(RS::CODE["이름색상코드"])[$1]
+  end  
+  #--------------------------------------------------------------------------
+  # * 색상 변경
   #--------------------------------------------------------------------------    
-  def update_name
-    self.contents.draw_text(0, 0, contents_width, line_height, @name, 1)    
+  def change_color(color)
+    if color.is_a?(Integer) and color >= 0 and color <= 7
+      self.contents.font.color = text_color(color)
+    elsif color.is_a?(Color)
+      self.contents.font.color = color
+    end
+  end  
+  #--------------------------------------------------------------------------
+  # * 스킬/무기구/방어구 아이콘 그리기
+  #--------------------------------------------------------------------------        
+  def draw_item(pos, item)
+    return if not item
+    bitmap = RPG::Cache.icon(item.icon_name)
+    rect = Rect.new(0, 0, 24, 24)
+    self.contents.blt(pos[:x], pos[:y] + 4, bitmap, rect, RS::LIST["투명도"])
+    pos[:x] += rect.width
+    w = self.contents.text_size(item.name).width
+    self.contents.draw_text(pos[:x], pos[:y], w, pos[:height], item.name, 0)
+    pos[:x] += w
+  end  
+  #--------------------------------------------------------------------------
+  # * draw_text_ex
+  #--------------------------------------------------------------------------   
+  def draw_text_ex(x, y, text)
+    
+    pos = {}
+    pos[:x] = x
+    pos[:y] = y
+    pos[:left] = x
+    pos[:height] = line_height
+    
+    until text.empty?
+      
+      c = text.slice!(/./m)
+
+      if c == "\e"
+        case obtain_escape_code(text)
+        when 'C'
+          change_color(obtain_escape_param(text))
+        when '색'
+          color = Color.gm_color(obtain_name_color(text))
+          change_color(color)      
+        when '#'
+          color = "##{to_hex(text)}".hex_to_color
+          change_color(color)   
+        when 'SI','스킬아이콘'
+          data = $data_skills[obtain_escape_param(text)]
+          draw_item(pos, data)
+        when 'II','아이템아이콘'
+          data = $data_items[obtain_escape_param(text)]
+          draw_item(pos, data)
+        when 'WI','무기구아이콘'
+          data = $data_weapons[obtain_escape_param(text)]
+          draw_item(pos, data)        
+        when 'AI','방어구아이콘'
+          data = $data_weapons[obtain_escape_param(text)]
+          draw_item(pos, data)          
+        when 'SB!'
+          self.contents.font.bold = true
+        when 'EB!'
+          self.contents.font.bold = false
+        when 'SI!'
+          self.contents.font.italic = true
+        when 'EI!'
+          self.contents.font.italic = false
+        end
+      else
+        w = self.contents.text_size(c).width
+        self.contents.draw_text(4 + pos[:x], pos[:y], w * 2, pos[:height], c)
+        pos[:x] += w 
+      end        
+    end      
+    
+    return pos[:x] - x
+    
   end
   #--------------------------------------------------------------------------
   # * 재묘화
   #--------------------------------------------------------------------------    
   def refresh
-    tw = text_width(@name) * 2
-    resize_window(tw)
-    self.contents.clear      
-    update_name
+    tw = draw_text_ex(0, contents_height + 6, @name.clone)
+    resize_window(tw * 2)
+    self.contents.clear     
+    text_padding = 4
+    draw_text_ex((contents_width - text_padding) / 2 - tw / 2, 0, @name)
   end
   #--------------------------------------------------------------------------
   # * 폰트 설정
