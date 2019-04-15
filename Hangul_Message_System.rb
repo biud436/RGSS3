@@ -1,106 +1,19 @@
 #==============================================================================
-# ** Hangul Message System 1.5.18 (RPG Maker VX Ace)
+# ** Hangul Message System 1.5.19 (RPG Maker VX Ace)
 #==============================================================================
 # Name       : Hangul Message System
 # Author     : biud436
-# Version    : 1.5.18
+# Version    : 1.5.19
 # Link       : http://biud436.blog.me/220251747366
-#==============================================================================
-# ** 사용법
-#==============================================================================
-# \이름<이벤트명>
-# \말풍선[이벤트의 ID]
-# \말풍선[0]
-# \말풍선[-1]
-# \변수[인덱스]
-# \골드
-# \주인공[인덱스]
-# \파티원[인덱스]
-# \색[색상명]
-# \효과음![효과음명]
-# \테두리색![색상명]
-# \#색상코드!
-# \굵게!
-# \이탤릭!
-# \속도![텍스트의 속도]
-# \그림![그림파일명]
-# \자동개행!
-# 
-# 색상 변경 명령을 수행하려면 다음과 같은 텍스트 코드를 사용하세요.
-# 한글 색상명은 색상테이블.ini 파일에서 나와있으며 새로 추가할 수도 있습니다.
-#
-#  \색[빨강]    : "청록","검은색","파란색","짙은회색","자홍색","회색","녹색","밝은녹색",
-#              "밝은회색", "밤색","감청색","황록색","주황색","주황색","보라색","빨간색",
-#              "민트색","노란색", "기본색"
-# \색[c_red]  : c_aqua, c_black, c_blue, c_dkgray, c_fuchsia, c_gray, c_green,
-#              c_lime, c_ltgray, c_maroon, c_navy, c_olive, c_orange, c_purple,
-#              c_red, c_silver, c_teal, c_white, c_yellow, c_normal
-# \색[기본색]  : 텍스트 색상을 기본색으로 바꿉니다.
-# \색[0-32]
-# \#FFFFFF!    : 웹 색상 변환입니다. (예제는 흰색이며 16진수 기준으로 RRGGBB 형식입니다)
-#   
-#  \변수[변수 인덱스]
-#  \주인공[주인공 번호]
-#  \파티원[파티원 번호]
-#
-#  \G      : 골드를 표시합니다.
-#  \I      : 아이콘을 표시합니다.
-#  \$      : 골드 윈도우를 띄웁니다.
-#  \!      : 결정키 입력을 받는 퍼지 모드로 전환합니다.
-#  \.      : 15 프레임을 대기합니다.
-#  \|      : 60 프레임을 대기합니다.
-# \^      : 결정키 입력을 받지 않고 다음 텍스트로 넘깁니다.
-#  \<      :  텍스트를 스킵 모드로 전환하여 대기 없이 빠르게 표시합니다.
-#  \>      :  텍스트 스킵 모드를 끄고 원래 속도로 표시합니다.
-#
-# 스킬, 아이템, 무기구, 방어구의 아이콘과 이름을 표시하려면 다음과 같은 명령을 사용하세요.
-#
-#  \SI[스킬 인덱스]
-#  \스킬아이콘[스킬 인덱스]
-#
-#  \II[아이템 인덱스]
-#  \아이템아이콘[아이템 인덱스]
-#
-#  \WI[아이템 인덱스]
-#  \무기구아이콘[아이템 인덱스]
-#
-#  \AI[아이템 인덱스]
-#  \방어구아이콘[아이템 인덱스]
-#
-#  \속도![대기프레임]      : 대기 카운트를 설정합니다.
-#  \S[대기프레임]          : 대기 카운트를 설정합니다.
-# 
-#  \크기![텍스트크기]      : 텍스트 크기를 변경합니다.
-#  \H[텍스트크기]          : 텍스트 크기를 변경합니다.
-#  <B>텍스트</B>           : 텍스트를 굵게 표시합니다.
-#  <I>텍스트</I>           : 텍스트를 기울임꼴로 표시합니다.
-#
-#  \이름<러닝은빛>        : 이름 윈도우를 메시지 윈도우의 왼쪽에 정렬하여 표시합니다.
-# \이름<러닝은빛:left>    : 이름 윈도우를 메시지 윈도우의 왼쪽에 정렬하여 표시합니다.
-#  \이름<러닝은빛:right>  : 이름 윈도우를 메시지 윈도우의 오른쪽에 정렬하여 표시합니다.
-#  \이름<러닝은빛:center> : 이름 윈도우를 메시지 윈도우의 중앙에 정렬하여 표시합니다.
-#
-# 메시지 윈도우를 말풍선 모드로 전환하는 명령어입니다.
-#
-#  \말풍선[-1] : 플레이어      :  플레이어 위에 말풍선을 띄웁니다.
-#  \말풍선[0] : 이 이벤트      :  이 이벤트 위에 말풍선을 띄웁니다.
-#  \말풍선[이벤트ID]           :  이벤트 ID에 해당하는 이벤트 위에 말풍선을 띄웁니다.
-#==============================================================================
-# ** 노트 태그
-#==============================================================================
-# 대화가 시작되기 전에 다음 노트 태그를 설정하면 메시지 설정을 바꿀 수 있습니다.
-#
-# <대화창 윈도우스킨:Window>
-# <이름 윈도우스킨:Window>
-# <대화창 투명도:255>
-#
-#==============================================================================
-# ** Terms of Use
-#==============================================================================
-# Free for commercial and non-commercial use
 #==============================================================================
 # ** 업데이트 로그
 #==============================================================================
+# 2019.04.15 (v1.5.19) :
+# - 부가 기능이었던 텍스트 정렬 애드온을 본 스크립트에 통합하였음.
+# - <LEFT>, <CENTER>, <RIGHT> 태그 사용 가능.
+# - 문장의 표시 이외에도 스크롤 텍스트에서도 텍스트 정렬 기능 사용 가능.
+# - 자세한 오류 스택을 표시하는 기능을 제거하였음.
+# - 스킬/아이템/무기구/방어구 아이콘 텍스트 표시 기능 추가.
 # 2019.04.10 (v1.5.18) :
 # - 라인 확장 관련 버그 수정
 # - 라인 확장 시 선택지 위치
@@ -169,6 +82,49 @@
 # 2015.01.26 - 버그 픽스
 # 2015.01.25 - 스크립트 통합
 #==============================================================================
+# ** 사용법
+#==============================================================================
+# \이름<이벤트명>
+# \말풍선[이벤트의 ID]
+# \말풍선[0]
+# \말풍선[-1]
+# \변수[인덱스]
+# \골드
+# \주인공[인덱스]
+# \파티원[인덱스]
+# \색[색상명]
+# \효과음![효과음명]
+# \테두리색![색상명]
+# \#색상코드!
+# \굵게!
+# \이탤릭!
+# \속도![텍스트의 속도]
+# \그림![그림파일명]
+# \자동개행!
+# \스킬아이콘[번호]
+# \무기구아이콘[번호]
+# \방어구아이콘[번호]
+# \아이템아이콘[번호]
+# <CENTER></CENTER>
+# <RIGHT></RIGHT>
+# <LEFT></LEFT>
+# \정렬자[0]
+# \정렬자[1]
+# \정렬자[2]
+#==============================================================================
+# ** 노트 태그
+#==============================================================================
+# 대화가 시작되기 전에 다음 노트 태그를 설정하면 메시지 설정을 바꿀 수 있습니다.
+#
+# <대화창 윈도우스킨:Window>
+# <이름 윈도우스킨:Window>
+# <대화창 투명도:255>
+#
+#==============================================================================
+# ** Terms of Use
+#==============================================================================
+# Free for commercial and non-commercial use
+#==============================================================================
 # ** RS
 #------------------------------------------------------------------------------
 # 기본 설정값입니다.
@@ -205,7 +161,7 @@ module RS
   # 자동 개행 설정
   # true이면 창의 폭을 넘겼을 때 자동으로 개행합니다.
   # 사용 시 정렬 기능이 제대로 동작하지 않을 수 있으니 주의 바랍니다.
-  LIST["자동개행"] = true
+  LIST["자동개행"] = false
   
   # 얼굴 이미지의 Z좌표 설정
   # 1이면 대화창 위, 
@@ -1182,6 +1138,17 @@ class Window_Message
     result.gsub!(/(?:\eN|\e주인공)\[(\d+)\]/i) { actor_name($1.to_i) }
     result.gsub!(/(?:\eP|\e파티원)\[(\d+)\]/i) { party_member_name($1.to_i) }
     result.gsub!(/(?:\eG|\e골드)/i)          { Vocab::currency_unit }
+		result.gsub!(/(?:\e아이템)\[(\d+)\]/i) { $data_items[$1.to_i].name || "" }
+		result.gsub!(/(?:\e스킬)\[(\d+)\]/i) { $data_skills[$1.to_i].name || "" }
+		result.gsub!(/(?:\e무기구)\[(\d+)\]/i) { $data_weapons[$1.to_i].name || "" }
+		result.gsub!(/(?:\e방어구)\[(\d+)\]/i) { $data_armors[$1.to_i].name || "" }
+		result.gsub!(/(?:\e적)\[(\d+)\]/i) { $data_enemies[$1.to_i].name || "" }
+		result.gsub!(/(?:\e직업)\[(\d+)\]/i) { $data_classes[$1.to_i].name || "" }
+		result.gsub!(/(?:\e상태)\[(\d+)\]/i) { $data_states[$1.to_i].name || "" }    
+		result.gsub!(/<(?:B)>/i) { "\eSB!" }
+		result.gsub!(/<(?:\/B)>/i) { "\eEB!" }
+		result.gsub!(/<(?:I)>/i) { "\eSI!" }
+		result.gsub!(/<(?:\/I)>/i) { "\eEI!" }    
     result
   end
   #--------------------------------------------------------------------------
@@ -1213,11 +1180,42 @@ class Window_Message
         if not @is_used_text_width_ex
           $game_map.se_play = obtain_escape_sound(text).to_s
         end
+      when 'SI','스킬아이콘'
+        data = $data_skills[obtain_escape_param(text)]
+        draw_item_text(pos, data)
+      when 'II','아이템아이콘'
+        data = $data_items[obtain_escape_param(text)]
+        draw_item_text(pos, data)
+      when 'WI','무기구아이콘'
+        data = $data_weapons[obtain_escape_param(text)]
+        draw_item_text(pos, data)				
+      when 'AI','방어구아이콘'
+        data = $data_weapons[obtain_escape_param(text)]
+        draw_item_text(pos, data)
+      when 'SB!'
+        self.contents.font.bold = true
+      when 'EB!'
+        self.contents.font.bold = false
+      when 'SI!'
+        self.contents.font.italic = true
+      when 'EI!'
+        self.contents.font.italic = false	        
       when '자동개행!'
         $game_message.word_wrap_enabled = true
       else
         msg_speed_process_escape_character(code, text, pos)
       end
+    end
+  #--------------------------------------------------------------------------
+  # * 아이템 아이콘/ 아이템 명
+  #--------------------------------------------------------------------------    
+  def draw_item_text(pos, item)
+    draw_icon(item.icon_index, pos[:x] , pos[:y], true)
+    change_color(normal_color, true)
+    pos[:x] += 24
+    w = self.contents.text_size(item.name).width
+    draw_text(pos[:x], pos[:y], w , pos[:height], item.name)
+    pos[:x] += w
   end
   #--------------------------------------------------------------------------
   # * 그림의 처리
@@ -1689,25 +1687,20 @@ class Window_Message < Window_Base
   # * 텍스트 처리
   #--------------------------------------------------------------------------
   def process_all_text
-    begin
-      open_and_wait
-      set_font(RS::LIST["폰트명"],RS::LIST["폰트크기"])
-      get_balloon_text_rect($game_message.all_text.dup)
-      text = convert_escape_characters($game_message.all_text)
-      pos = {}
+    open_and_wait
+    set_font(RS::LIST["폰트명"],RS::LIST["폰트크기"])
+    get_balloon_text_rect($game_message.all_text.dup)
+    text = convert_escape_characters($game_message.all_text)
+    pos = {}
 
-      # 이 라인으로 인하여 fiber_main에 재진입 시 텍스트 컨텐츠 영역이 백지화된다.
-      # self.contents는 contents_width와 contents_height만큼 설정된다.
-      # 다만 메시지 영역을 재설정 해줄 필요성이 있다.
-      resize_message_system
-      create_contents    
-      set_font(RS::LIST["폰트명"],RS::LIST["폰트크기"])
-      new_page(text, pos)
-      process_character(text.slice!(0, 1), text, pos) until text.empty?
-    rescue => e
-      puts e.backtrace.join("\n\t")
-      raise e.message + "\n\t" + e.backtrace.join("\n\t")
-    end
+    # 이 라인으로 인하여 fiber_main에 재진입 시 텍스트 컨텐츠 영역이 백지화된다.
+    # self.contents는 contents_width와 contents_height만큼 설정된다.
+    # 다만 메시지 영역을 재설정 해줄 필요성이 있다.
+    resize_message_system
+    create_contents    
+    set_font(RS::LIST["폰트명"],RS::LIST["폰트크기"])
+    new_page(text, pos)
+    process_character(text.slice!(0, 1), text, pos) until text.empty?
   end
   #--------------------------------------------------------------------------
   # * 말풍선 높이
@@ -2308,5 +2301,227 @@ class Window_ChoiceList < Window_Command
       end
     end
     self.x = @message_window.x + @message_window.width - self.width
+  end
+end
+
+#==============================================================================
+# ** Game_Message
+#------------------------------------------------------------------------------
+#
+#==============================================================================
+class Game_Message
+  attr_accessor :align
+  #--------------------------------------------------------------------------
+  # * clear
+  #--------------------------------------------------------------------------
+  alias hms_gm_clear clear
+  def clear
+    hms_gm_clear
+    @align = 0
+    @align = []
+    @align_last = 0    
+  end
+  #--------------------------------------------------------------------------
+  # *  Set Align
+  #-------------------------------------------------------------------------- 
+  def align=(n)
+    @align = @align || []
+    @align_last = n
+    @align.push(n)
+  end
+  #--------------------------------------------------------------------------
+  # *  Get Align
+  #--------------------------------------------------------------------------     
+  def align
+    n = @align.shift || 0
+    n ? n : @align_last
+  end
+  #--------------------------------------------------------------------------
+  # *  Clear Align Last
+  #--------------------------------------------------------------------------       
+  def clear_align_last
+    @align_last = 0
+  end  
+end
+#==============================================================================
+# ** Window_Base
+#------------------------------------------------------------------------------
+#
+#==============================================================================
+class Window_Base
+  #--------------------------------------------------------------------------
+  # * draw_text_ex
+  #--------------------------------------------------------------------------
+  def draw_text_ex_align(x, y, text)
+    text = convert_escape_characters(text)
+    pos = {:x => x, :y => y, :new_x => x, :height => calc_line_height(text)}
+    process_character(text.slice!(0, 1), text, pos) until text.empty?
+    return pos[:x] - x
+  end  
+  #--------------------------------------------------------------------------
+  # * text_width_ex
+  #--------------------------------------------------------------------------
+  def text_width_ex2(text)
+    temp_text = text.clone
+    temp_text = temp_text.split(/[\r\n]+/i)
+    text_width = 0
+    save
+    @is_used_text_width_ex = true
+    text_width = draw_text_ex_align(0, self.contents.height, temp_text[0])
+    restore
+    @is_used_text_width_ex = false
+    text_width
+  end    
+  #--------------------------------------------------------------------------
+  # * process_align
+  #--------------------------------------------------------------------------
+  def process_align(text, pos)
+    case $game_message.align
+    when 1
+      set_align_center(text, pos)
+    when 2
+      set_align_right(text, pos)
+    else
+      set_align_left(text, pos)
+    end
+  end
+  #--------------------------------------------------------------------------
+  # * process_new_line
+  #--------------------------------------------------------------------------
+  alias hms_align_process_new_line process_new_line
+  def process_new_line(text, pos)
+    hms_align_process_new_line(text, pos)
+    process_align(text, pos)
+  end
+  #--------------------------------------------------------------------------
+  # * new_line_x
+  #--------------------------------------------------------------------------  
+  def new_line_x
+    0
+  end
+  #--------------------------------------------------------------------------
+  # * set_align_center
+  #--------------------------------------------------------------------------
+  def set_align_left(text, pos)
+    tx = text_width_ex2(text)
+    pos[:x] = new_line_x + 6
+  end  
+  #--------------------------------------------------------------------------
+  # * set_align_center
+  #--------------------------------------------------------------------------
+  def set_align_center(text, pos)
+    tx = text_width_ex2(text)
+    pos[:x] = (new_line_x + contents_width + 6) / 2 - (tx / 2)
+  end
+  #--------------------------------------------------------------------------
+  # * set_align_right
+  #--------------------------------------------------------------------------
+  def set_align_right(text, pos)
+    tx = text_width_ex2(text)
+    pos[:x] = (contents_width - 6) - tx
+  end
+  #--------------------------------------------------------------------------
+  # * 텍스트 정렬
+  #--------------------------------------------------------------------------    
+  def do_first_line_align(pos, text)
+    is_valid = !@is_used_text_width_ex
+    process_align(text, text) if is_valid
+  end  
+  #--------------------------------------------------------------------------
+  # * do_ruby_text_align
+  #--------------------------------------------------------------------------
+  def do_ruby_text_align(text)
+    text.split(/[\r\n]+/i).each do |i|
+      i.gsub!(/\eTA\[(\d+)\]/i) { 
+        if !@is_used_text_width_ex
+          $game_message.align = $1.to_i || 0
+        end
+        ""
+      }        
+    end
+    text.gsub!(/\eTA\[(\d+)\]/i) { "" }
+    text
+  end  
+  #--------------------------------------------------------------------------
+  # * convert_escape_characters
+  #--------------------------------------------------------------------------
+  alias hms_align_convert_escape_characters convert_escape_characters
+  def convert_escape_characters(text)
+    result = hms_align_convert_escape_characters(text)
+    result.gsub!(/(?:<LEFT>)|\e정렬자\[0\]/i) { "\eTA[0]" }
+    result.gsub!(/(?:<CENTER>)|\e정렬자\[1\]/i) { "\eTA[1]" }
+    result.gsub!(/(?:<RIGHT>)|\e정렬자\[2\]/i) { "\eTA[2]" }
+    result.gsub!(/<\/LEFT>|<\/CENTER>|<\/RIGHT>/i) { "\eAEND" } 
+    result = do_ruby_text_align(result)
+    result
+  end
+  #--------------------------------------------------------------------------
+  # * process_escape_character
+  #--------------------------------------------------------------------------  
+  alias hms_align_process_escape_character process_escape_character
+  def process_escape_character(code, text, pos)
+    case code
+    when 'AEND'
+      $game_message.clear_align_last
+    else
+      hms_align_process_escape_character(code, text, pos)
+    end
+  end    
+end
+
+#==============================================================================
+# ** Window_Message
+#==============================================================================
+class Window_Message < Window_Base
+  #--------------------------------------------------------------------------
+  # * new_page
+  #--------------------------------------------------------------------------
+  alias hangul_message_align_new_page new_page
+  def new_page(text, pos)
+    hangul_message_align_new_page(text, pos)
+    process_align(text, pos)
+  end
+  #--------------------------------------------------------------------------
+  # * convert_escape_characters
+  #--------------------------------------------------------------------------
+  alias hms_align_convert_escape_characters convert_escape_characters
+  def convert_escape_characters(text)
+    result = hms_align_convert_escape_characters(text)
+    result.gsub!(/(?:<LEFT>)|\e정렬자\[0\]/i) { "\eTA[0]" }
+    result.gsub!(/(?:<CENTER>)|\e정렬자\[1\]/i) { "\eTA[1]" }
+    result.gsub!(/(?:<RIGHT>)|\e정렬자\[2\]/i) { "\eTA[2]" }
+    result.gsub!(/<\/LEFT>|<\/CENTER>|<\/RIGHT>/i) { "\eAEND" } 
+    result = do_ruby_text_align(result)
+    result
+  end 
+end
+
+#==============================================================================
+# ** Window_ScrollText
+#==============================================================================
+class Window_ScrollText < Window_Base    
+  #--------------------------------------------------------------------------
+  # * start_message
+  #--------------------------------------------------------------------------    
+  def start_message
+    @text = $game_message.all_text
+    @text = do_ruby_text_align(@text)
+    refresh
+    show
+  end
+  #--------------------------------------------------------------------------
+  # * refresh
+  #--------------------------------------------------------------------------  
+  def refresh
+    reset_font_settings
+    update_all_text_height
+    create_contents
+    pos = {}
+    pos[:x] = 0
+    pos[:y] = 0
+    pos[:height] = calc_line_height(@text, false)
+    process_align(@text, pos)
+    draw_text_ex(4 + pos[:x], pos[:y], @text)
+    self.oy = @scroll_pos = -height
   end
 end
