@@ -1,5 +1,5 @@
 #==============================================================================
-#  ** 한글 메시지 시스템 v1.0.4 (2019.04.13)
+#  ** 한글 메시지 시스템 v1.0.5 (2019.04.15)
 #==============================================================================
 #  ** 사용법
 #==============================================================================
@@ -82,6 +82,8 @@
 # - 이름 윈도우에서 색상 변경 등 일부 텍스트 코드 사용 가능 (들여쓰기 제외)
 # 2019.04.13 (v1.0.4) :
 # - 네코 플레이어에서 실행할 때 추가 색상 로드 기능 예외로 설정
+# 2019.04.15 (v1.0.5) :
+# - 텍스트 폭 계산 함수 사용 시 폰트 설정이 임시로 리셋되는 문제 수정.
 #==============================================================================
 # ** 사용 조건
 #==============================================================================
@@ -1354,10 +1356,26 @@ class Window_Message < Window_Selectable
     return pos[:x] - x
   end  
   #--------------------------------------------------------------------------
+  # * draw_text_ex_for_align
+  #--------------------------------------------------------------------------  
+  def draw_text_ex_for_align(x, y, text)
+    text = convert_escape_characters(text)
+    pos = {:x => x, :y => y, :new_x => x, :height => calc_line_height(text)}
+    do_first_line_align(pos, text) if not @is_used_text_width_ex
+    process_character(text.slice!(/./m), text, pos) until text.empty?
+    return pos[:x] - x    
+  end
+  #--------------------------------------------------------------------------
   # * text_width_ex
   #--------------------------------------------------------------------------
   def text_width_ex(text)
     draw_text_ex(0, contents_height + 6, text)
+  end
+  #--------------------------------------------------------------------------
+  # * text_width_ex2
+  #--------------------------------------------------------------------------  
+  def text_width_ex2(text)
+    draw_text_ex_for_align(0, contents_height + 6, text)    
   end
   #--------------------------------------------------------------------------
   # * 라인 높이 계산
@@ -1366,7 +1384,7 @@ class Window_Message < Window_Selectable
     result = [line_height, self.contents.font.size].max
     last_font_size = contents.font.size
     
-    text.slice(/^.*$/).scan(/\e크기!\[(\d+)\]/).each do |esc|
+    text.slice(/^.*$/).scan(/\e(?:크기!|H)\[(\d+)\]/).each do |esc|
       set_text_size(esc[0].to_i) if esc
       result = [result, self.contents.font.size].max
     end
@@ -1468,7 +1486,7 @@ class Window_Message < Window_Selectable
     text_width = 0
     save
     @is_used_text_width_ex = true
-    text_width = text_width_ex(temp_text[0])
+    text_width = text_width_ex2(temp_text[0])
     restore
     @is_used_text_width_ex = false
     text_width
@@ -1524,6 +1542,7 @@ class Window_Message < Window_Selectable
   # * 텍스트 속도 조절
   #--------------------------------------------------------------------------
   def set_text_speed(text_speed)
+    return if @is_used_text_width_ex
     $game_temp.message_speed = case text_speed
     when (RS::LIST["텍스트속도-최소"]..RS::LIST["텍스트속도-최대"])
       text_speed
@@ -1907,6 +1926,7 @@ class Window_Message < Window_Selectable
   # * 퍼지 시작
   #--------------------------------------------------------------------------    
   def start_pause
+    return if @is_used_text_width_ex
     @wait_count = 10    
     self.pause = true        
   end
