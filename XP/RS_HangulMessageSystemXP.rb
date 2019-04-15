@@ -84,6 +84,7 @@
 # - 네코 플레이어에서 실행할 때 추가 색상 로드 기능 예외로 설정
 # 2019.04.15 (v1.0.5) :
 # - 텍스트 폭 계산 함수 사용 시 폰트 설정이 임시로 리셋되는 문제 수정.
+# - 텍스트 사운드 설정 추가
 #==============================================================================
 # ** 사용 조건
 #==============================================================================
@@ -188,6 +189,13 @@ module RS
   LIST["가로"] = (Graphics.width * 0.75).floor
   LIST["오프셋X"] = 0
   LIST["오프셋Y"] = -10
+  
+  # 텍스트 사운드 설정
+  LIST["텍스트 사운드 사용"] = true
+  LIST["텍스트 사운드"] = ["032-Switch01", "032-Switch01"]
+  LIST["텍스트 사운드 볼륨"] = [70, 70]
+  LIST["텍스트 사운드 피치"] = [100, 90]
+  LIST["텍스트 사운드 주기"] = 3
 
   # 정규 표현식 (잘 아시는 분들만 건드리십시오)
   CODE["16진수"] = /#([a-zA-Z^\d]*)/i
@@ -1591,6 +1599,19 @@ class Window_Message < Window_Selectable
      
   end
   #--------------------------------------------------------------------------
+  # * request_text_sound
+  #--------------------------------------------------------------------------
+  def request_text_sound
+    return false if @is_used_text_width_ex
+    return false unless RS::LIST["텍스트 사운드 사용"]
+    id = Graphics.frame_count % RS::LIST["텍스트 사운드"].size
+    name = RS::LIST["텍스트 사운드"][id]
+    volume = RS::LIST["텍스트 사운드 볼륨"][id]
+    pitch = RS::LIST["텍스트 사운드 피치"][id]
+    path = "Audio/SE/" + name
+    Audio.se_play(path, volume, pitch)
+  end
+  #--------------------------------------------------------------------------
   # * Normal Character Processing
   #--------------------------------------------------------------------------  
   def process_normal_character(c, pos, text)
@@ -1607,7 +1628,11 @@ class Window_Message < Window_Selectable
     self.contents.draw_text(4 + pos[:x], pos[:y], w * 2, pos[:height], c)
     pos[:x] += w 
     
-    wait($game_temp.message_speed) unless @show_fast || @line_show_fast
+    unless @show_fast || @line_show_fast
+      wait($game_temp.message_speed) 
+      request_text_sound if (Graphics.frame_count % RS::LIST["텍스트 사운드 주기"]) == 0
+    end
+    
   end
   #--------------------------------------------------------------------------
   # * [오리지날] Dispose
