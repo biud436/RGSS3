@@ -14,6 +14,7 @@
 # - 문장의 표시 이외에도 스크롤 텍스트에서도 텍스트 정렬 기능 사용 가능.
 # - 자세한 오류 스택을 표시하는 기능을 제거하였음.
 # - 스킬/아이템/무기구/방어구 아이콘 텍스트 표시 기능 추가.
+# - 텍스트 사운드 설정 기능 추가
 # 2019.04.10 (v1.5.18) :
 # - 라인 확장 관련 버그 수정
 # - 라인 확장 시 선택지 위치
@@ -228,6 +229,13 @@ module RS
   LIST["가로"] = (Graphics.width / 2 + Graphics.width / 3).floor
   LIST["오프셋X"] = 0
   LIST["오프셋Y"] = 0
+  
+  # 텍스트 사운드 설정
+  LIST["텍스트 사운드 사용"] = true
+  LIST["텍스트 사운드"] = ["Cursor1", "Cursor1"]
+  LIST["텍스트 사운드 볼륨"] = [70, 70]
+  LIST["텍스트 사운드 피치"] = [100, 90]
+  LIST["텍스트 사운드 주기"] = 3  
 
   # 정규 표현식 (잘 아시는 분들만 건드리십시오)
   CODE["16진수"] = /#([a-zA-Z^\d]*)/i
@@ -2233,6 +2241,19 @@ class Window_Message
     end
   end
   #--------------------------------------------------------------------------
+  # * request_text_sound
+  #--------------------------------------------------------------------------
+  def request_text_sound
+    return false if @is_used_text_width_ex
+    return false unless RS::LIST["텍스트 사운드 사용"]
+    id = Graphics.frame_count % RS::LIST["텍스트 사운드"].size
+    name = RS::LIST["텍스트 사운드"][id]
+    volume = RS::LIST["텍스트 사운드 볼륨"][id]
+    pitch = RS::LIST["텍스트 사운드 피치"][id]
+    path = "Audio/SE/" + name
+    Audio.se_play(path, volume, pitch)
+  end  
+  #--------------------------------------------------------------------------
   # * 텍스트 자동 개행
   #--------------------------------------------------------------------------
   alias process_word_wrap_character process_normal_character
@@ -2249,6 +2270,10 @@ class Window_Message
     end
     
     process_word_wrap_character(c, pos)
+    
+    unless @line_show_fast or @show_fast
+      request_text_sound if (Graphics.frame_count % RS::LIST["텍스트 사운드 주기"]) == 0
+    end
     
   end
   #--------------------------------------------------------------------------
