@@ -96,8 +96,6 @@
 # - 텍스트 사운드 설정 추가
 # 2019.04.16 (v1.0.6) : 
 # - 캐릭터가 움직이고 있을 때 말풍선 창은 이동되지 않는 문제.
-# - 색상 테이블 파일명을 영어로 변경.
-# - 윈도우 핸들 찾는 API를 유니코드 용으로 변경.
 #==============================================================================
 # ** 사용 조건
 #==============================================================================
@@ -764,7 +762,7 @@ class Window_Name < Window_Base
   def update
     super
     update_opacity
-    update_position    
+    update_position
   end
   #--------------------------------------------------------------------------
   # * 투명도 업데이트
@@ -952,50 +950,64 @@ class Window_Name < Window_Base
     pos[:left] = x
     pos[:height] = line_height
     
-    until text.empty?
-      
-      c = text.slice!(/./m)
-
-      if c == "\e"
-        case obtain_escape_code(text)
-        when 'C'
-          change_color(obtain_escape_param(text))
-        when '색'
-          color = Color.gm_color(obtain_name_color(text))
-          change_color(color)      
-        when '#'
-          color = "##{to_hex(text)}".hex_to_color
-          change_color(color)   
-        when 'SI','스킬아이콘'
-          data = $data_skills[obtain_escape_param(text)]
-          draw_item(pos, data)
-        when 'II','아이템아이콘'
-          data = $data_items[obtain_escape_param(text)]
-          draw_item(pos, data)
-        when 'WI','무기구아이콘'
-          data = $data_weapons[obtain_escape_param(text)]
-          draw_item(pos, data)        
-        when 'AI','방어구아이콘'
-          data = $data_weapons[obtain_escape_param(text)]
-          draw_item(pos, data)          
-        when 'SB!'
-          self.contents.font.bold = true
-        when 'EB!'
-          self.contents.font.bold = false
-        when 'SI!'
-          self.contents.font.italic = true
-        when 'EI!'
-          self.contents.font.italic = false
-        end
-      else
-        w = self.contents.text_size(c).width
-        self.contents.draw_text(4 + pos[:x], pos[:y], w * 2, pos[:height], c)
-        pos[:x] += w 
-      end        
-    end      
+    process_character(pos, text.slice!(/./m), text) until text.empty?
     
     return pos[:x] - x
     
+  end
+  #--------------------------------------------------------------------------
+  # * process_character for name window
+  #--------------------------------------------------------------------------     
+  def process_character(pos, c, text)
+    case c
+    when "\e"
+      process_escape_character(obtain_escape_code(text), text, pos)
+    else
+      process_normal_character(c, pos)
+    end
+  end
+  #--------------------------------------------------------------------------
+  # * process_escape_character for name window
+  #--------------------------------------------------------------------------   
+  def process_escape_character(c, text, pos)
+    case c
+    when 'C'
+      change_color(obtain_escape_param(text))
+    when '색'
+      color = Color.gm_color(obtain_name_color(text))
+      change_color(color)      
+    when '#'
+      color = "##{to_hex(text)}".hex_to_color
+      change_color(color)   
+    when 'SI','스킬아이콘'
+      data = $data_skills[obtain_escape_param(text)]
+      draw_item(pos, data)
+    when 'II','아이템아이콘'
+      data = $data_items[obtain_escape_param(text)]
+      draw_item(pos, data)
+    when 'WI','무기구아이콘'
+      data = $data_weapons[obtain_escape_param(text)]
+      draw_item(pos, data)        
+    when 'AI','방어구아이콘'
+      data = $data_weapons[obtain_escape_param(text)]
+      draw_item(pos, data)          
+    when 'SB!'
+      self.contents.font.bold = true
+    when 'EB!'
+      self.contents.font.bold = false
+    when 'SI!'
+      self.contents.font.italic = true
+    when 'EI!'
+      self.contents.font.italic = false
+    end    
+  end
+  #--------------------------------------------------------------------------
+  # * process_normal_character for name window
+  #--------------------------------------------------------------------------     
+  def process_normal_character(c, pos)    
+    w = self.contents.text_size(c).width
+    self.contents.draw_text(4 + pos[:x], pos[:y], w * 2, pos[:height], c)
+    pos[:x] += w
   end
   #--------------------------------------------------------------------------
   # * 재묘화
@@ -1003,9 +1015,10 @@ class Window_Name < Window_Base
   def refresh
     tw = draw_text_ex(0, contents_height + 6, @name.clone)
     resize_window(tw * 2)
-    self.contents.clear     
+    self.contents.clear   
     text_padding = 4
-    draw_text_ex((contents_width - text_padding) / 2 - tw / 2, 0, @name)
+    cx = (contents_width - text_padding) / 2 - tw / 2
+    draw_text_ex(cx, 0, @name)
   end
   #--------------------------------------------------------------------------
   # * 폰트 설정
