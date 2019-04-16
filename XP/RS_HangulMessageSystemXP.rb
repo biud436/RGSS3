@@ -96,6 +96,8 @@
 # - 텍스트 사운드 설정 추가
 # 2019.04.16 (v1.0.6) : 
 # - 캐릭터가 움직이고 있을 때 말풍선 창은 이동되지 않는 문제.
+# - 색상 테이블 파일명을 영어로 변경.
+# - 윈도우 핸들 찾는 API를 유니코드 용으로 변경.
 #==============================================================================
 # ** 사용 조건
 #==============================================================================
@@ -370,7 +372,7 @@ module RS
   def import_color(string)
     default_color = ::Color.new(255, 255, 255, 255) 
     return default_color if defined? $NEKO_RUBY
-    data = INI.read_string("색상목록",string,'색상테이블.ini')
+    data = INI.read_string("색상목록",string,'Colors.ini')
     if data =~ /\[(\d+)\W\s*(\d+)\W\s*(\d+)\W\s*(\d+)\s*\]/i
       ::Color.new($1.to_i, $2.to_i, $3.to_i, $4.to_i)
     else
@@ -488,7 +490,7 @@ module RS::Color
     # 추가로 정의된 색상을 추가합니다
     extend_color {|k,v| color_table[k] = v }
     # INI 파일을 생성합니다
-    color_table.to_ini("색상테이블.ini","색상목록")
+    color_table.to_ini("Colors.ini","색상목록")
   end
   #--------------------------------------------------------------------------
   # * 색상을 추가합니다
