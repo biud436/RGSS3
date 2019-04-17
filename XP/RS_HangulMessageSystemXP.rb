@@ -1,5 +1,5 @@
 #==============================================================================
-#  ** 한글 메시지 시스템 v1.0.6 (2019.04.16)
+#  ** 한글 메시지 시스템 v1.0.7 (2019.04.17)
 #==============================================================================
 #  ** 사용법
 #==============================================================================
@@ -75,6 +75,30 @@
 # 숫자를 100,000,000과 같은 형태로 표시하려면 다음과 같은 텍스트 코드를 사용하십시오.
 # \숫자[100000000]
 #
+# 다음 텍스트 코드는 현재 페이지에만 유효합니다. 
+# 아래 명령들은 다음 페이지에선 기본값으로 재설정됩니다.
+#
+# \테두리색[색상명]
+# \그림자색[색상명]
+# \배경색[색상명]
+# 
+# 예를 들면, \배경색[빨강]이라고 하면 텍스트의 배경색이 빨강색으로 변하게 됩니다.
+# 다음 명령들도 현재 페이지에만 유효합니다.
+# 
+# \테두리켜
+# \테두리꺼 
+# \그림자켜
+# \그림자꺼
+# \배경색켜
+# \배경색꺼
+#
+# 다음 페이지로 넘어갈 땐 다시 기본값으로 설정되므로,
+# 원천적으로 기능을 OFF 하려면 설정을 false로 바꾸거나 스크립트 호출을 사용하십시오.
+# 
+# RS::LIST["배경색 그리기"] = false
+# RS::LIST["테두리"] = false
+# RS::LIST["그림자"] = false
+#
 #==============================================================================
 # ** 스크립트 호출
 #==============================================================================
@@ -101,6 +125,10 @@
 # 2019.04.16 (v1.0.6) : 
 # - 캐릭터가 움직이고 있을 때 말풍선 창은 이동되지 않는 문제.
 # - 숫자 포맷 텍스트 코드 추가
+# 2019.04.17 (v1.0.7) :
+# - 테두리, 그림자, 배경색 묘화 추가
+# - 텍스트 옵션 추가
+# - 토글 텍스트 코드 추가
 #==============================================================================
 # ** 사용 조건
 #==============================================================================
@@ -271,6 +299,16 @@ module RS
   LIST["텍스트 사운드 볼륨"] = [70, 70]
   LIST["텍스트 사운드 피치"] = [100, 90]
   LIST["텍스트 사운드 주기"] = 3
+  
+  # 폰트 옵션
+  LIST["배경색 그리기"] = true
+  LIST["테두리"] = true
+  LIST["그림자"] = true
+  LIST["그림자 거리"] = 2
+  LIST["테두리 거리"] = 1
+  LIST["배경색"] = Color.new(128, 128, 128, 200)
+  LIST["테두리 색상"] = Color.new(0, 0, 0, 255)
+  LIST["그림자 색상"] = Color.new(0, 0, 0, 200)  
 
   # 정규 표현식 (잘 아시는 분들만 건드리십시오)
   CODE["16진수"] = /#([a-zA-Z^\d]*)/i
@@ -1095,7 +1133,8 @@ class Window_Message < Window_Selectable
     @wait_count = 0
     @opening = false
     @closing = false
-    @is_used_text_width_ex = false
+    @is_used_text_width_ex = false  
+        
     clear_flags
   end
   #--------------------------------------------------------------------------
@@ -1104,7 +1143,13 @@ class Window_Message < Window_Selectable
   def clear_flags
     @show_fast = false
     @line_show_fast = false
-    @pause_skip = false    
+    @pause_skip = false        
+    @highlight = RS::LIST["배경색 그리기"]
+    @highlight_color = RS::LIST["배경색"]
+    @out_color = RS::LIST["테두리 색상"]
+    @outline = RS::LIST["테두리"]
+    @shadow = RS::LIST["그림자"]
+    @shadow_color = RS::LIST["그림자 색상"]    
   end  
   #--------------------------------------------------------------------------
   # * 대기
@@ -1368,6 +1413,9 @@ class Window_Message < Window_Selectable
     @message_desc[:font_bold] = contents.font.bold
     @message_desc[:font_italic] = contents.font.italic
     @message_desc[:font_color] = contents.font.color
+    @message_desc[:font_highlight_color] = @highlight_color
+    @message_desc[:font_out_color] = @out_color
+    @message_desc[:font_out_width] = @out_width
   end
   #--------------------------------------------------------------------------
   # * 복구
@@ -1379,6 +1427,9 @@ class Window_Message < Window_Selectable
     contents.font.bold = @message_desc[:font_bold]
     contents.font.italic = @message_desc[:font_italic]
     contents.font.color = @message_desc[:font_color]
+    @highlight_color = @message_desc[:font_highlight_color]
+    @out_color = @message_desc[:font_out_color]
+    @out_width = @message_desc[:font_out_width]
     @message_desc = nil
   end  
   #--------------------------------------------------------------------------
@@ -1514,6 +1565,21 @@ class Window_Message < Window_Selectable
       $game_temp.clear_align_last
     when '숫자'
       to_snumber(obtain_escape_param(text).to_s, pos)
+    when '그림자켜' then @shadow = true
+    when '그림자꺼' then @shadow = false
+    when '테두리켜' then @outline = true
+    when '테두리꺼' then @outline = false
+    when '배경색켜' then @highlight = true
+    when '배경색꺼' then @highlight = false  
+    when '그림자색'
+      color = Color.gm_color(obtain_name_color(text))
+      @shadow_color = color      
+    when '테두리색'
+      color = Color.gm_color(obtain_name_color(text))
+      @out_color = color
+    when '배경색'
+      color = Color.gm_color(obtain_name_color(text))
+      @highlight_color  = color
     end
   end
   #--------------------------------------------------------------------------
@@ -1524,8 +1590,17 @@ class Window_Message < Window_Selectable
       n = text.reverse.scan(/\d{1,3}/i).collect! {|i| i.reverse }
       result = n.reverse.join(",")
       w = self.contents.text_size(result).width
-      self.contents.draw_text(pos[:x], pos[:y], w, pos[:height], result, 0)
+      temp_color = self.contents.font.color.dup
+      
+      draw_highlight_color(result, pos, w)
+      draw_shadow(result, pos, w >> 1)
+      draw_outline(result, pos, w >> 1)
+      
+      self.contents.font.color = temp_color
+      self.contents.draw_text(4 + pos[:x], pos[:y], w, pos[:height], result, 0)
+      
       pos[:x] += w
+      
     rescue
     end
   end
@@ -1656,6 +1731,66 @@ class Window_Message < Window_Selectable
     Audio.se_play(path, volume, pitch)
   end
   #--------------------------------------------------------------------------
+  # * 배경색 묘화
+  #--------------------------------------------------------------------------    
+  def draw_highlight_color(c, pos, w)
+    return if not @highlight
+    highlight_color = @highlight_color      
+    self.contents.fill_rect(4 + pos[:x], pos[:y], w, pos[:height], highlight_color)
+  end
+  #--------------------------------------------------------------------------
+  # * 그림자 묘화
+  #--------------------------------------------------------------------------   
+  def draw_shadow(c, pos, w)
+    return if not @shadow
+    self.contents.font.color = @shadow_color    
+    n = RS::LIST["그림자 거리"]
+    tw = w * 2
+    self.contents.draw_text(4 + pos[:x] + n, pos[:y], tw, pos[:height], c)      
+    self.contents.draw_text(4 + pos[:x] + n, pos[:y] + n, tw, pos[:height], c)
+  end
+  #--------------------------------------------------------------------------
+  # * 테두리 묘화
+  #--------------------------------------------------------------------------  
+  def draw_outline(c, pos, w)
+    return if not @outline
+    self.contents.font.color = @out_color      
+    n = RS::LIST["테두리 거리"]
+    tw = w * 2
+    self.contents.draw_text(4 + pos[:x], pos[:y] - n, tw, pos[:height], c)
+    self.contents.draw_text(4 + pos[:x], pos[:y] + n, tw, pos[:height], c)      
+    self.contents.draw_text(4 + pos[:x] - n, pos[:y], tw, pos[:height], c)
+    self.contents.draw_text(4 + pos[:x] + n, pos[:y], tw, pos[:height], c)
+    self.contents.draw_text(4 + pos[:x] + n, pos[:y] + n, tw, pos[:height], c)
+    self.contents.draw_text(4 + pos[:x] + n, pos[:y] - n, tw, pos[:height], c)
+    self.contents.draw_text(4 + pos[:x] - n, pos[:y] - n, tw, pos[:height], c)
+    self.contents.draw_text(4 + pos[:x] - n, pos[:y] + n, tw, pos[:height], c)  
+  end
+  #--------------------------------------------------------------------------
+  # * 일반 텍스트 묘화
+  #--------------------------------------------------------------------------    
+  def draw_normal_character(c, pos)
+    w = self.contents.text_size(c).width
+    
+    temp_color = self.contents.font.color.dup
+    
+    # 배경색
+    draw_highlight_color(c, pos, w)
+    
+    # 그림자
+    draw_shadow(c, pos, w)
+    
+    # 테두리
+    draw_outline(c, pos, w)
+    
+    # 텍스트
+    self.contents.font.color = temp_color
+    self.contents.draw_text(4 + pos[:x], pos[:y], (w * 2), pos[:height], c)
+    
+    pos[:x] += w     
+    
+  end
+  #--------------------------------------------------------------------------
   # * Normal Character Processing
   #--------------------------------------------------------------------------  
   def process_normal_character(c, pos, text)
@@ -1668,10 +1803,8 @@ class Window_Message < Window_Selectable
       end
     end
     
-    w = self.contents.text_size(c).width
-    self.contents.draw_text(4 + pos[:x], pos[:y], w * 2, pos[:height], c)
-    pos[:x] += w 
-    
+    draw_normal_character(c, pos)
+            
     unless @show_fast || @line_show_fast
       wait($game_temp.message_speed) 
       request_text_sound if (Graphics.frame_count % RS::LIST["텍스트 사운드 주기"]) == 0
