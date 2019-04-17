@@ -603,6 +603,10 @@ class Game_Temp
   
   attr_accessor :used_text_width_ex
   
+  attr_accessor :highlight, :highlight_color
+  attr_accessor :out_color, :outline
+  attr_accessor :shadow, :shadow_color
+  
   alias rs_message_system_initialize initialize
   #--------------------------------------------------------------------------
   # * 초기화
@@ -625,6 +629,12 @@ class Game_Temp
     @align = []
     @align_last = 0
     @used_text_width_ex = false
+    @highlight = RS::LIST["배경색 그리기"]
+    @highlight_color = RS::LIST["배경색"]
+    @out_color = RS::LIST["테두리 색상"]
+    @outline = RS::LIST["테두리"]
+    @shadow = RS::LIST["그림자"]
+    @shadow_color = RS::LIST["그림자 색상"]   
   end
   #--------------------------------------------------------------------------
   # *  add
@@ -1143,13 +1153,7 @@ class Window_Message < Window_Selectable
   def clear_flags
     @show_fast = false
     @line_show_fast = false
-    @pause_skip = false        
-    @highlight = RS::LIST["배경색 그리기"]
-    @highlight_color = RS::LIST["배경색"]
-    @out_color = RS::LIST["테두리 색상"]
-    @outline = RS::LIST["테두리"]
-    @shadow = RS::LIST["그림자"]
-    @shadow_color = RS::LIST["그림자 색상"]    
+    @pause_skip = false
   end  
   #--------------------------------------------------------------------------
   # * 대기
@@ -1413,9 +1417,12 @@ class Window_Message < Window_Selectable
     @message_desc[:font_bold] = contents.font.bold
     @message_desc[:font_italic] = contents.font.italic
     @message_desc[:font_color] = contents.font.color
-    @message_desc[:font_highlight_color] = @highlight_color
-    @message_desc[:font_out_color] = @out_color
-    @message_desc[:font_out_width] = @out_width
+    @message_desc[:font_highlight] = $game_temp.highlight
+    @message_desc[:font_highlight_color] = $game_temp.highlight_color
+    @message_desc[:font_out_color] = $game_temp.out_color
+    @message_desc[:font_outline] = $game_temp.outline
+    @message_desc[:font_shadow] = $game_temp.shadow
+    @message_desc[:font_shadow_color] = $game_temp.shadow_color   
   end
   #--------------------------------------------------------------------------
   # * 복구
@@ -1427,9 +1434,12 @@ class Window_Message < Window_Selectable
     contents.font.bold = @message_desc[:font_bold]
     contents.font.italic = @message_desc[:font_italic]
     contents.font.color = @message_desc[:font_color]
-    @highlight_color = @message_desc[:font_highlight_color]
-    @out_color = @message_desc[:font_out_color]
-    @out_width = @message_desc[:font_out_width]
+    $game_temp.highlight = @message_desc[:font_highlight]
+    $game_temp.highlight_color = @message_desc[:font_highlight_color]
+    $game_temp.out_color = @message_desc[:font_out_color]
+    $game_temp.outline = @message_desc[:font_outline]
+    $game_temp.shadow = @message_desc[:font_shadow]
+    $game_temp.shadow_color = @message_desc[:font_shadow_color]
     @message_desc = nil
   end  
   #--------------------------------------------------------------------------
@@ -1565,21 +1575,21 @@ class Window_Message < Window_Selectable
       $game_temp.clear_align_last
     when '숫자'
       to_snumber(obtain_escape_param(text).to_s, pos)
-    when '그림자켜' then @shadow = true
-    when '그림자꺼' then @shadow = false
-    when '테두리켜' then @outline = true
-    when '테두리꺼' then @outline = false
-    when '배경색켜' then @highlight = true
-    when '배경색꺼' then @highlight = false  
+    when '그림자켜' then $game_temp.shadow = true
+    when '그림자꺼' then $game_temp.shadow = false
+    when '테두리켜' then $game_temp.outline = true
+    when '테두리꺼' then $game_temp.outline = false
+    when '배경색켜' then $game_temp.highlight = true
+    when '배경색꺼' then $game_temp.highlight = false  
     when '그림자색'
       color = Color.gm_color(obtain_name_color(text))
-      @shadow_color = color      
+      $game_temp.shadow_color = color      
     when '테두리색'
       color = Color.gm_color(obtain_name_color(text))
-      @out_color = color
+      $game_temp.out_color = color
     when '배경색'
       color = Color.gm_color(obtain_name_color(text))
-      @highlight_color  = color
+      $game_temp.highlight_color  = color
     end
   end
   #--------------------------------------------------------------------------
@@ -1734,16 +1744,16 @@ class Window_Message < Window_Selectable
   # * 배경색 묘화
   #--------------------------------------------------------------------------    
   def draw_highlight_color(c, pos, w)
-    return if not @highlight
-    highlight_color = @highlight_color      
+    return if not $game_temp.highlight
+    highlight_color = $game_temp.highlight_color      
     self.contents.fill_rect(4 + pos[:x], pos[:y], w, pos[:height], highlight_color)
   end
   #--------------------------------------------------------------------------
   # * 그림자 묘화
   #--------------------------------------------------------------------------   
   def draw_shadow(c, pos, w)
-    return if not @shadow
-    self.contents.font.color = @shadow_color    
+    return if not $game_temp.shadow
+    self.contents.font.color = $game_temp.shadow_color    
     n = RS::LIST["그림자 거리"]
     tw = w * 2
     self.contents.draw_text(4 + pos[:x] + n, pos[:y], tw, pos[:height], c)      
@@ -1753,8 +1763,8 @@ class Window_Message < Window_Selectable
   # * 테두리 묘화
   #--------------------------------------------------------------------------  
   def draw_outline(c, pos, w)
-    return if not @outline
-    self.contents.font.color = @out_color      
+    return if not $game_temp.outline
+    self.contents.font.color = $game_temp.out_color      
     n = RS::LIST["테두리 거리"]
     tw = w * 2
     self.contents.draw_text(4 + pos[:x], pos[:y] - n, tw, pos[:height], c)
