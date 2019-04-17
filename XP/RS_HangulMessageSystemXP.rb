@@ -81,6 +81,7 @@
 # \테두리색[색상명]
 # \그림자색[색상명]
 # \배경색[색상명]
+# \테두리굵기[크기]
 # 
 # 예를 들면, \배경색[빨강]이라고 하면 텍스트의 배경색이 빨강색으로 변하게 됩니다.
 # 다음 명령들도 현재 페이지에만 유효합니다.
@@ -129,6 +130,7 @@
 # - 테두리, 그림자, 배경색 묘화 추가
 # - 텍스트 옵션 추가
 # - 토글 텍스트 코드 추가
+# - 테두리 굵기 변경 텍스트 코드 추가
 #==============================================================================
 # ** 사용 조건
 #==============================================================================
@@ -604,7 +606,7 @@ class Game_Temp
   attr_accessor :used_text_width_ex
   
   attr_accessor :highlight, :highlight_color
-  attr_accessor :out_color, :outline
+  attr_accessor :out_color, :outline, :outline_width
   attr_accessor :shadow, :shadow_color
   
   alias rs_message_system_initialize initialize
@@ -635,6 +637,7 @@ class Game_Temp
     @outline = RS::LIST["테두리"]
     @shadow = RS::LIST["그림자"]
     @shadow_color = RS::LIST["그림자 색상"]   
+    @outline_width = RS::LIST["테두리 굵기"]
   end
   #--------------------------------------------------------------------------
   # *  add
@@ -1434,6 +1437,7 @@ class Window_Message < Window_Selectable
     @message_desc[:font_highlight_color] = $game_temp.highlight_color
     @message_desc[:font_out_color] = $game_temp.out_color
     @message_desc[:font_outline] = $game_temp.outline
+    @message_desc[:font_outline_width] = $game_temp.outline_width
     @message_desc[:font_shadow] = $game_temp.shadow
     @message_desc[:font_shadow_color] = $game_temp.shadow_color   
   end
@@ -1451,6 +1455,7 @@ class Window_Message < Window_Selectable
     $game_temp.highlight_color = @message_desc[:font_highlight_color]
     $game_temp.out_color = @message_desc[:font_out_color]
     $game_temp.outline = @message_desc[:font_outline]
+    $game_temp.outline_width = @message_desc[:font_outline_width]
     $game_temp.shadow = @message_desc[:font_shadow]
     $game_temp.shadow_color = @message_desc[:font_shadow_color]
     @message_desc = nil
@@ -1602,6 +1607,8 @@ class Window_Message < Window_Selectable
     when '배경색'
       color = Color.gm_color(obtain_name_color(text))
       $game_temp.highlight_color  = color
+    when '테두리굵기'
+      $game_temp.outline_width = obtain_escape_param(text).to_i
     end
   end
   #--------------------------------------------------------------------------
@@ -1767,7 +1774,7 @@ class Window_Message < Window_Selectable
   def draw_outline(c, pos, w)
     return if not $game_temp.outline
     self.contents.font.color = $game_temp.out_color      
-    n = RS::LIST["테두리 굵기"]
+    n = $game_temp.outline_width
     tw = w
     r = (-n..n)
     for i in r
