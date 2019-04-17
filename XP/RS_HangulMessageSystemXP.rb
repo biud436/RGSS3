@@ -52,7 +52,7 @@
 #  <I>텍스트</I>           : 텍스트를 기울임꼴로 표시합니다.
 #
 #  \이름<러닝은빛>        : 이름 윈도우를 메시지 윈도우의 왼쪽에 정렬하여 표시합니다.
-# \이름<러닝은빛:left>    : 이름 윈도우를 메시지 윈도우의 왼쪽에 정렬하여 표시합니다.
+#  \이름<러닝은빛:left>    : 이름 윈도우를 메시지 윈도우의 왼쪽에 정렬하여 표시합니다.
 #  \이름<러닝은빛:right>  : 이름 윈도우를 메시지 윈도우의 오른쪽에 정렬하여 표시합니다.
 #  \이름<러닝은빛:center> : 이름 윈도우를 메시지 윈도우의 중앙에 정렬하여 표시합니다.
 #
@@ -302,10 +302,10 @@ module RS
   
   # 폰트 옵션
   LIST["배경색 그리기"] = true
-  LIST["테두리"] = true
+  LIST["테두리"] = false
   LIST["그림자"] = true
-  LIST["그림자 거리"] = 2
-  LIST["테두리 거리"] = 1
+  LIST["그림자 거리"] = 1
+  LIST["테두리 거리"] = 1 # 1 이하
   LIST["배경색"] = Color.new(128, 128, 128, 200)
   LIST["테두리 색상"] = Color.new(0, 0, 0, 255)
   LIST["그림자 색상"] = Color.new(0, 0, 0, 200)  
@@ -1058,10 +1058,24 @@ class Window_Name < Window_Base
     end    
   end
   #--------------------------------------------------------------------------
+  # * 그림자 묘화
+  #--------------------------------------------------------------------------   
+  def draw_shadow(c, pos, w)
+    return if not $game_temp.shadow
+    self.contents.font.color = $game_temp.shadow_color    
+    n = 1
+    tw = w
+    self.contents.draw_text(4 + pos[:x] + n, pos[:y], tw, pos[:height], c)      
+    self.contents.draw_text(4 + pos[:x] + n, pos[:y] + n, tw, pos[:height], c)
+  end  
+  #--------------------------------------------------------------------------
   # * process_normal_character for name window
   #--------------------------------------------------------------------------     
   def process_normal_character(c, pos)    
     w = self.contents.text_size(c).width
+    temp_color = self.contents.font.color.dup
+    draw_shadow(c, pos, w)
+    self.contents.font.color = temp_color
     self.contents.draw_text(4 + pos[:x], pos[:y], w * 2, pos[:height], c)
     pos[:x] += w
   end
@@ -1506,11 +1520,10 @@ class Window_Message < Window_Selectable
     return if not item
     bitmap = RPG::Cache.icon(item.icon_name)
     rect = Rect.new(0, 0, 24, 24)
+    draw_highlight_color("", pos, rect.width)
     self.contents.blt(pos[:x], pos[:y] + 4, bitmap, rect, RS::LIST["투명도"])
     pos[:x] += rect.width
-    w = self.contents.text_size(item.name).width
-    self.contents.draw_text(pos[:x], pos[:y], w, pos[:height], item.name, 0)
-    pos[:x] += w
+    draw_normal_character(item.name, pos, true)
   end
   #--------------------------------------------------------------------------
   # * 텍스트 코드 처리
@@ -1598,17 +1611,8 @@ class Window_Message < Window_Selectable
   def to_snumber(text, pos)
     begin
       n = text.reverse.scan(/\d{1,3}/i).collect! {|i| i.reverse }
-      result = n.reverse.join(",")
-      w = self.contents.text_size(result).width
-      temp_color = self.contents.font.color.dup
-      
-      draw_highlight_color(result, pos, w)
-      draw_shadow(result, pos, w >> 1)
-      draw_outline(result, pos, w >> 1)
-      
-      self.contents.font.color = temp_color
-      self.contents.draw_text(4 + pos[:x], pos[:y], w, pos[:height], result, 0)
-      
+      result = n.reverse.join(",")      
+      draw_normal_character(result, pos, true)
       pos[:x] += w
       
     rescue
@@ -1755,7 +1759,7 @@ class Window_Message < Window_Selectable
     return if not $game_temp.shadow
     self.contents.font.color = $game_temp.shadow_color    
     n = RS::LIST["그림자 거리"]
-    tw = w * 2
+    tw = w
     self.contents.draw_text(4 + pos[:x] + n, pos[:y], tw, pos[:height], c)      
     self.contents.draw_text(4 + pos[:x] + n, pos[:y] + n, tw, pos[:height], c)
   end
@@ -1766,7 +1770,7 @@ class Window_Message < Window_Selectable
     return if not $game_temp.outline
     self.contents.font.color = $game_temp.out_color      
     n = RS::LIST["테두리 거리"]
-    tw = w * 2
+    tw = w
     self.contents.draw_text(4 + pos[:x], pos[:y] - n, tw, pos[:height], c)
     self.contents.draw_text(4 + pos[:x], pos[:y] + n, tw, pos[:height], c)      
     self.contents.draw_text(4 + pos[:x] - n, pos[:y], tw, pos[:height], c)
@@ -1779,23 +1783,25 @@ class Window_Message < Window_Selectable
   #--------------------------------------------------------------------------
   # * 일반 텍스트 묘화
   #--------------------------------------------------------------------------    
-  def draw_normal_character(c, pos)
+  def draw_normal_character(c, pos, half = false)
     w = self.contents.text_size(c).width
     
     temp_color = self.contents.font.color.dup
+    
+    tw = half ? w : (w * 2)
     
     # 배경색
     draw_highlight_color(c, pos, w)
     
     # 그림자
-    draw_shadow(c, pos, w)
+    draw_shadow(c, pos, tw)
     
     # 테두리
-    draw_outline(c, pos, w)
+    draw_outline(c, pos, tw)
     
     # 텍스트
     self.contents.font.color = temp_color
-    self.contents.draw_text(4 + pos[:x], pos[:y], (w * 2), pos[:height], c)
+    self.contents.draw_text(4 + pos[:x], pos[:y], tw, pos[:height], c)
     
     pos[:x] += w     
     
