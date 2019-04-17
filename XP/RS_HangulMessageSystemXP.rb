@@ -297,15 +297,15 @@ module RS
   LIST["텍스트 사운드 사용"] = true
   LIST["텍스트 사운드"] = ["032-Switch01", "032-Switch01"]
   LIST["텍스트 사운드 볼륨"] = [70, 70]
-  LIST["텍스트 사운드 피치"] = [100, 90]
+  LIST["텍스트 사운드 피치"] = [100, 100]
   LIST["텍스트 사운드 주기"] = 3
   
   # 폰트 옵션
   LIST["배경색 그리기"] = true
-  LIST["테두리"] = false
+  LIST["테두리"] = true
   LIST["그림자"] = true
-  LIST["그림자 거리"] = 1
-  LIST["테두리 거리"] = 1 # 1 이하
+  LIST["그림자 거리"] = 2
+  LIST["테두리 굵기"] = 1
   LIST["배경색"] = Color.new(128, 128, 128, 200)
   LIST["테두리 색상"] = Color.new(0, 0, 0, 255)
   LIST["그림자 색상"] = Color.new(0, 0, 0, 200)  
@@ -1064,8 +1064,7 @@ class Window_Name < Window_Base
     return if not $game_temp.shadow
     self.contents.font.color = $game_temp.shadow_color    
     n = 1
-    tw = w
-    self.contents.draw_text(4 + pos[:x] + n, pos[:y], tw, pos[:height], c)      
+    tw = w    
     self.contents.draw_text(4 + pos[:x] + n, pos[:y] + n, tw, pos[:height], c)
   end  
   #--------------------------------------------------------------------------
@@ -1759,8 +1758,7 @@ class Window_Message < Window_Selectable
     return if not $game_temp.shadow
     self.contents.font.color = $game_temp.shadow_color    
     n = RS::LIST["그림자 거리"]
-    tw = w
-    self.contents.draw_text(4 + pos[:x] + n, pos[:y], tw, pos[:height], c)      
+    tw = w    
     self.contents.draw_text(4 + pos[:x] + n, pos[:y] + n, tw, pos[:height], c)
   end
   #--------------------------------------------------------------------------
@@ -1769,16 +1767,15 @@ class Window_Message < Window_Selectable
   def draw_outline(c, pos, w)
     return if not $game_temp.outline
     self.contents.font.color = $game_temp.out_color      
-    n = RS::LIST["테두리 거리"]
+    n = RS::LIST["테두리 굵기"]
     tw = w
-    self.contents.draw_text(4 + pos[:x], pos[:y] - n, tw, pos[:height], c)
-    self.contents.draw_text(4 + pos[:x], pos[:y] + n, tw, pos[:height], c)      
-    self.contents.draw_text(4 + pos[:x] - n, pos[:y], tw, pos[:height], c)
-    self.contents.draw_text(4 + pos[:x] + n, pos[:y], tw, pos[:height], c)
-    self.contents.draw_text(4 + pos[:x] + n, pos[:y] + n, tw, pos[:height], c)
-    self.contents.draw_text(4 + pos[:x] + n, pos[:y] - n, tw, pos[:height], c)
-    self.contents.draw_text(4 + pos[:x] - n, pos[:y] - n, tw, pos[:height], c)
-    self.contents.draw_text(4 + pos[:x] - n, pos[:y] + n, tw, pos[:height], c)  
+    r = (-n..n)
+    for i in r
+      for j in r
+        self.contents.draw_text(4 + pos[:x] + i, pos[:y] + j, tw, pos[:height], c)        
+      end
+    end
+    
   end
   #--------------------------------------------------------------------------
   # * 일반 텍스트 묘화
