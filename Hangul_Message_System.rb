@@ -1,13 +1,15 @@
 #==============================================================================
-# ** Hangul Message System 1.5.20 (RPG Maker VX Ace)
+# ** Hangul Message System 1.5.21 (RPG Maker VX Ace)
 #==============================================================================
 # Name       : Hangul Message System
 # Author     : biud436
-# Version    : 1.5.20
+# Version    : 1.5.21
 # Link       : http://biud436.blog.me/220251747366
 #==============================================================================
 # ** 업데이트 로그
 #==============================================================================
+# 2019.04.30 (v1.5.21)
+# - 캐릭터 크기에 따라 말풍선 위치 동적으로 변경됨.
 # 2019.04.16 (v1.5.20) :
 # - 숫자 포맷 텍스트 코드 추가.
 # 2019.04.15 (v1.5.19) :
@@ -1752,6 +1754,29 @@ class Game_Map
 end
 
 #==============================================================================
+# ** Spriteset_Map
+#==============================================================================
+class Spriteset_Map
+  def character(event_id)
+    sprite = @character_sprites.find do |i|
+      c = i.character
+      if c and c.is_a?(Game_Event)
+        c.instance_variable_get("@id") == event_id 
+      elsif c and c.is_a?(Game_Player)
+        return true 
+      end
+    end
+    return 32, 32 if not sprite
+    cw = sprite.instance_variable_get("@cw")
+    ch = sprite.instance_variable_get("@ch")
+    return cw, ch
+  end
+end
+class Scene_Map
+  attr_reader :spriteset
+end
+
+#==============================================================================
 # ** Window_Message
 #------------------------------------------------------------------------------
 # 말풍선 시스템과 관련되어있습니다.
@@ -1927,6 +1952,11 @@ class Window_Message < Window_Base
     ty = @_height
     scale_y = 1
     tile_height = 32
+    if SceneManager.scene.is_a?(Scene_Map) and $game_map.msg_owner.is_a?(Game_Event)
+      event_id = $game_map.msg_owner.instance_variable_get("@id")
+      pt = SceneManager.scene.spriteset.character(event_id)
+      tile_height = pt[1]
+    end
     dx = mx - @_width / 2
     dy = my - @_height - tile_height
     ny = self.y - @name_window.height - RS::LIST["이름윈도우Y"]
