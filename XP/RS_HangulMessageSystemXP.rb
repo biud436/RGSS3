@@ -1,5 +1,5 @@
 #==============================================================================
-#  ** 한글 메시지 시스템 v1.0.7 (2019.04.17)
+#  ** 한글 메시지 시스템 v1.0.8 (2019.04.30)
 #==============================================================================
 #  ** 사용법
 #==============================================================================
@@ -131,6 +131,8 @@
 # - 텍스트 옵션 추가
 # - 토글 텍스트 코드 추가
 # - 테두리 굵기 변경 텍스트 코드 추가
+# 2019.04.30 (v1.0.8) :
+# - 말풍선 모드에서 캐릭터 스프라이트 세로 길이 자동 감지 기능 추가
 #==============================================================================
 # ** 사용 조건
 #==============================================================================
@@ -303,7 +305,7 @@ module RS
   LIST["텍스트 사운드 주기"] = 3
   
   # 폰트 옵션
-  LIST["배경색 그리기"] = true
+  LIST["배경색 그리기"] = false
   LIST["테두리"] = true
   LIST["그림자"] = true
   LIST["그림자 거리"] = 2
@@ -2293,6 +2295,37 @@ class Interpreter
 end
 
 #==============================================================================
+# ** Spriteset_Map
+#==============================================================================
+class Spriteset_Map
+  def character(event_id)
+    sprite = nil
+    
+    if event_id == -1
+      sprite = @character_sprites.find do |i|
+        i.class == Game_Player
+      end
+    else
+      sprite = @character_sprites.find do |i|
+        c = i.character
+        if c and c.is_a?(Game_Event)
+          c.id == event_id 
+        end
+      end
+    end
+    
+    return 32, 32 if not sprite
+    cw = sprite.instance_variable_get("@cw")
+    ch = sprite.instance_variable_get("@ch")
+    
+    return cw, ch
+  end
+end
+class Scene_Map
+  attr_reader :spriteset
+end
+
+#==============================================================================
 # ** Window_Message
 #------------------------------------------------------------------------------
 # 말풍선 시스템과 관련되어있습니다.
@@ -2456,6 +2489,15 @@ class Window_Message
     ty = @_height
     scale_y = 1
     tile_height = 32
+    
+    class_type = $game_map.msg_owner.class
+    
+    if $scene.is_a?(Scene_Map) and [Game_Event, Game_Player].include?(class_type)
+      event_id = class_type == Game_Event ? $game_map.msg_owner.id : -1
+      pt = $scene.spriteset.character(event_id)
+      tile_height = pt[1]
+    end
+    
     dx = mx - @_width / 2
     dy = my - @_height - tile_height
     ny = self.y - @name_window.height - RS::LIST["이름윈도우Y"]

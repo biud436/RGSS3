@@ -1758,17 +1758,25 @@ end
 #==============================================================================
 class Spriteset_Map
   def character(event_id)
-    sprite = @character_sprites.find do |i|
-      c = i.character
-      if c and c.is_a?(Game_Event)
-        c.instance_variable_get("@id") == event_id 
-      elsif c and c.is_a?(Game_Player)
-        return true 
+    sprite = nil
+    
+    if event_id == -1
+      sprite = @character_sprites.find do |i|
+        i.class == Game_Player
+      end
+    else
+      sprite = @character_sprites.find do |i|
+        c = i.character
+        if c and c.is_a?(Game_Event)
+          c.id == event_id 
+        end
       end
     end
+    
     return 32, 32 if not sprite
     cw = sprite.instance_variable_get("@cw")
     ch = sprite.instance_variable_get("@ch")
+    
     return cw, ch
   end
 end
@@ -1952,11 +1960,15 @@ class Window_Message < Window_Base
     ty = @_height
     scale_y = 1
     tile_height = 32
-    if SceneManager.scene.is_a?(Scene_Map) and $game_map.msg_owner.is_a?(Game_Event)
-      event_id = $game_map.msg_owner.instance_variable_get("@id")
+    
+    class_type = $game_map.msg_owner.class
+    
+    if SceneManager.scene.is_a?(Scene_Map) and [Game_Event, Game_Player].include?(class_type)
+      event_id = class_type == Game_Event ? $game_map.msg_owner.id : -1
       pt = SceneManager.scene.spriteset.character(event_id)
       tile_height = pt[1]
     end
+    
     dx = mx - @_width / 2
     dy = my - @_height - tile_height
     ny = self.y - @name_window.height - RS::LIST["이름윈도우Y"]
@@ -2015,7 +2027,7 @@ class Window_Message < Window_Base
 
     @balloon_pause = false
     self.arrows_visible = false
-    @b_cursor.visible = true
+    @b_cursor.visible = false
     show
 
     update_background
@@ -2056,7 +2068,7 @@ class Window_Message < Window_Base
     $game_map.msg_owner = $game_player
 
     @balloon_pause = true
-    self.arrows_visible = true
+    self.arrows_visible = false
     @b_cursor.visible = false
 
     # 대화창의 위치
