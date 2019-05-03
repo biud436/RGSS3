@@ -21,9 +21,6 @@ $imported["RS_Pathfind"] = true
 # 설정
 #===============================================================================
 module Pathfind
-  
-  # 디버깅 용도로 평균 FPS를 화면에 표시합니다.
-  SHOW_FPS = false
 
   # 최대 탐색 깊이입니다.
   # 이 값보다 크게 하면 탐색 범위가 넓어집니다.
@@ -37,80 +34,6 @@ module Pathfind
   def self.limit
     @@search_limit
   end  
-end
-
-module Graphics
-
-  # 고성능 카운터를 사용하여 밀리 세컨드 단위까지 확인하기 위함입니다.
-  QueryPerformanceCounter = Win32API.new('Kernel32.dll', 'QueryPerformanceCounter', 'P', 'l')
-  QueryPerformanceFrequency = Win32API.new('Kernel32.dll', 'QueryPerformanceFrequency', 'P', 'l')
-  class << self
-    def time
-      # 64비트 기반으로 설정하였습니다.
-      data = "\0" * 8
-      QueryPerformanceCounter.call(data)
-      data.unpack("q").pop
-    end
-    def frequency
-      data = "\0" * 8
-      QueryPerformanceFrequency.call(data)
-      data.unpack("q").pop
-    end
-  end  
-end
-
-module Graphics
-  
-  @time_freq = Graphics.frequency
-  @time_start = Graphics.time
-  @time_end = 0
-  @fps = 0
-  @elapsed = 0
-  @lag = 0.0
-  @frame_count = 0
-  
-  DELAY_TIME = 0.016666666666666666
-  
-  class << self
-    alias graphics_display_fps_update update
-    def update
-      graphics_display_fps_update
-      return unless Pathfind::SHOW_FPS
-      update_fps_counter
-    end
-    def update_fps_counter
-      @time_end = Graphics.time
-      @elapsed = (@time_end - @time_start) / @time_freq.to_f
-      @lag += @elapsed
-          
-      @current_count = Graphics.frame_count - @prev_frame_count
-      
-      while @lag >= DELAY_TIME
-        @lag -= DELAY_TIME
-      end
-            
-      if @elapsed > 0.0 and @current_count > 0
-        @fps = (@fps * 0.99) + (0.01 / @elapsed)
-      end
-      
-      @time_start = @time_end
-      
-      render_counter
-      
-    end
-    def render_counter
-      @fps_sprite = Sprite.new unless @fps_sprite
-      @fps_sprite.x = 0
-      @fps_sprite.y = -10
-      @fps_sprite.z = 50000
-      @fps_sprite.bitmap = Bitmap.new(200, 40) unless @fps_sprite.bitmap
-      @fps_sprite.bitmap.clear
-      @fps_sprite.bitmap.draw_text(0, 0, 200, 40, @fps.to_i.to_s, 0)      
-    end
-  end
-  def self.fps
-    @fps
-  end
 end
 
 #===============================================================================
@@ -317,6 +240,18 @@ class Game_Character
   def pathfind(x, y)
     dir = find_direction_to(x, y)
     move_straight(dir) if dir > 0
+  end
+  #--------------------------------------------------------------------------
+  # * pathfind
+  #--------------------------------------------------------------------------    
+  def pathfind_v(target)
+    dx = target.x
+    dy = target.y
+    dr = target.direction
+    if $game_map.passable?(dx, dy, dr)
+      dir = find_direction_to(dx, dy)
+      move_straight(dir) if dir > 0
+    end
   end
   #--------------------------------------------------------------------------
   # * pathfind_ev
