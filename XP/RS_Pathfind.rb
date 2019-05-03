@@ -7,6 +7,7 @@
 # 이동 루트의 설정에서 다음 스크립트를 호출하세요.
 #   pathfind(x, y)
 #   pathfind_ev(event_id)
+#   pathfind_v($game_player)
 #===============================================================================
 $imported = {} if $imported.nil?
 $imported["RS_Pathfind"] = true
@@ -247,6 +248,18 @@ class Game_Character
     when 8
       move_up
     end  
+  end
+  def pathfind_v(target)
+    if target.is_a?(Integer)
+      return if target == 0
+      target = (target == -1) ? $game_player : $game_map.events[target]
+    end
+    dx = target.x
+    dy = target.y
+    dr = target.direction
+    if passable?(dx, dy, dr)
+      pathfind(dx, dy)
+    end
   end
   def pathfind_ev(event_id)
     event = $game_map.events[event_id]
