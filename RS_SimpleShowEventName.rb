@@ -1,38 +1,84 @@
-=begin
-이름 표시를 테스트 하기 위해 즉각 작성한 것으로
-폰트 설정, 오프셋 변경 등의 기능은 없습니다.
-개인적인 용도라 이러한 기능들이 사실 필요 없습니다.
-=end
 $imported = {} if $imported.nil?
 $imported["RS_SimpleShowEventName"] = true
 
+# ======================================================
+# 사용법
+# ======================================================
+# 이름 색상을 변경하려면 다음과 같은 노트 태그를 삽입하세요.
+#
+# <NAME_COLOR : r g b a>
+#
+# r은 빨강이며 0 ~ 255 사이의 BYTE 값입니다.
+# g는 초록색이며 0 ~ 255 사이의 BYTE 값입니다.
+# b는 파란색이며 0 ~ 255 사이의 BYTE 값입니다.
+# a는 알파값이며 0 ~ 255 사이의 BYTE 값입니다.
+#
+# 노트 태그를 삽입하지 않으면 기본 색상이 적용됩니다.
+#
+# 이름을 변경하고 싶다면 다음 노트 태그를 삽입하세요.
+#
+# <NEW_NAME : name>
+#
+# ======================================================
+# 버전 로그
+# ======================================================
 # 2019.03.23 (v1.0.1) : 
-# - added a new feature that can hide the name layer when opening the message window.
+# - Added a new feature that can hide the name layer when opening the message window.
+# 2019.05.03 (v1.0.2) :
+# - Added the functionality that get the character width and height values from the parent.
+
+module EV_NAME_CONFIG
+  BW = 32 * 6
+  BH = 32 * 3
+  OY = 32 * 2
+  Z_ADD = 100
+  MIN_OPACITY = 64
+  MAX_OPACITY = 255
+  MY_FONT = Font.new("나눔고딕", 16)
+  MY_FONT.outline = true
+  MY_FONT.shadow = true
+end
 
 class Game_Event
   def erased?
     @erased
   end
+  def read_name_comment
+    return "" if @list.nil?
+    comments = []
+    @list.each do |param|
+      if [108, 408].include?(param.code)
+        comments.push(param.parameters[0])
+      end
+    end
+    comments.join('\r\n')
+  end
 end
+
 module Sprite_Name
+  include EV_NAME_CONFIG
+  
   def create_name_sprite
     @name_sprite = Sprite.new
-    @name_sprite.bitmap = Bitmap.new(32 * 6, 32 * 3)
-    @name_sprite.x = self.x - (32 * 6) / 2
-    @name_sprite.y = self.y - 32 * 2
+    @name_sprite.bitmap = Bitmap.new(BW, BH)
+    @name_sprite.bitmap.font = MY_FONT
+    @name_sprite.x = self.x - (BW / 2)
+    @name_sprite.y = self.y - OY
     @name_sprite.z = self.z + 100
     @name_sprite.visible = false
   end
+  
   def update_visibility
     return if not @name_sprite
     @name_sprite.opacity = if $game_message.busy?
-      @name_sprite.z = self.z - 100
-      64
+      @name_sprite.z = self.z - Z_ADD
+      MIN_OPACITY
     else 
-      @name_sprite.z = self.z + 100
-      255
+      @name_sprite.z = self.z + Z_ADD
+      MAX_OPACITY
     end
   end
+  
   def update_name_sprite
     return if @name_sprite.nil?
     return if @character.nil?
@@ -49,34 +95,59 @@ module Sprite_Name
     @name_sprite.bitmap.clear
     dx = 0
     dy = 0
-    tw = 32 * 6
+    tw = BW
     lh = 32
-    name = @character.name || ""
+    
+    name = @character.name || ""        
+    @name_sprite.bitmap.font = MY_FONT
+    
+    comment = @character.read_name_comment    
+    
+    if not comment.empty?
+      # <NAME_COLOR : r g b a>      
+      if comment =~ /\<(?:NAME_COLOR)[ ]*\:[ ]*(\d+)[ ](\d+)[ ](\d+)[ ](\d+)[ ]*\>/im
+        c = Color.new($1.to_i, $2.to_i, $3.to_i, $4.to_i)
+        @name_sprite.bitmap.font.color = c
+      end
+      # <NEW_NAME : r g b a>            
+      if comment =~ /\<(?:NEW_NAME)[ ]*\:[ ]*(.*)\>/im
+        name = $1.to_s
+      end      
+    end    
+    
     @name_sprite.bitmap.draw_text(dx, dy, tw, lh, name, 1)
-    @name_sprite.x = @character.screen_x - (32 * 6) / 2
-    @name_sprite.y = @character.screen_y - 32 * 2
+    
+    @name_sprite.x = @character.screen_x - BW / 2
+    @name_sprite.y = @character.screen_y - (@ch + lh)
   end
+  
   def dispose_name_sprite
     @name_sprite.dispose
     @name_sprite.bitmap.dispose
   end  
+  
 end
 class Sprite_Character < Sprite_Base
   include Sprite_Name
+  
   alias thelang_xm3_initialize initialize
   alias thelang_xm3_update update
   alias thelang_xm3_dispose dispose
+  
   def initialize(viewport, character = nil)
     thelang_xm3_initialize(viewport, character)
     create_name_sprite
   end
+  
   def update
     thelang_xm3_update
     update_name_sprite
     update_visibility
   end
+  
   def dispose
     thelang_xm3_dispose
     dispose_name_sprite
   end
+  
 end
