@@ -245,6 +245,10 @@ class Game_Character
   # * pathfind
   #--------------------------------------------------------------------------    
   def pathfind_v(target)
+    if target.is_a?(Integer)
+      return if target == 0
+      target = (target == -1) ? $game_player : $game_map.events[target]
+    end    
     dx = target.x
     dy = target.y
     dr = target.direction
