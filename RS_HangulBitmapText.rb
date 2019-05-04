@@ -7,6 +7,15 @@
 $imported = {} if $imported.nil?
 $imported["RS_HangulBitmapText"] = true
 
+if not defined?(RGSS_VERSION)
+  RGSS_VERSION = case RUBY_VERSION
+  when "1.8.1"
+    defined?(Game_Interpreter) ? 2 : 1
+  when "1.9.2"
+    3
+  end
+end
+
 class CharDescriptor
   attr_accessor :x, :y, :width, :height, :xoffset, :yoffset
   attr_accessor :xadvance, :page, :kerning
@@ -23,11 +32,18 @@ class CharDescriptor
   end
 end
 
-module RPG::Cache
-  def self.font(filename)
-    self.load_bitmap("Graphics/Hangul/", filename)
-  end  
+m = []
+if RGSS_VERSION == 1
+  m << "module RPG::Cache"
+else
+  m << "module Cache"
 end
+  m << "def self.font(filename)"
+  m << '  self.load_bitmap("Graphics/Hangul/", filename)'
+  m << "end  "
+  m << "end"
+
+  eval(m.join("\r\n"))
 
 class Charset
   attr_accessor :line_height, :base, :width, :height
@@ -73,7 +89,7 @@ class BMFont
   def parse_page(stream)
     pages = get_data(stream, {})
     filename = pages["file"].gsub(/[\"]*/i, "")
-    @texture.push(RPG::Cache.font(filename))
+    @texture.push(RGSS_VERSION == 1 ? RPG::Cache.font(filename) : Cache.font(filename))
   end
   def parse_char(stream)
     chars = get_data(stream, {})
@@ -132,7 +148,7 @@ class BMFont
     cursor_x = x
     cursor_y = y
     prev_cursor_x = 0
-    line_width = 0
+    line_width = [0]
     
     bitmap = Bitmap.new(tw, th)
     
@@ -171,7 +187,7 @@ class BMFont
         end
         
         cursor_x += desc.xadvance * scale
-        line_width = cursor_x
+        line_width << cursor_x
         prev_code = id
       else 
         # 이외의 문자 중 개행 문자가 있으면 처리합니다.
@@ -179,7 +195,7 @@ class BMFont
           cursor_x = x
           cursor_y += line_height * scale
         end
-        line_width = cursor_x
+        line_width << cursor_x
       end
     end
     
@@ -194,7 +210,7 @@ class BMFont
     
     block.call(data) if block
     
-    return line_width
+    return line_width.max
     
   end
   def draw_text_ex(sprite, x, y, width, height, text)
