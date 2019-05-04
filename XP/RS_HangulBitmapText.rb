@@ -124,13 +124,13 @@ class BMFont
       bitmap.dispose
     end
   end
-  def draw_text(x, y, tw, th, text)
+  def draw_text(x, y, tw, th, text, &block)
     base = @desc.base
     line_height = @desc.line_height
     width = @desc.width
     height = @desc.height
-    cursor_x = 0
-    cursor_y = 0
+    cursor_x = x
+    cursor_y = y
     prev_cursor_x = 0
     line_width = 0
     
@@ -181,7 +181,23 @@ class BMFont
       end
     end
     
-    return bitmap
+    data = {
+      :x => x,
+      :y => y,
+      :bitmap => bitmap, 
+      :cursor_x => cursor_x, 
+      :cursor_y => cursor_y, 
+      :src_rect => Rect.new(0, 0, width, height)
+    }
     
+    block.call(data) if block
+    
+    return line_width
+    
+  end
+  def draw_text_ex(sprite, x, y, width, height, text)
+    draw_text(x, y, width, height, text) do |i|
+      sprite.bitmap.blt(i[:x], i[:y], i[:bitmap], i[:src_rect])
+    end    
   end
 end
