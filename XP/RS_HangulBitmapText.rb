@@ -133,6 +133,8 @@ class BMFont
     
     bitmap = Bitmap.new(tw, th)
     
+    scale = Font.default_size / line_height.to_f
+    
     prev_code = 0
     
     return if not @desc.texture_ready
@@ -140,7 +142,7 @@ class BMFont
     text.split("").each_with_index do |c, index|
       
       # ID 값을 구합니다. 
-      p id = c.unpack('U*')[0]
+      id = c.unpack('U*')[0]
       
       # 한글 또는 영어 범위인지 확인합니다.
       if (id >= 32 and id <= 255) || (id >= 0xAC00 and id <= 0xD7A3)
@@ -150,27 +152,27 @@ class BMFont
         cy = desc.y
         cw = desc.width
         ch = desc.height
-        ox = desc.xoffset
-        oy = desc.yoffset
+        ox = desc.xoffset * scale
+        oy = desc.yoffset * scale
         page = desc.page
         
         src_bitmap = @texture[page]
         src_rect = Rect.new(cx, cy, cw, ch)
-        dest_rect = Rect.new(cursor_x + ox, cursor_y + oy, cw, ch)
+        dest_rect = Rect.new(cursor_x + ox, cursor_y + oy, cw * scale, ch * scale)
         bitmap.stretch_blt(dest_rect, src_bitmap, src_rect)
         
         if prev_code != 0 and desc.kerning[prev_code] and desc.kerning[prev_code] > 0
           cursor_x += desc.kerning[prev_code]
         end
         
-        cursor_x += desc.xadvance
+        cursor_x += desc.xadvance * scale
         line_width = cursor_x
         prev_code = id
       else 
         # 이외의 문자 중 개행 문자가 있으면 처리합니다.
         if id == 10
           cursor_x = x
-          cursor_y += line_height
+          cursor_y += line_height * scale
         end
         line_width = cursor_x
       end
@@ -178,5 +180,29 @@ class BMFont
     
     return bitmap
     
+  end
+end
+
+$font = BMFont.new("hangul.fnt")
+$font.parse_font      
+
+class Scene_Map
+  alias bmfont_update update
+  def update
+    bmfont_update
+    if not @text
+      @text = Sprite.new
+      @text.bitmap = $font.draw_text(0, 0, 640, 480, "안녕하세요?\n러닝은빛입니다. ")
+    else
+      @text.update
+    end
+  end
+  alias bmfont_main main
+  def main
+    bmfont_main
+    if @text
+      @text.bitmap.dispose
+      @text.dispose
+    end
   end
 end
