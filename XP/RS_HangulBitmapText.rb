@@ -180,27 +180,3 @@ class BMFont
     
   end
 end
-
-$font = BMFont.new("hangul.fnt")
-$font.parse_font      
-
-class Scene_Map
-  alias bmfont_update update
-  def update
-    bmfont_update
-    if not @text
-      @text = Sprite.new
-      @text.bitmap = $font.draw_text(0, 0, 640, 480, "안녕하세요?\n러닝은빛입니다. ")
-    else
-      @text.update
-    end
-  end
-  alias bmfont_main main
-  def main
-    bmfont_main
-    if @text
-      @text.bitmap.dispose
-      @text.dispose
-    end
-  end
-end
