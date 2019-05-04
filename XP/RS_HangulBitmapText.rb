@@ -45,10 +45,13 @@ class Charset
 end
 
 class BMFont
+  attr_accessor :size
+  
   def initialize(fnt_name)
     @file = IO.readlines("Graphics/Hangul/#{fnt_name}")
     @desc = Charset.new
     @texture = []
+    @size = Font.default_size
   end
   def get_data(stream, hash)
     stream.each do |i|
@@ -133,7 +136,7 @@ class BMFont
     
     bitmap = Bitmap.new(tw, th)
     
-    scale = Font.default_size / line_height.to_f
+    scale = @size / line_height.to_f
     
     prev_code = 0
     
@@ -180,29 +183,5 @@ class BMFont
     
     return bitmap
     
-  end
-end
-
-$font = BMFont.new("hangul.fnt")
-$font.parse_font      
-
-class Scene_Map
-  alias bmfont_update update
-  def update
-    bmfont_update
-    if not @text
-      @text = Sprite.new
-      @text.bitmap = $font.draw_text(0, 0, 640, 480, "안녕하세요?\n러닝은빛입니다. ")
-    else
-      @text.update
-    end
-  end
-  alias bmfont_main main
-  def main
-    bmfont_main
-    if @text
-      @text.bitmap.dispose
-      @text.dispose
-    end
   end
 end
