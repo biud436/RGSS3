@@ -151,6 +151,8 @@ class BMFont
       if (id >= 32 and id <= 255) || (id >= 0xAC00 and id <= 0xD7A3)
         desc = @desc.chars[id]
         
+        next if not desc
+        
         cx = desc.x
         cy = desc.y
         cw = desc.width
