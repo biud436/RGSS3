@@ -3,7 +3,9 @@
 # Usage : 
 #   Font.default_name = if Locale.check?('ko-KR')
 #     ["나눔고딕", "VL Gothic"]
-#   else 
+#   elsif Locale.check?('ja-JP')
+#     ["Meiryo", "VL Gothic"]
+#   else
 #     ["VL Gothic"]
 #   end
 $imported = {} if $imported.nil?
