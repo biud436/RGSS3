@@ -1,14 +1,16 @@
 #==============================================================================
-# ** Hangul Message System 1.5.21 (RPG Maker VX Ace)
+# ** Hangul Message System 1.5.22 (RPG Maker VX Ace)
 #==============================================================================
 # Name       : Hangul Message System
 # Author     : biud436
-# Version    : 1.5.21
+# Version    : 1.5.22
 # Link       : http://biud436.blog.me/220251747366
 #==============================================================================
 # ** 업데이트 로그
 #==============================================================================
-# 2019.04.30 (v1.5.21)
+# 2019.05.19 (v1.5.22) :
+# - 커먼 이벤트가 설정되어있고, 이벤트 ID가 0이면 노트 태그를 읽지 않게 처리
+# 2019.04.30 (v1.5.21) :
 # - 캐릭터 크기에 따라 말풍선 위치 동적으로 변경됨.
 # 2019.04.16 (v1.5.20) :
 # - 숫자 포맷 텍스트 코드 추가.
@@ -361,8 +363,19 @@ module RS::EventComment
     data[:note] = []
     data[:meta] = {}
     meta = nil
+    list = nil
     
-    list = $game_map.events[event_id].list
+    if event_id <= 0
+      if $game_temp.reserved_common_event
+        list = $game_temp.reserved_common_event.list
+      end
+      return meta if list.nil?  
+    else
+      if $game_map.events[event_id]
+        list = $game_map.events[event_id].list
+      end
+      return meta if list.nil?      
+    end
     param = list[index]
     
     while param and param.code == 408
