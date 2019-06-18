@@ -163,7 +163,7 @@ module XMLWriter
     end
     
     # 저장
-    RSSaveXmlDoc.call(xml_doc, "MapEidtorTest.xml")
+    RSSaveXmlDoc.call(xml_doc, "MapEditorTest.xml")
     
     # 메모리 해제
     RSRemoveXmlDoc.call(xml_doc)
@@ -175,7 +175,7 @@ module XMLWriter
     # DOC 생성
     xml_doc = RSNewXmlDoc.call    
     
-    if RSLoadXmlFile.call(xml_doc, "MapEidtorTest.xml") == -1
+    if RSLoadXmlFile.call(xml_doc, "MapEditorTest.xml") == -1
       p "XML 파일 로드에 실패했습니다"
       return false
     end
