@@ -1,7 +1,9 @@
 # Author : biud436
-# Date : 2019.06.18 (v1.0.0)
 # 자바스크립트로 작성하면 시간이 오래 걸리므로 상대적으로 쉬운 루비를 선택하여 프로토타이핑을 했습니다.
 # 루비로 만든 초기 모델은 최종적으로 다른 언어로 변환됩니다.
+# Date : 
+# 2019.06.18 (v1.0.0) :
+# - XML 파일을 읽는 기능을 추가하였습니다.
 
 module MapEidtorConfig
   # Setting the view section on the screen.
@@ -116,6 +118,46 @@ class SelectTool < Sprite
     self.z = 210
     
   end
+end
+
+module XMLWriter
+  RSCreateDoc = Win32API.new('XMLWriter.dll', 'RSCreateDoc', 'p', 'l')
+  
+  RSNewXmlDoc = Win32API.new('XMLWriter.dll', 'RSNewXmlDoc', 'v', 'l')
+  RSSaveXmlDoc = Win32API.new('XMLWriter.dll', 'RSSaveXmlDoc', 'lp', 'l')  
+  RSRemoveXmlDoc = Win32API.new('XMLWriter.dll', 'RSRemoveXmlDoc', 'l', 'l')
+  RSCreateXmlElement = Win32API.new('XMLWriter.dll', 'RSCreateXmlElement', 'p', 'l')
+  
+  RSLinkEndChildFromDoc = Win32API.new('XMLWriter.dll', 'RSLinkEndChildFromDoc', 'll', 'v')
+  RSLinkEndChild = Win32API.new('XMLWriter.dll', 'RSLinkEndChild', 'll', 'v')
+  RSSetAttribute = Win32API.new('XMLWriter.dll', 'RSSetAttribute', 'llll', 'v')
+  
+  # 작성법은 다음과 같다.
+  def self.write_test
+    
+    # DOC 생성
+    xml_doc = RSNewXmlDoc.call
+    
+    # 루트 노드 생성
+    xml_root = RSCreateXmlElement.call("MapEditor")
+    
+    # 루트 노드 삽입
+    RSLinkEndChildFromDoc.call(xml_doc, xml_root)
+    
+    # 자식 노드 생성
+    xml_element = RSCreateXmlElement.call("TileIds")
+    
+    # 자식 노드에 타일 ID 설정
+    RSSetAttribute.call(xml_element, 10, 12, 1)
+    
+    # 루트 노드에 자식 노드 삽입
+    RSLinkEndChild.call(xml_root, xml_element)
+    
+    # 저장
+    RSSaveXmlDoc.call(xml_doc, "MapEidtorTest.xml")
+    
+  end
+  
 end
 
 class MapEditor
@@ -384,3 +426,5 @@ module SceneManager
     $BTEST ? Scene_Battle : Scene_Tool
   end
 end
+
+XMLWriter.write_test
