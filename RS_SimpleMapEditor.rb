@@ -1,5 +1,7 @@
 # Author : biud436
 # Date : 2019.06.18 (v1.0.0)
+# 자바스크립트로 작성하면 시간이 오래 걸리므로 상대적으로 쉬운 루비를 선택하여 프로토타이핑을 했습니다.
+# 루비로 만든 초기 모델은 최종적으로 다른 언어로 변환됩니다.
 
 module MapEidtorConfig
   # Setting the view section on the screen.
