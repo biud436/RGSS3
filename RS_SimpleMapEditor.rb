@@ -3,7 +3,7 @@
 # 루비로 만든 초기 모델은 최종적으로 다른 언어로 변환됩니다.
 # Date : 
 # 2019.06.18 (v1.0.0) :
-# - XML 파일을 읽는 기능을 추가하였습니다.
+# - XML 파일을 쓰고 읽는 기능을 추가하였습니다.
 
 module MapEidtorConfig
   # Setting the view section on the screen.
@@ -132,8 +132,13 @@ module XMLWriter
   RSLinkEndChild = Win32API.new('XMLWriter.dll', 'RSLinkEndChild', 'll', 'v')
   RSSetAttribute = Win32API.new('XMLWriter.dll', 'RSSetAttribute', 'llll', 'v')
   
-  # 작성법은 다음과 같다.
-  def self.write_test
+  RSLoadXmlFile = Win32API.new('XMLWriter.dll', 'RSLoadXmlFile', 'lp', 'l')
+  RSGetRootElement = Win32API.new('XMLWriter.dll', 'RSGetRootElement', 'l', 'l')
+  RSGetTileIds = Win32API.new('XMLWriter.dll', 'RSGetTileIds', 'lp', 'l')
+  
+  MAX_SIZE = 50
+  
+  def self.write_test(buffers)
     
     # DOC 생성
     xml_doc = RSNewXmlDoc.call
@@ -144,17 +149,52 @@ module XMLWriter
     # 루트 노드 삽입
     RSLinkEndChildFromDoc.call(xml_doc, xml_root)
     
-    # 자식 노드 생성
-    xml_element = RSCreateXmlElement.call("TileIds")
-    
-    # 자식 노드에 타일 ID 설정
-    RSSetAttribute.call(xml_element, 10, 12, 1)
-    
-    # 루트 노드에 자식 노드 삽입
-    RSLinkEndChild.call(xml_root, xml_element)
+    buffers.each do |buf|
+      
+      # 자식 노드 생성
+      xml_element = RSCreateXmlElement.call("TileIds")
+      
+      # 자식 노드에 타일 ID 설정
+      RSSetAttribute.call(xml_element, *buf)
+      
+      # 루트 노드에 자식 노드 삽입
+      RSLinkEndChild.call(xml_root, xml_element)
+            
+    end
     
     # 저장
     RSSaveXmlDoc.call(xml_doc, "MapEidtorTest.xml")
+    
+    # 메모리 해제
+    RSRemoveXmlDoc.call(xml_doc)
+    
+  end
+  
+  def self.read_test
+    
+    # DOC 생성
+    xml_doc = RSNewXmlDoc.call    
+    
+    if RSLoadXmlFile.call(xml_doc, "MapEidtorTest.xml") == -1
+      p "XML 파일 로드에 실패했습니다"
+      return false
+    end
+    
+    # 루트 노트 
+    xml_root = RSGetRootElement.call(xml_doc)
+    
+    ids_struct = ([0,0,0] * MAX_SIZE).pack('l*')
+    
+    RSGetTileIds.call(xml_root, ids_struct)
+    
+    ids = ids_struct.unpack('l*')
+    
+    # 메모리 해제
+    RSRemoveXmlDoc.call(xml_doc)    
+    
+    ret = ids.each_slice(3).to_a
+    ret.delete([0,0,0])
+    ret
     
   end
   
@@ -369,22 +409,23 @@ class MapEditor
   end
   
   def on_save
-    File.open("data.rbmap", "wb") do |f|
-      Marshal.dump(@tile_buffers, f)
-    end
+
+    XMLWriter.write_test(@tile_buffers)
     
     p "데이터가 저장되었습니다"
     
   end
   
   def on_load
-    @tile_buffers = []      
-    if not FileTest.exist?("data.rbmap") 
+    @tile_buffers = []    
+    
+    if not FileTest.exist?("MapEidtorTest.xml") 
       return false 
     end
-    File.open("data.rbmap", "rb") do |f|
-      @tile_buffers = Marshal.load(f)
-    end
+
+
+    @tile_buffers = XMLWriter.read_test
+
     return false if @tile_buffers.nil?
     
     last_tile = nil
@@ -426,5 +467,3 @@ module SceneManager
     $BTEST ? Scene_Battle : Scene_Tool
   end
 end
-
-XMLWriter.write_test
