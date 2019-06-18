@@ -419,7 +419,7 @@ class MapEditor
   def on_load
     @tile_buffers = []    
     
-    if not FileTest.exist?("MapEidtorTest.xml") 
+    if not FileTest.exist?("MapEditorTest.xml") 
       return false 
     end
 
