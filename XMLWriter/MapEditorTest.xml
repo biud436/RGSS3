@@ -1,0 +1,29 @@
+<?xml version="1.0" ?>
+<MapEditor>
+    <TileIds dx="64" dy="160" index="33" />
+    <TileIds dx="96" dy="160" index="33" />
+    <TileIds dx="128" dy="160" index="33" />
+    <TileIds dx="96" dy="192" index="56" />
+    <TileIds dx="128" dy="192" index="56" />
+    <TileIds dx="160" dy="192" index="56" />
+    <TileIds dx="160" dy="192" index="56" />
+    <TileIds dx="192" dy="192" index="56" />
+    <TileIds dx="128" dy="192" index="65" />
+    <TileIds dx="160" dy="192" index="65" />
+    <TileIds dx="192" dy="192" index="65" />
+    <TileIds dx="96" dy="192" index="65" />
+    <TileIds dx="160" dy="160" index="20" />
+    <TileIds dx="128" dy="128" index="20" />
+    <TileIds dx="160" dy="128" index="20" />
+    <TileIds dx="96" dy="96" index="2" />
+    <TileIds dx="128" dy="96" index="3" />
+    <TileIds dx="160" dy="96" index="4" />
+    <TileIds dx="192" dy="256" index="69" />
+    <TileIds dx="160" dy="256" index="69" />
+    <TileIds dx="128" dy="256" index="69" />
+    <TileIds dx="128" dy="288" index="69" />
+    <TileIds dx="160" dy="288" index="69" />
+    <TileIds dx="192" dy="288" index="69" />
+    <TileIds dx="224" dy="288" index="69" />
+    <TileIds dx="224" dy="256" index="69" />
+</MapEditor>
