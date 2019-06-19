@@ -13,6 +13,8 @@
 # 2019.06.19 (v1.0.1) :
 # - 퍼포먼스 저하로 인해 텍스트 레이어 제거
 # - 타일 배치 시 TouchInput.trigger?에서 TouchInput.press?로 변경
+# - 타일뷰에 스크롤 기능 추가
+# - 타일 최대치 50에서 100으로 변경.
 
 module MapEidtorConfig
   # Setting the view section on the screen.
@@ -37,6 +39,7 @@ end
 
 # A class that manages children for many of sprites.
 class Children
+  attr_reader :children
   def initialize
     @children = []
   end
@@ -92,7 +95,7 @@ class Component < Sprite
         end
       end
     
-    end
+  end
     
   def dispose
     super
@@ -106,6 +109,35 @@ class Component < Sprite
     @clicked_callback.call(self) if @clicked_callback and @clicked
   end
 
+end
+
+class TileComponent < Component
+  def update
+    
+    Sprite.instance_method(:update).bind(self).call
+    
+    # Check collision with mouse pointer.
+    tx = TouchInput.x
+    ty = TouchInput.y
+    x = self.x
+    y = self.y
+    width = self.width
+    height = self.height
+      
+    # if it is inside, it will execute callback method that specified contents before.
+    if TouchInput.press?(:LEFT)
+      if (tx > x and tx < x + width) and (ty > y and ty < (y + height))
+        do_clicked_callback
+      end
+    end
+    
+  end  
+    
+  def do_clicked_callback
+    if @clicked_callback
+      @clicked_callback.call(self) 
+    end
+  end    
 end
 
 # 선택 툴을 그린다
@@ -159,7 +191,8 @@ module XMLWriter
   RSGetRootElement = Win32API.new('XMLWriter.dll', 'RSGetRootElement', 'l', 'l')
   RSGetTileIds = Win32API.new('XMLWriter.dll', 'RSGetTileIds', 'lp', 'l')
   
-  MAX_SIZE = 50
+  # 저장할 수 있는 타일 최대치
+  MAX_SIZE = 100
   
   def self.write_test(buffers)
     
@@ -282,6 +315,22 @@ class MapEditor
       end
     end
     
+    # 오른쪽 타일셋 뷰에서 마우스 휠을 위로 스크롤 했을 때
+    if TouchInput.z < 0
+      @components.children.each do |i|
+        i.y -= 16
+      end
+      @select_tool.y -= 16
+    end
+    
+    # 오른쪽 타일셋 뷰에서 마우스 휠을 아래로 스크롤 했을 때
+    if TouchInput.z > 0
+      @components.children.each do |i|
+        i.y += 16
+      end
+      @select_tool.y += 16 
+    end    
+    
     saved = false
     
     # if the save button is pressed?
@@ -360,8 +409,13 @@ class MapEditor
     rr = MapEidtorConfig::VIEW[:RIGHT]
     w = MapEidtorConfig::TW
     h = MapEidtorConfig::TH
+    my = rr.y
+    if @components.children[0].y < my
+      my = @components.children[0].y
+    end
+      
     mx = (event.x - rr.x) / w
-    my = (event.y - rr.y) / h
+    my = (event.y - my) / h
     
     @index = (my * 8) + mx
     
@@ -391,7 +445,7 @@ class MapEditor
     bitmap = Bitmap.new(rect.width, rect.height)
     
     # Create a new component
-    new_component = Component.new(bitmap)
+    new_component = TileComponent.new(bitmap)
     new_component.x = rect.x
     new_component.y = rect.y
     new_component.z = @map_view.z + 1
