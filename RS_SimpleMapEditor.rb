@@ -1,9 +1,18 @@
+# ==============================================================================
 # Author : biud436
-# 자바스크립트로 작성하면 시간이 오래 걸리므로 상대적으로 쉬운 루비를 선택하여 프로토타이핑을 했습니다.
-# 루비로 만든 초기 모델은 최종적으로 다른 언어로 변환됩니다.
-# Date : 
+# Desc : 
+# 자바스크립트로 작성하면 시간이 오래 걸리므로 상대적으로 쉬운 루비를 선택하여 
+# 프로토타이핑을 했습니다. 루비로 만든 초기 모델은 최종적으로 다른 언어로 변환됩니다.
+#
+# Usage :
+# Ctrl + S를 누르면 Save 됩니다.
+#
+# Change Log : 
 # 2019.06.18 (v1.0.0) :
 # - XML 파일을 쓰고 읽는 기능을 추가하였습니다.
+# 2019.06.19 (v1.0.1) :
+# - 퍼포먼스 저하로 인해 텍스트 레이어 제거
+# - 타일 배치 시 TouchInput.trigger?에서 TouchInput.press?로 변경
 
 module MapEidtorConfig
   # Setting the view section on the screen.
@@ -11,6 +20,17 @@ module MapEidtorConfig
   
   ww = (Graphics.width / 3).floor + (Graphics.width / 7).floor
   
+  # 저장할 XML 파일명
+  SAVE_XML_NAME = "MapEditorTest.xml"
+  
+  # 타일셋 명
+  TILES = "Outside_A5"
+  
+  # 타일 크기
+  TW = 32
+  TH = 32
+  
+  # 뷰 크기
   VIEW[:LEFT] = Rect.new(0, 0, Graphics.width - ww, Graphics.height)
   VIEW[:RIGHT] = Rect.new(VIEW[:LEFT].width, 0, ww, Graphics.height)
 end
@@ -95,25 +115,28 @@ class SelectTool < Sprite
     create_bitmap
   end
   def create_bitmap
-    self.bitmap = Bitmap.new(32, 32)
+    self.bitmap = Bitmap.new(MapEidtorConfig::TW, MapEidtorConfig::TH)
     
     border = 2
     
     c = Color.new(255, 255, 255, 255)
     b = Color.new(0, 0, 0, 255)
     
+    tw = MapEidtorConfig::TW
+    th = MapEidtorConfig::TH
+    
     # 위
-    self.bitmap.fill_rect(0, 0, 32, border, b)
-    self.bitmap.fill_rect(0, 0, 32 - 1, border - 1, c)    
+    self.bitmap.fill_rect(0, 0, tw, border, b)
+    self.bitmap.fill_rect(0, 0, tw - 1, border - 1, c)    
     # 왼
-    self.bitmap.fill_rect(0, 0, border, 32, c)
-    self.bitmap.fill_rect(1, 1, border - 1, 32 - 1, b)
+    self.bitmap.fill_rect(0, 0, border, th, c)
+    self.bitmap.fill_rect(1, 1, border - 1, th - 1, b)
     # 오른쪽
-    self.bitmap.fill_rect(32 - border, 0, border, 32, c)
-    self.bitmap.fill_rect(32 - border + 1, 1, border - 1, 32 - 1, b)
+    self.bitmap.fill_rect(tw - border, 0, border, th, c)
+    self.bitmap.fill_rect(tw - border + 1, 1, border - 1, th - 1, b)
     # 아래
-    self.bitmap.fill_rect(0, 32 - border, 32, border, c)
-    self.bitmap.fill_rect(1, 32 - border + 1, 32 - 1, border - 1, b)
+    self.bitmap.fill_rect(0, th - border, tw, border, c)
+    self.bitmap.fill_rect(1, th - border + 1, tw - 1, border - 1, b)
     
     self.z = 210
     
@@ -163,7 +186,7 @@ module XMLWriter
     end
     
     # 저장
-    RSSaveXmlDoc.call(xml_doc, "MapEditorTest.xml")
+    RSSaveXmlDoc.call(xml_doc, MapEidtorConfig::SAVE_XML_NAME)
     
     # 메모리 해제
     RSRemoveXmlDoc.call(xml_doc)
@@ -175,7 +198,7 @@ module XMLWriter
     # DOC 생성
     xml_doc = RSNewXmlDoc.call    
     
-    if RSLoadXmlFile.call(xml_doc, "MapEditorTest.xml") == -1
+    if RSLoadXmlFile.call(xml_doc, MapEidtorConfig::SAVE_XML_NAME) == -1
       p "XML 파일 로드에 실패했습니다"
       return false
     end
@@ -204,7 +227,7 @@ class MapEditor
   
   def initialize
     
-    # Create both views
+    # 뷰 생성
     @map_view = create_image(MapEidtorConfig::VIEW[:LEFT])
     @right_view = create_image(MapEidtorConfig::VIEW[:RIGHT])
     
@@ -231,7 +254,6 @@ class MapEditor
     @children << @tile_select_tool
     
     create_component
-    create_text_layer
     
     @index = 0
     
@@ -244,18 +266,18 @@ class MapEditor
   end
   
   def update
+    
     # Update all children
     @children.update
-    update_text_layer
     
     # if the mouse button is pressed as left button?
-    if TouchInput.trigger?(:LEFT)
+    if TouchInput.press?(:LEFT)
       l = MapEidtorConfig::VIEW[:LEFT]
       tx = TouchInput.x
       ty = TouchInput.y
       if (tx >= l.x and tx < l.width) and (ty >= l.y and ty < l.height)
-        dx = (tx / 32).floor * 32
-        dy = (ty / 32).floor * 32
+        dx = (tx / MapEidtorConfig::TW).floor * MapEidtorConfig::TW
+        dy = (ty / MapEidtorConfig::TH).floor * MapEidtorConfig::TH
         on_draw(dx, dy)
       end
     end
@@ -283,7 +305,6 @@ class MapEditor
   def dispose
     # Dispose all children
     @children.dispose
-    dispose_text_layer
   end
   
   private
@@ -300,13 +321,16 @@ class MapEditor
     
     rr = MapEidtorConfig::VIEW[:RIGHT]
     
-    src_bitmap = Cache.tileset("Outside_A5")
+    src_bitmap = Cache.tileset(MapEidtorConfig::TILES)
+    
+    tw = MapEidtorConfig::TW
+    th = MapEidtorConfig::TH
     
     for y in (0...32)
       for x in (0...8)
         
         # Create a rect
-        rect = Rect.new(0,0,32,32)
+        rect = Rect.new(0,0,tw,th)
         rect.x = rr.x + (x * rect.width)
         rect.y = rr.y + (y * rect.height)
         
@@ -320,7 +344,7 @@ class MapEditor
         
         # Set the tile area 
         dest_rect = Rect.new(0,0,rect.width, rect.height)
-        src_rect = Rect.new(x * 32, y * 32,32,32)
+        src_rect = Rect.new(x * tw, y * th,tw,th)
         
         new_component.bitmap.stretch_blt(dest_rect, src_bitmap, src_rect)
         
@@ -332,32 +356,10 @@ class MapEditor
     
   end
   
-  def create_text_layer
-    @text_layer = create_image(MapEidtorConfig::VIEW[:LEFT])
-  end
-  
-  def update_text_layer
-    return if not @text_layer
-    rl = MapEidtorConfig::VIEW[:LEFT]
-    texts = [
-      "선택된 버튼은 #{@index}번 버튼입니다.",
-      "데이터 저장은 CTRL + S 입니다"
-    ]
-    @text_layer.bitmap.clear
-    texts.each_with_index do |text, i|
-      rect = @text_layer.bitmap.text_size(text)      
-      @text_layer.bitmap.draw_text(0, i * rect.height, rect.width, rect.height, text)
-    end
-  end
-  
-  def dispose_text_layer
-    @text_layer.dispose if @text_layer
-  end
-  
   def on_component(event)
     rr = MapEidtorConfig::VIEW[:RIGHT]
-    w = 32
-    h = 32
+    w = MapEidtorConfig::TW
+    h = MapEidtorConfig::TH
     mx = (event.x - rr.x) / w
     my = (event.y - rr.y) / h
     
@@ -376,11 +378,13 @@ class MapEditor
   def on_draw(dx, dy, index = @index, is_on_load=false)
   
     x = index % 8
-    y = index / 8
+    y = index/ 8
     
-    src_bitmap = Cache.tileset("Outside_A5")
+    src_bitmap = Cache.tileset(MapEidtorConfig::TILES)
     l = MapEidtorConfig::VIEW[:RIGHT]
-    rect = Rect.new(0,0,32,32)
+    tw = MapEidtorConfig::TW
+    th = MapEidtorConfig::TH
+    rect = Rect.new(0,0,tw,th)
     rect.x = dx
     rect.y = dy
     
@@ -394,16 +398,18 @@ class MapEditor
     
     # Set the tile area 
     dest_rect = Rect.new(0, 0, rect.width, rect.height)
-    src_rect = Rect.new(x * 32, y * 32, 32, 32)
+    src_rect = Rect.new(x * tw, y * th, tw, th)
     
     new_component.bitmap.stretch_blt(dest_rect, src_bitmap, src_rect)
     
     new_component.set_clicked_callback(method(:on_clicked_tile))   
     
-    @tiles[(dy * 32) + dx] = new_component
+    @tiles[(dy * tw) + dx] = new_component
     
     if not is_on_load
-      @tile_buffers << [dx, dy, @index]
+      new_array = [dx, dy, @index]
+      @tile_buffers << new_array
+      @tile_buffers.uniq!
     end
     
   end
@@ -419,7 +425,7 @@ class MapEditor
   def on_load
     @tile_buffers = []    
     
-    if not FileTest.exist?("MapEditorTest.xml") 
+    if not FileTest.exist?(MapEidtorConfig::SAVE_XML_NAME) 
       return false 
     end
 
