@@ -2,7 +2,7 @@
 # 2019
 
 |이름|릴리즈|다운로드|비고|
-|--|--|--|--|--|
+|--|--|--|--|
 |RS_HangulInput.rb|2019.07.13|[Link](https://github.com/biud436/RGSS3/raw/master/RS_HangulInput.rb)|.|
 |RS_SimpleMapEditor.rb|2019.06.18|[Link](https://github.com/biud436/RGSS3/raw/master/RS_SimpleMapEditor.rb)|.|
 |XMLWriter.rb|2019.06.18|[Link](https://github.com/biud436/RGSS3/raw/master/XMLWriter/XMLWriter.rb)|.|
