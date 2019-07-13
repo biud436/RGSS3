@@ -449,6 +449,3 @@ class HangulIME
   end
 
 end
-
-$hangul = HangulIME.new
-$hangul.start_with_composite($hangul.decompress("니 결에 있을게 my love"), Proc.new {|ret| p ret })
