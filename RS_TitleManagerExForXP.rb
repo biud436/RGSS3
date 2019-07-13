@@ -24,7 +24,7 @@
 #==============================================================================
 
 $imported = {} if $imported.nil?
-$imported["RS_TitleManagerEx"] = true
+$imported["RS_TitleManagerExForXP"] = true
 
 module Tool
 

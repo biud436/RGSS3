@@ -49,7 +49,7 @@
 #==============================================================================
 
 $imported = {} if $imported.nil?
-$imported["RS_Menu"] = true
+$imported["RS_GraphicsMenu"] = true
 
 module RECT_SRC
   W = 78
