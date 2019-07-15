@@ -228,18 +228,15 @@ module Graphics
     rescue
       @width, @height = 640, 480
     end
-  else
-    @width, @height = 640, 480
-  end
   
-  extend self
-  unless method_defined? :width
-    define_method(:width) { @width }
+    extend self
+    unless method_defined? :width
+      define_method(:width) { @width }
+    end
+    unless method_defined? :height  
+      define_method(:height) { @height } 
+    end
   end
-  unless method_defined? :height  
-    define_method(:height) { @height } 
-  end
-  
 end
 
 #==============================================================================
