@@ -1,5 +1,5 @@
 #==============================================================================
-#  ** 한글 메시지 시스템 v1.0.11 (2019.07.22)
+#  ** 한글 메시지 시스템 v1.0.12 (2019.07.23)
 #==============================================================================
 #  ** 사용법
 #==============================================================================
@@ -139,6 +139,8 @@
 # - F12로 게임 재시작 시, Color의 new 메서드를 찾을 수 없다고 나오는 오류 수정
 # 2019.07.22 (v1.0.11) :
 # - 자동 개행 시 오류가 발생하는 문제를 수정하였습니다.
+# 2019.07.23 (v1.0.12) :
+# - 네코 플레이어에서 텍스트 테두리, 그림자 기능 지원
 #==============================================================================
 # ** 사용 조건
 #==============================================================================
@@ -309,7 +311,7 @@ module RS
   LIST["폰트명"] = Font.default_name
   
   # 폰트 크기를 변경합니다. 예:) Font.default_size는 기본 폰트 사이즈입니다.
-  LIST["폰트크기"] = Font.default_size
+  LIST["폰트크기"] = $NEKO_RUBY ? 16 : Font.default_size
   
   # 자동 개행 설정
   # true이면 창의 폭을 넘겼을 때 자동으로 개행합니다.
@@ -388,15 +390,6 @@ module RS
   CODE["이름색상변경1"] = /\eC\[(.+)\]/
   CODE["이름색상변경2"] = /\e색\[(.+)\]/
     
-end
-
-#==============================================================================
-# ** RS::EventComment
-#==============================================================================
-module RS::EventComment
-  # TODO: 추후 노트 태그로 윈도우 스킨 등을 변경할 수 있게 해야 한다.
-  def self.get(event_id, index)
-  end
 end
 
 #==============================================================================
@@ -651,13 +644,6 @@ class String
   #--------------------------------------------------------------------------
   def hex_to_color
     Colour.create Color.hex_to_rgb(self), 255
-  end
-  # https://github.com/ryanmcgrath/node-utf8/blob/master/lib/utf8.js
-  def encode
-    self.gsub!(/[가-핳]/) do |c|
-      cc = c.unpack('U')[0]
-      return [0xc0 | cc >> 6, 0x80 | cc & 0x3f].pack('U*')
-    end
   end
 end
 
@@ -1167,6 +1153,16 @@ class Window_Name < Window_Base
   # * 폰트 설정
   #--------------------------------------------------------------------------
   def set_font(name, size = Font.default_size )
+    
+    if $NEKO_RUBY
+      text_height = size / 0.75 # pt에서 px
+      max_font_size = (line_height - 2) * 0.75 # px에서 pt
+      
+      if text_height > line_height
+        size = max_font_size 
+      end
+    end
+    
     self.contents.font.name = name
     self.contents.font.size = size
   end
@@ -1323,8 +1319,19 @@ class Window_Message < Window_Selectable
   # * 폰트 설정
   #--------------------------------------------------------------------------
   def set_font(name, size = Font.default_size )
+    
+    if $NEKO_RUBY
+      text_height = size / 0.75 # pt에서 px
+      max_font_size = (line_height - 2) * 0.75 # px에서 pt
+      
+      if text_height > line_height
+        size = max_font_size 
+      end
+    end
+    
     self.contents.font.name = name
     self.contents.font.size = size
+    
   end  
   #--------------------------------------------------------------------------
   # * 이름 윈도우 생성하기
@@ -1865,9 +1872,50 @@ class Window_Message < Window_Selectable
     r = (-n..n)
     for i in r
       for j in r
-        self.contents.draw_text(4 + pos[:x] + i, pos[:y] + j, tw, pos[:height], c)        
+        if $NEKO_RUBY
+          draw_text_for_neko(4 + pos[:x] + i, pos[:y] + j, tw, pos[:height], c)
+        else 
+          self.contents.draw_text(4 + pos[:x] + i, pos[:y] + j, tw, pos[:height], c)        
+        end
       end
     end
+  end
+  #--------------------------------------------------------------------------
+  # * 텍스트 묘화(네코 플레이어 용)
+  #--------------------------------------------------------------------------    
+  def draw_text_for_neko(x, y, width=0, height=nil, str=nil, align=0 )
+    
+    return if self.contents.entity.nil?
+    
+    if x.is_a? Rect
+      rect  = x
+      str   = y
+      align = width
+
+      x      = rect.x
+      y      = rect.y
+      width  = rect.width
+      height = rect.height
+      
+    end    
+    
+    font = self.contents.font
+    font_entity = self.contents.font.entity
+        
+    str = str.to_s
+    if align == 2
+      x += width - font_entity.textSize(str)[0]
+    elsif align == 1
+      x += (width - font_entity.textSize(str)[0]) / 2
+    end
+
+    y += (height - font_entity.textSize(str)[1]) / 2 if height
+    
+    tmp = font_entity.renderSolidUTF8(str, font.color.red, font.color.green, font.color.blue)
+    tmp.setAlpha font.color.alpha
+    tmp.setBlendMode SDL::BLENDMODE_NONE
+    
+    self.contents.entity.put tmp, x, y
     
   end
   #--------------------------------------------------------------------------
@@ -1879,7 +1927,7 @@ class Window_Message < Window_Selectable
     temp_color = self.contents.font.color.dup
     
     tw = half ? w : (w * 2)
-    
+            
     # 배경색
     draw_highlight_color(c, pos, w)
     
@@ -1887,11 +1935,15 @@ class Window_Message < Window_Selectable
     draw_shadow(c, pos, tw)
     
     # 테두리
-    draw_outline(c, pos, tw)
+    draw_outline(c, pos, tw)          
     
     # 텍스트
     self.contents.font.color = temp_color
-    self.contents.draw_text(4 + pos[:x], pos[:y], tw, pos[:height], c)
+    if $NEKO_RUBY
+      draw_text_for_neko(4 + pos[:x], pos[:y], tw, pos[:height], c)
+    else
+      self.contents.draw_text(4 + pos[:x], pos[:y], tw, pos[:height], c)
+    end
     
     pos[:x] += w     
     
