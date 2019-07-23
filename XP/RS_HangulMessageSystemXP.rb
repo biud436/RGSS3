@@ -1705,7 +1705,7 @@ class Window_Message < Window_Selectable
   #--------------------------------------------------------------------------
   # * 한국어 조사
   #--------------------------------------------------------------------------   
-  def to_postpositional_word(text, a)
+  def to_postpositional_word(text, a, b)
         
     last_word = text.slice(-1, 1)
     return last_word if not last_word.match(/[가-ퟻ]+/i)
