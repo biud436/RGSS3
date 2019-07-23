@@ -1848,7 +1848,8 @@ class Window_Message < Window_Selectable
   #--------------------------------------------------------------------------    
   def draw_highlight_color(c, pos, w)
     return if not $game_temp.highlight
-    highlight_color = $game_temp.highlight_color      
+    return if $NEKO_RUBY # 네코 플레이어에서 텍스트 블렌딩을 지원하지 않음
+    highlight_color = $game_temp.highlight_color    
     self.contents.fill_rect(4 + pos[:x], pos[:y], w, pos[:height], highlight_color)
   end
   #--------------------------------------------------------------------------
@@ -1910,10 +1911,10 @@ class Window_Message < Window_Selectable
     end
 
     y += (height - font_entity.textSize(str)[1]) / 2 if height
-    
+        
     tmp = font_entity.renderSolidUTF8(str, font.color.red, font.color.green, font.color.blue)
     tmp.setAlpha font.color.alpha
-    tmp.setBlendMode SDL::BLENDMODE_NONE
+    tmp.setBlendMode  SDL::BLENDMODE_NONE
     
     self.contents.entity.put tmp, x, y
     
