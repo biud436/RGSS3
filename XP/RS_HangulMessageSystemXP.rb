@@ -184,6 +184,7 @@ end
 #------------------------------------------------------------------------------
 # INI 파일을 만들거나 읽을 수 있는 모듈입니다
 #==============================================================================
+
 module INI
   WritePrivateProfileStringW = Win32API.new('Kernel32','WritePrivateProfileStringW','pppp','s')
   GetPrivateProfileStringW = Win32API.new('Kernel32','GetPrivateProfileStringW','ppppip','s')
@@ -200,11 +201,61 @@ module INI
   # * INI 파일의 내용을 읽어옵니다
   #--------------------------------------------------------------------------
   def read_string(app_name,key_name,file_name)
+    if $NEKO_RUBY
+      return neko_read_string(app_name, key_name, file_name)
+    end
     buf = "\0" * 256
     path = ".\\" + file_name
     (param = [app_name,key_name,path]).collect! {|x| x.unicode!}
     GetPrivateProfileStringW.call(param[0], param[1], 0, buf, 256, param[2])
     buf.unicode_s.unpack('U*').pack('U*')
+  end    
+  #--------------------------------------------------------------------------
+  # * INI 파일의 내용을 작성합니다
+  #--------------------------------------------------------------------------  
+  def neko_write_string(app, data, file_name)
+    return if not $NEKO_RUBY
+    
+    Thread.new {
+      path = "./#{file_name}"
+      
+      f = File.open(path, "wb+")
+      
+      f.write "[#{app}]\r\n"
+      data.each do |k, v|
+        f.write "#{k}=#{v.to_s}\r\n"
+      end
+      f.close
+    }
+  end
+  #--------------------------------------------------------------------------
+  # * INI 파일의 내용을 읽어옵니다
+  #--------------------------------------------------------------------------  
+  def neko_read_string(app, key, file_name)
+    return "" if not $NEKO_RUBY
+    
+    # 파일을 읽는다
+    path = "./#{file_name}"
+    f = File.open(path, "r+")
+    data = f.read
+    f.close
+    
+    # app_name이 app과 일치 하는 지 확인한다.
+    m = data.split(/[\r\n]+/)
+    app_name = d[1, d.size - 2]
+    return "" if app_name != app
+    m.shift
+    
+    # 컬러 배열을 만든다
+    color = {}
+    m.each do |line|
+      name, value = line.split("=")
+      color[name] = value
+    end
+    
+    # 컬러가 있으면 반환, 없으면 빈 문자열
+    return color[key] || ""
+    
   end
 end
 
@@ -391,7 +442,11 @@ end
 #==============================================================================
 class Hash
   def to_ini(file_name="Default.ini",app_name="Default")
-    self.each { |k, v| INI.write_string(app_name,k.to_s.dup,v.to_s.dup,file_name) }
+    if $NEKO_RUBY
+      INI.neko_write_string(app_name, self, file_name)
+    else
+      self.each { |k, v| INI.write_string(app_name,k.to_s.dup,v.to_s.dup,file_name) }
+    end
   end
 end
 
@@ -596,6 +651,13 @@ class String
   #--------------------------------------------------------------------------
   def hex_to_color
     Colour.create Color.hex_to_rgb(self), 255
+  end
+  # https://github.com/ryanmcgrath/node-utf8/blob/master/lib/utf8.js
+  def encode
+    self.gsub!(/[가-핳]/) do |c|
+      cc = c.unpack('U')[0]
+      return [0xc0 | cc >> 6, 0x80 | cc & 0x3f].pack('U*')
+    end
   end
 end
 
