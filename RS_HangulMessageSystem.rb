@@ -1,13 +1,15 @@
 #==============================================================================
-# ** Hangul Message System 1.5.23 (RPG Maker VX Ace)
+# ** Hangul Message System 1.5.24 (RPG Maker VX Ace)
 #==============================================================================
 # Name       : Hangul Message System
 # Author     : biud436
-# Version    : 1.5.23
+# Version    : 1.5.24
 # Link       : http://biud436.blog.me/220251747366
 #==============================================================================
 # ** 업데이트 로그
 #==============================================================================
+# 2019.08.26 (v1.5.24) :
+# - 타일셋 그래픽이 설정된 캐릭터에 말풍선 모드를 적용하면 오류가 났던 문제 수정.
 # 2019.06.17 (v1.5.23) :
 # - 기본 텍스트 속도 매개변수 추가
 # 2019.05.19 (v1.5.22) :
@@ -1808,8 +1810,14 @@ class Spriteset_Map
     end
     
     return 32, 32 if not sprite
-    cw = sprite.instance_variable_get("@cw")
-    ch = sprite.instance_variable_get("@ch")
+    tile_id = sprite.instance_variable_get("@tile_id")
+    if tile_id > 0
+      cw = 32
+      ch = 32
+    else
+      cw = sprite.instance_variable_get("@cw")
+      ch = sprite.instance_variable_get("@ch")
+    end
     
     return cw, ch
   end
