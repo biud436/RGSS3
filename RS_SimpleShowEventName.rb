@@ -26,6 +26,8 @@ $imported["RS_SimpleShowEventName"] = true
 # - Added a new feature that can hide the name layer when opening the message window.
 # 2019.05.03 (v1.0.2) :
 # - Added the functionality that get the character width and height values from the parent.
+# 2019.08.26 (v1.0.3) :
+# - Fixed the issue that is not working when the tile graphics had set.
 
 module EV_NAME_CONFIG
   BW = 32 * 6
@@ -117,8 +119,9 @@ module Sprite_Name
     
     @name_sprite.bitmap.draw_text(dx, dy, tw, lh, name, 1)
     
+    ch = @tile_id > 0 ? 32 : @ch
     @name_sprite.x = @character.screen_x - BW / 2
-    @name_sprite.y = @character.screen_y - (@ch + lh)
+    @name_sprite.y = @character.screen_y - (ch + lh)
   end
   
   def dispose_name_sprite
