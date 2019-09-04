@@ -1,9 +1,14 @@
+<center>한글 메시지 시스템</center>
+--
 
 ## 소개
 텍스트 코드(제어 문자)를 영어 대신 한글로 대체합니다. 뿐만 아니라 한글로된 색상 코드 사용, 이름 윈도우, 말풍선 모드, 텍스트 사운드 등 많은 기능을 추가로 제공합니다.
 
 ## 다운로드
-RAW : https://github.com/biud436/RGSS3/raw/master/RS_HangulMessageSystem.rb
+
+VX Ace(RGSS3) : https://github.com/biud436/RGSS3/raw/master/RS_HangulMessageSystem.rb
+
+XP (RGSS) : https://github.com/biud436/RGSS3/raw/master/XP/RS_HangulMessageSystemXP.rb
 
 ## 주요 기능
 - [말풍선 모드](#말풍선)
@@ -17,6 +22,7 @@ RAW : https://github.com/biud436/RGSS3/raw/master/RS_HangulMessageSystem.rb
 - [노트 태그](#노트-태그)
 
 ## 사용법
+한글 메시지 시스템 RPG Maker VX Ace (RGSS3) 버전 기준의 설명입니다.
 
 ### 이름 윈도우
 
