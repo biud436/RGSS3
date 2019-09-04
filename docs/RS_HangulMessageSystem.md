@@ -67,7 +67,7 @@ RAW : https://github.com/biud436/RGSS3/raw/master/RS_HangulMessageSystem.rb
 
 문장 대기, 빠른 표시, 페이지 스킵 여부를 설정하는 기능은 따로 변경되지 않았습니다.
 
-```python
+```
 # 골드 윈도우 표시
 \$
 # 15 프레임 대기
