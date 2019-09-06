@@ -50,6 +50,8 @@
 	double ret = x; \
 	return rgss_rb_float_new(ret);
 
+#define TO_F(x) rgss_rb_float_new(x)
+
 RSDLL VALUE EchoMessage(VALUE d)
 {
 	double t = RFLOAT_VALUE(d);
@@ -85,7 +87,7 @@ RSDLL VALUE BackEaseInOut(VALUE tt, VALUE bb, VALUE cc, VALUE dd)
 RSDLL VALUE BounceEaseIn(VALUE tt, VALUE bb, VALUE cc, VALUE dd)
 {
 	CONVERT_VALUE(tt, bb, cc, dd);
-	VALUE v = BounceEaseOut(d - t, 0, c, d);
+	VALUE v = BounceEaseOut(TO_F(d - t), TO_F(0), TO_F(c), TO_F(d));
 	RET (c - v + b);
 }
 
@@ -115,11 +117,11 @@ RSDLL VALUE BounceEaseInOut(VALUE tt, VALUE bb, VALUE cc, VALUE dd)
 	CONVERT_VALUE(tt, bb, cc, dd);
 
 	if (t < d / 2) {
-		VALUE v = BounceEaseIn(t * 2, 0, c, d);
+		VALUE v = BounceEaseIn(TO_F(t * 2), TO_F(0), TO_F(c), TO_F(d));
 		double d = RFLOAT_VALUE(v);
 		RET(d *.5 + b);
 	} else {
-		VALUE v = BounceEaseOut(t * 2 - d, 0, c, d);
+		VALUE v = BounceEaseOut(TO_F(t * 2 - d), TO_F(0), TO_F(c), TO_F(d));
 		double d = RFLOAT_VALUE(v);
 		RET(d * .5 + c*.5 + b);
 	}
