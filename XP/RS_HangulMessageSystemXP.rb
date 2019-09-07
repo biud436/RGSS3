@@ -100,6 +100,21 @@
 # RS::LIST["테두리"] = false
 # RS::LIST["그림자"] = false
 #
+# Graphics/Faces 폴더에 얼굴 이미지를 위치시키십시오.
+# 얼굴 이미지는 다음 명령으로 표시할 수 있으며 총 4개까지 표시할 수 있습니다.
+# ID 값은 0과 2는 왼쪽에 표시되고, 홀수 번 1과 3은 오른쪽에 표시됩니다.
+# 
+# \얼굴<ID, 이미지명>
+# \얼위<ID, X, Y>
+#
+# 이미지 애니메이션 기능으로 이미지가 화면 바깥에서 날아오게 합니다.
+#
+# \트윈<ID>
+#
+# 얼굴 이미지의 톤을 변경할 수 있는 기능입니다.
+#
+# \얼톤<ID, red, green, blue, gray>
+#
 #==============================================================================
 # ** 스크립트 호출
 #==============================================================================
@@ -1217,7 +1232,7 @@ module BaseEase
     if t < 0.5
       return 2 * t * t
     else
-      return (-2 * t * t) + (4 * t) - 1;
+      return (-2 * t * t) + (4 * t) - 1
     end
   end  
   def sine_ease_out(t)
@@ -1355,6 +1370,14 @@ class BustManager
     @face_sprites[id].start_tween
   end
   #--------------------------------------------------------------------------
+  # * 톤 조절
+  #--------------------------------------------------------------------------   
+  def set_tone(id, red, green, blue, gray)
+    return if not (0...@max).include?(id)
+    return if !@face_sprites[id]    
+    @face_sprites[id].tone = Tone.new(red, green, blue, gray)
+  end  
+  #--------------------------------------------------------------------------
   # * 감추기
   #--------------------------------------------------------------------------   
   def hide
@@ -1389,14 +1412,6 @@ class BustManager
     return if !@face_sprites[id]    
     @face_sprites[id].x = x
     @face_sprites[id].y = y
-  end
-  #--------------------------------------------------------------------------
-  # * 톤 설정
-  #--------------------------------------------------------------------------  
-  def set_tone(id, tone)
-    return if not (0...@max).include?(id)
-    return if !@face_sprites[id]   
-    @face_sprites[id].tone = tone
   end
 end
 
@@ -1945,6 +1960,8 @@ class Window_Message < Window_Selectable
       set_face_position(text)
     when '트윈', 'FT'
       set_face_tween(text)
+    when '얼톤', 'FN'
+      set_face_tone(text)
     end
   end
   #--------------------------------------------------------------------------
@@ -1983,6 +2000,19 @@ class Window_Message < Window_Selectable
     id = bytes[0].slice!(/[0-9]/).to_i
     @bust_manager.tween(id)    
   end  
+  #--------------------------------------------------------------------------
+  # * Set Face Tone
+  #--------------------------------------------------------------------------  
+  def set_face_tone(text)  
+    bytes = obtain_string(text).split(",")
+    return if @is_used_text_width_ex      
+    id = bytes[0].slice!(/[0-9]/).to_i
+    red = bytes[1].strip.to_i
+    green = bytes[2].strip.to_i
+    blue = bytes[3].strip.to_i
+    gray = bytes[4].strip.to_i
+    @bust_manager.set_tone(id, red, green, blue, gray)
+  end    
   #--------------------------------------------------------------------------
   # * 숫자 변환
   #--------------------------------------------------------------------------   
