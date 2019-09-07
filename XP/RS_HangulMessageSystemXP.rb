@@ -1,5 +1,5 @@
 #==============================================================================
-#  ** 한글 메시지 시스템 v1.0.14 (2019.09.07)
+#  ** 한글 메시지 시스템 v1.0.15 (2019.09.07)
 #==============================================================================
 #  ** 사용법
 #==============================================================================
@@ -652,6 +652,15 @@ class String
 end
 
 #==============================================================================
+# ** RPG::Cache
+#==============================================================================
+module RPG::Cache
+  def self.face(filename)
+    self.load_bitmap("Graphics/Faces/", filename)
+  end  
+end
+
+#==============================================================================
 # ** Game_Temp
 #==============================================================================
 class Game_Temp
@@ -1192,6 +1201,206 @@ class Window_MessageGold < Window_Gold
 end
 
 #==============================================================================
+# ** BaseEase
+#------------------------------------------------------------------------------
+# Robert Penner (http://www.robertpenner.com/easing/)
+#==============================================================================
+module BaseEase
+
+  PI_2 = Math::PI * 2
+  KEY_FRAME = 24
+ 
+  def quadratic_ease_out(t)
+    return -(t * (t - 2))
+  end   
+  def quadratic_ease_in_out(t)
+    if t < 0.5
+      return 2 * t * t
+    else
+      return (-2 * t * t) + (4 * t) - 1;
+    end
+  end  
+  def sine_ease_out(t)
+    Math.sin(t * PI_2)
+  end
+  def elastic_ease_in(t)
+    Math.sin(13 * PI_2 * t) * (2 ** (10 * (t - 1)))
+  end
+  def back_ease_in(t)
+    t * t * t - t * Math.sin(t * Math::PI)
+  end
+end
+
+#==============================================================================
+# ** Bust
+#==============================================================================
+class Bust < Sprite
+  include BaseEase
+
+  #--------------------------------------------------------------------------
+  # * 초기화
+  #--------------------------------------------------------------------------   
+  def initialize(viewport=nil)
+    super(viewport)
+    @tween_start = false
+    @dirty = false
+  end
+  #--------------------------------------------------------------------------
+  # * 더티 플래그; 반대편으로 날아들게 합니다
+  #--------------------------------------------------------------------------   
+  def dirty
+    @dirty = true
+  end
+  #--------------------------------------------------------------------------
+  # * 초기 위치로 리셋합니다
+  #--------------------------------------------------------------------------   
+  def reset
+    if @dirty 
+      self.x = Graphics.width / 2
+    else
+      self.x = 0
+    end
+  end
+  #--------------------------------------------------------------------------
+  # * 트위닝 시작
+  #--------------------------------------------------------------------------   
+  def start_tween
+    @tween_start = true
+    if @dirty
+      @start_x = self.x + Graphics.width / 2
+      @target_x = self.x     
+    else
+      @start_x = self.x - Graphics.width / 2
+      @target_x = self.x
+    end
+    self.x = @start_x   
+
+    @t = 0.0
+    @dt = 1.0 / KEY_FRAME   
+    @frame = 0 
+
+  end
+  #--------------------------------------------------------------------------
+  # * 업데이트
+  #--------------------------------------------------------------------------   
+  def update
+    super
+    update_tick if @tween_start
+  end
+  #--------------------------------------------------------------------------
+  # * 틱 업데이트
+  #--------------------------------------------------------------------------   
+  def update_tick
+
+    @t += @dt
+    self.x = @start_x + back_ease_in(@t) * (@target_x - @start_x)
+
+    @frame += 1
+
+    if @frame > KEY_FRAME
+      self.x = @target_x
+      @tween_start = false
+    end
+
+  end
+end
+
+#==============================================================================
+# ** BustManager
+#==============================================================================
+class BustManager
+  #--------------------------------------------------------------------------
+  # * 초기화
+  #--------------------------------------------------------------------------   
+  def initialize(max)
+    @max = max
+    @default_z = 300
+    @face_sprites = []
+    create
+    hide
+  end
+  #--------------------------------------------------------------------------
+  # * 생성
+  #--------------------------------------------------------------------------   
+  def create
+    for i in (0...@max)
+      @face_sprites[i] = Bust.new
+      # 홀수인가?
+      if (i % 2) != 0
+        @face_sprites[i].dirty
+      end
+    end
+  end
+  #--------------------------------------------------------------------------
+  # * 업데이트
+  #--------------------------------------------------------------------------   
+  def update
+    @face_sprites.each {|i| i.update if i }
+  end  
+  #--------------------------------------------------------------------------
+  # * 표시
+  #--------------------------------------------------------------------------   
+  def show
+    @face_sprites.each do |e| 
+      e.reset
+      e.visible = true
+    end
+  end
+  #--------------------------------------------------------------------------
+  # * 트위닝 시작
+  #--------------------------------------------------------------------------   
+  def tween(id)
+    return if not (0...@max).include?(id)
+    return if !@face_sprites[id]    
+    @face_sprites[id].start_tween
+  end
+  #--------------------------------------------------------------------------
+  # * 감추기
+  #--------------------------------------------------------------------------   
+  def hide
+    @face_sprites.each do |i| 
+      i.visible = false
+      i.reset
+    end
+  end
+  #--------------------------------------------------------------------------
+  # * 메모리 해제
+  #--------------------------------------------------------------------------   
+  def dispose
+    @face_sprites.each do |i| 
+      i.bitmap.dispose if i.bitmap
+      i.dispose
+    end
+  end
+  #--------------------------------------------------------------------------
+  # * 비트맵 로드 및 z 좌표 설정
+  #--------------------------------------------------------------------------   
+  def load(id, bitmap, x=0, y=0)
+    return if not (0...@max).include?(id)
+    return if !@face_sprites[id]
+    @face_sprites[id].bitmap = bitmap
+    @face_sprites[id].z = @default_z + 3 * id
+  end
+  #--------------------------------------------------------------------------
+  # * 위치 설정
+  #--------------------------------------------------------------------------   
+  def set_position(id, x, y)
+    return if not (0...@max).include?(id)
+    return if !@face_sprites[id]    
+    @face_sprites[id].x = x
+    @face_sprites[id].y = y
+  end
+  #--------------------------------------------------------------------------
+  # * 톤 설정
+  #--------------------------------------------------------------------------  
+  def set_tone(id, tone)
+    return if not (0...@max).include?(id)
+    return if !@face_sprites[id]   
+    @face_sprites[id].tone = tone
+  end
+end
+
+#==============================================================================
 # ** Window_Message
 #------------------------------------------------------------------------------
 #  윈도우 메시지 객체를 용도에 맞게 캡슐화 한다.
@@ -1221,6 +1430,7 @@ class Window_Message < Window_Selectable
     Color.set_base_color = text_color(0)
     init_color_table
     set_height(RS::LIST["라인"])
+    @bust_manager = BustManager.new(4)
   end
   #--------------------------------------------------------------------------
   # * 멤버 초기화
@@ -1613,6 +1823,43 @@ class Window_Message < Window_Selectable
     draw_normal_character(item.name, pos, true)
   end
   #--------------------------------------------------------------------------
+  # * 문자열 추출
+  #--------------------------------------------------------------------------       
+  def obtain_string(text)
+    
+    flag = false
+    len = 0
+    index = 0
+  
+    text.split("").each_with_index do |e, i| 
+      if e == "<"
+        flag = true
+        index = i
+        next
+      end
+      if i > 0 && !flag
+        throw "\얼굴 명령어에 < 문자가 없습니다."
+        break
+      end
+      if flag
+        len += 1
+        if e == ">"
+          break
+        end
+      end
+    end
+    
+    ret = ""
+    
+    if flag
+      ret = text.dup.slice!(index + 1, len - 1)
+      text.slice!(index, len + 1)
+    end
+    
+    ret
+
+  end    
+  #--------------------------------------------------------------------------
   # * 텍스트 코드 처리
   #--------------------------------------------------------------------------       
   def process_escape_character(code, text, pos)
@@ -1681,19 +1928,61 @@ class Window_Message < Window_Selectable
     when '테두리꺼' then $game_temp.outline = false
     when '배경색켜' then $game_temp.highlight = true
     when '배경색꺼' then $game_temp.highlight = false  
-    when '그림자색'
+    when '그림자색', 'SC'
       color = Color.gm_color(obtain_name_color(text))
       $game_temp.shadow_color = color      
-    when '테두리색'
+    when '테두리색', 'OC'
       color = Color.gm_color(obtain_name_color(text))
       $game_temp.out_color = color
-    when '배경색'
+    when '배경색', 'BC'
       color = Color.gm_color(obtain_name_color(text))
       $game_temp.highlight_color  = color
-    when '테두리굵기'
+    when '테두리굵기', 'OW'
       $game_temp.outline_width = obtain_escape_param(text).to_i
+    when '얼굴', 'F'
+      set_face_image(text)
+    when '얼위', 'FP'
+      set_face_position(text)
+    when '트윈', 'FT'
+      set_face_tween(text)
     end
   end
+  #--------------------------------------------------------------------------
+  # * Set Face Image
+  #--------------------------------------------------------------------------   
+  def set_face_image(text)
+    bytes = obtain_string(text).split(",")
+    return if @is_used_text_width_ex      
+    id = bytes[0].strip.to_i
+    name = bytes[1].strip
+    x, y = 0, 0
+    if bytes.size == 4
+      x = bytes[2].strip.to_i
+      y = bytes[3].strip.to_i
+    end
+    bitmap = RPG::Cache.face(name)
+    @bust_manager.load(id, bitmap, x, y)    
+  end
+  #--------------------------------------------------------------------------
+  # * Set Face Position
+  #--------------------------------------------------------------------------  
+  def set_face_position(text)  
+    bytes = obtain_string(text).split(",")
+    return if @is_used_text_width_ex      
+    id = bytes[0].slice!(/[0-9]/).to_i
+    x = bytes[1].strip.to_i
+    y = bytes[2].strip.to_i
+    @bust_manager.set_position(id, x, y)    
+  end
+  #--------------------------------------------------------------------------
+  # * Set Face Tween
+  #--------------------------------------------------------------------------  
+  def set_face_tween(text)  
+    bytes = obtain_string(text).split(",")
+    return if @is_used_text_width_ex      
+    id = bytes[0].slice!(/[0-9]/).to_i
+    @bust_manager.tween(id)    
+  end  
   #--------------------------------------------------------------------------
   # * 숫자 변환
   #--------------------------------------------------------------------------   
@@ -1986,6 +2275,7 @@ class Window_Message < Window_Selectable
     end
     dispose_name_window
     dispose_gold_window
+    @bust_manager.dispose if @bust_manager
     super
   end
   #--------------------------------------------------------------------------
@@ -2021,6 +2311,8 @@ class Window_Message < Window_Selectable
     $game_temp.num_input_start = 99
     $game_temp.num_input_variable_id = 0
     $game_temp.num_input_digits_max = 0
+
+    @bust_manager.hide
     
   end
   #--------------------------------------------------------------------------
@@ -2070,6 +2362,7 @@ class Window_Message < Window_Selectable
     set_font(RS::LIST["폰트명"],RS::LIST["폰트크기"])
     new_page(@text_state)
     process_align(@text_state, @text)        
+    @bust_manager.show
     open    
     self.visible = true
   end
@@ -2242,6 +2535,7 @@ class Window_Message < Window_Selectable
     
     update_name_window
     update_gold_window
+    @bust_manager.update if @bust_manager
     update_balloon_position if $game_temp.balloon != -2 and $game_map.msg_owner
     
     # 루비 계열에선 VXA가 가장 최상위 스타일이지만, 호환이 맞는 VX 스타일로 개편.
