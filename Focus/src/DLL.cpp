@@ -23,12 +23,12 @@ LRESULT CALLBACK SuperProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 typedef int(*RGSSEVAL_PROTO)(char *);
 static RGSSEVAL_PROTO gRGSSEval;
 
-RSDLL void Init(HMODULE hModule)
+RSDLL void Init()
 {
-	gRGSSEval = (RGSSEVAL_PROTO)GetProcAddress(hModule, "RGSSEval");
 
 	freopen("CONOUT$", "wt", stdout);
 	InitWithRGSS();
+	gRGSSEval = (RGSSEVAL_PROTO)GetProcAddress(g_hRGSSSystemDLL, "RGSSEval");
 	GetWndProc();
 	gRGSSEval("$window_focus = true;");
 

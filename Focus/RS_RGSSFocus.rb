@@ -40,11 +40,8 @@ module RS
   # DLL 파일 로드 함수
   LoadLibrary = Win32API.new('kernel32.dll', 'LoadLibrary', 'p', 'l')
   
-  # RGSS301.DLL의 핸들
-  @system_handle = LoadLibrary.call("System/RGSS301.dll")
-
   # 초기화 함수
-  Init = Win32API.new('RGSSFocus.dll', 'Init', 'l', 'v')
+  Init = Win32API.new('RGSSFocus.dll', 'Init', 'v', 'v')
   
   # 설정창 열기
   OpenOptionWindow = Win32API.new('RGSSFocus.dll', 'OpenOptionWindow', 'v', 'v')
@@ -63,7 +60,7 @@ module RS
     # * 초기화
     #--------------------------------------------------------------------------    
     def init
-      Init.call(@system_handle)
+      Init.call
       static_address = focus_on
       RSCallProc.call(static_address)
     end

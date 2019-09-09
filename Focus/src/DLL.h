@@ -17,7 +17,7 @@ extern "C" {
 	void InitWithRGSS();
 	void GetWndProc();
 
-	RSDLL void Init(HMODULE hModule);
+	RSDLL void Init();
 	RSDLL void ToggleFPS();
 	RSDLL void OpenOptionWindow();
 	RSDLL void SwitchFullScreen();
