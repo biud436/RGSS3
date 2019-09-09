@@ -104,11 +104,6 @@ LRESULT CALLBACK SuperProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 		gRGSSEval("$window_focus = false;");
 		return 0;
 	case WM_COMMAND:
-		if (OldProc != NULL)
-		{
-			CallWindowProc(OldProc, hWnd, uMsg, wParam, lParam);
-		}
-		return 0;
 	case WM_SYSCOMMAND:
 		if (OldProc != NULL)
 		{
