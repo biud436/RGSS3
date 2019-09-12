@@ -78,12 +78,8 @@ void InitWithRGSS()
 void GetWndProc()
 {
 	char szStr[MAX_PATH];
-	sprintf(szStr, "def RS.focus_on; $oldProc = Win32API.new('user32.dll', 'SetWindowLong', ['l', 'i', 'l'], 'l').call(%d, -4, %d);end", g_hRGSSPlayer, (LONG)SuperProc);
+	snprintf(szStr, MAX_PATH, "def RS.focus_on; $oldProc = Win32API.new('user32.dll', 'SetWindowLong', ['l', 'i', 'l'], 'l').call(%d, -4, %d);end", g_hRGSSPlayer, (LONG)SuperProc);
 	gRGSSEval(szStr);
-	//gRGSSEval("class << Audio; def off; @last_bgm = RPG::BGM::last; @last_bgs = RPG::BGS::last; end; end");
-	//gRGSSEval("class << Audio; def on;  @last_bgm.play; @last_bgs.play; end; end");
-	/*_tprintf_s(_T("서브 클래싱에 성공하였습니다.\n"));*/
-
 }
 
 
