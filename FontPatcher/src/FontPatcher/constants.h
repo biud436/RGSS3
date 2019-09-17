@@ -1,0 +1,24 @@
+#ifndef _CONSTANTS_H__
+#define _CONSTANTS_H__
+
+#define WIN32_LEAN_AND_MEAN
+
+#include <Windows.h>
+
+LRESULT CALLBACK WndProc(HWND, UINT, WPARAM, LPARAM);
+
+#define DEF_PROCESS_NAME (_T("Game.exe"))
+#define DEF_DLL_NAME (_T("RSFont.dll"))
+
+#define BUTTON_STYLE WS_CHILD|WS_VISIBLE|BS_PUSHBUTTON
+
+#define ID_EXECUTE 100
+#define ID_COMBOBOX 101
+#define ID_SIZE_COMBOBOX 102
+
+#define MAX_FONT 1000
+#define DEFAULT_COMBO_WIDTH 100
+#define DEFAULT_COMBO_HEIGHT 32
+#define PAD 10
+
+#endif

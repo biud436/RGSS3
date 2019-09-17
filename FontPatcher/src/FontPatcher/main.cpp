@@ -1,79 +1,49 @@
 #include <Windows.h>
-#include <TlHelp32.h>
-#include <tchar.h>
-#include <cstdio>
+#include "constants.h"
+#include "App.h"
 
-enum {
-	INJECTION_MODE,
-	EJECTION_MODE
-};
+LPCTSTR lpszClass = TEXT("Font Patcher");
 
-#define DEF_PROCESS_NAME (_T("Game.exe"))
-#define DEF_DLL_NAME (_T("RSFont.dll"))
+App* g_pApp = nullptr;
 
-BOOL InjectDll2(LPCTSTR szDllPath)
+int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpszCmdParam, int nCmdShow)
 {
-	HANDLE hProcess = NULL;
-	HANDLE hThread = NULL;
-	HMODULE hMod = NULL;
-	LPVOID pRemoteBuf = NULL;
-	DWORD dwBufSize = (DWORD)(_tcslen(szDllPath) + 1) * sizeof(TCHAR);
-	LPTHREAD_START_ROUTINE pThreadProc;
+	HWND hWnd;
+	MSG Message;
+	WNDCLASS WndClass;
 
-	STARTUPINFO si = { sizeof(STARTUPINFO), };
-	PROCESS_INFORMATION pi;
+	WndClass.cbClsExtra = 0;
+	WndClass.cbWndExtra = 0;
+	WndClass.hbrBackground = (HBRUSH)(WHITE_BRUSH);
+	WndClass.hCursor = LoadCursor(NULL, IDC_ARROW);
+	WndClass.hIcon = LoadIcon(NULL, IDI_APPLICATION);
+	WndClass.hInstance = hInstance;
+	WndClass.lpfnWndProc = WndProc;
+	WndClass.lpszClassName = lpszClass;
+	WndClass.lpszMenuName = NULL;
+	WndClass.style = CS_HREDRAW | CS_VREDRAW;
+	RegisterClass(&WndClass);
 
-	if (!CreateProcess(DEF_PROCESS_NAME,
-		NULL,
-		NULL,
-		NULL,
-		TRUE,
-		0,
-		NULL,
-		NULL,
-		&si,
-		&pi))
-	{
-		CloseHandle(pi.hProcess);
-		CloseHandle(pi.hThread);
-		_tprintf_s(_T("CreateProcess(%d) failed!!! [%d]\n"), pi.dwProcessId, GetLastError());
-		return FALSE;
+	// Initialize the App object.
+	g_pApp = new App(hInstance);
+
+	hWnd = CreateWindow(lpszClass, lpszClass, WS_OVERLAPPED|WS_SYSMENU,
+		CW_USEDEFAULT, CW_USEDEFAULT, 400, 400,
+		NULL, (HMENU)NULL, hInstance, NULL);
+	ShowWindow(hWnd, nCmdShow);
+
+	while (GetMessage(&Message, NULL, 0, 0)) {
+		TranslateMessage(&Message);
+		DispatchMessage(&Message);
 	}
 
-	Sleep(200);
+	// Remove the App object.
+	delete g_pApp;
 
-	hProcess = pi.hProcess;
-
-	pRemoteBuf = VirtualAllocEx(hProcess, NULL, dwBufSize, MEM_COMMIT, PAGE_READWRITE);
-
-	if (pRemoteBuf == NULL)
-		return FALSE;
-
-	WriteProcessMemory(hProcess, pRemoteBuf, (LPVOID)szDllPath, dwBufSize, NULL);
-
-	hMod = GetModuleHandleA(_T("Kernel32.dll"));
-	pThreadProc = (LPTHREAD_START_ROUTINE)GetProcAddress(hMod, "LoadLibraryA");
-
-	hThread = CreateRemoteThread(hProcess, NULL, 0, pThreadProc, pRemoteBuf, 0, NULL);
-
-	WaitForSingleObject(hThread, INFINITE);
-
-	VirtualFreeEx(hProcess, pRemoteBuf, 0, MEM_RELEASE);
-
-	CloseHandle(hProcess);
-	CloseHandle(hThread);
-	CloseHandle(pi.hThread);	
-
-	return TRUE;
+	return (int)Message.wParam;
 }
 
-int _tmain(int argc, TCHAR *argv[])
+LRESULT CALLBACK WndProc(HWND hWnd, UINT iMessage, WPARAM wParam, LPARAM lParam)
 {
-	if (InjectDll2(DEF_DLL_NAME)) {
-		_tprintf_s("DLL 인젝션에 성공하였습니다.");
-	} else {
-		_tprintf_s("DLL 인젝션에 실패하였습니다.");
-	}
-	
-	return 0;
+	return g_pApp->CallProc(hWnd, iMessage, wParam, lParam);
 }
