@@ -8,6 +8,7 @@
 #include <cstdio>
 
 RGSSEvalProto gRGSSEval;
+RGSSSetStringUTF16Proto gRGSSSetStringUTF16;
 HMODULE g_hRGSSSystemDLL;
 
 int g_nInit = 0;
@@ -81,7 +82,7 @@ void RGSSInit()
 
 	TCHAR RGSSSystemFilePath[MAX_PATH];
 	TCHAR IniDir[MAX_PATH];
-	TCHAR FontName[MAX_PATH];
+	WCHAR FontName[MAX_PATH];
 	TCHAR FontSize[MAX_PATH];
 
 	char szFontName[MAX_PATH];
@@ -90,20 +91,24 @@ void RGSSInit()
 	_tcsncat_s(IniDir, MAX_PATH, _T("\\Game.ini"), MAX_PATH);
 
 	GetPrivateProfileString(_T("Game"), _T("Library"), _T("System/RGSS301.dll"), RGSSSystemFilePath, MAX_PATH, IniDir);
-	GetPrivateProfileString(_T("Game"), _T("Font"), _T("³ª´®°íµñ"), FontName, MAX_PATH, IniDir);
+	GetPrivateProfileStringW(L"Game", L"Font", L"³ª´®°íµñ", FontName, MAX_PATH, AllocWideChar(IniDir));
 	GetPrivateProfileString(_T("Game"), _T("FontSize"), _T("16"), FontSize, MAX_PATH, IniDir);
 
 	g_hRGSSSystemDLL = GetModuleHandle(RGSSSystemFilePath);
 
 	gRGSSEval = (RGSSEvalProto)GetProcAddress(g_hRGSSSystemDLL, "RGSSEval");
+	gRGSSSetStringUTF16 = (RGSSSetStringUTF16Proto)GetProcAddress(g_hRGSSSystemDLL, "RGSSSetStringUTF16");
 
 	Sleep(20);
 
 	if (gRGSSEval != NULL) {
-		snprintf(szFontName, MAX_PATH, "Font.default_name = [\"%s\"]", FontName);
+		
+		gRGSSSetStringUTF16("$font_name", FontName);
+
+		snprintf(szFontName, MAX_PATH, "Font.default_name = [$font_name]");
 		gRGSSEval(Conv(szFontName));
 		snprintf(szFontName, MAX_PATH, "Font.default_size = %s", FontSize);
-		gRGSSEval(Conv(szFontName));
+		gRGSSEval(szFontName);
 
 	}
 
