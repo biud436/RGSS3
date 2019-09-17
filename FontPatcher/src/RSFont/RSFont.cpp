@@ -10,8 +10,75 @@
 RGSSEvalProto gRGSSEval;
 HMODULE g_hRGSSSystemDLL;
 
+int g_nInit = 0;
+
+const wchar_t* AllocWideChar(const char* law)
+{
+	int length = MultiByteToWideChar(CP_UTF8, 0, law, -1, NULL, 0);
+
+	if (length == 0)
+	{
+		return L"";
+	}
+
+	// NULL 문자를 포함하여 메모리를 초기화 않으면 오류가 난다.
+	LPWSTR lpszWideChar = new WCHAR[length + 1];
+
+	if (lpszWideChar == NULL)
+	{
+		return L"";
+	}
+
+	memset(lpszWideChar, 0, sizeof(WCHAR) * (length + 1));
+	int ret = MultiByteToWideChar(CP_UTF8, 0, law, -1, lpszWideChar, length);
+
+	if (ret == 0)
+	{
+		return L"";
+	}
+
+	return lpszWideChar;
+}
+
+const char* AllocMultibyteChar(const wchar_t* law)
+{
+	int length = WideCharToMultiByte(CP_UTF8, 0, law, -1, NULL, 0, NULL, NULL);
+
+	if (length == 0)
+	{
+		return "";
+	}
+
+	// NULL 문자를 포함하여 메모리를 초기화 않으면 오류가 난다.
+	LPSTR lpszChar = new char[length + 1];
+
+	if (lpszChar == NULL)
+	{
+		return "";
+	}
+
+	memset(lpszChar, 0, sizeof(char) * (length + 1));
+	int ret = WideCharToMultiByte(CP_UTF8, 0, law, -1, lpszChar, length, NULL, NULL);
+
+	if (ret == 0)
+	{
+		return "";
+	}
+
+	return lpszChar;
+}
+
+const char* Conv(const char* law)
+{
+	const wchar_t* from = AllocWideChar(law);
+	const char* to = AllocMultibyteChar(from);
+	
+	return to;
+}
+
 void RGSSInit()
 {
+
 	TCHAR RGSSSystemFilePath[MAX_PATH];
 	TCHAR IniDir[MAX_PATH];
 	TCHAR FontName[MAX_PATH];
@@ -30,10 +97,15 @@ void RGSSInit()
 
 	gRGSSEval = (RGSSEvalProto)GetProcAddress(g_hRGSSSystemDLL, "RGSSEval");
 
-	snprintf(szFontName, MAX_PATH, "Font.default_name = \"%s\"", FontName);
-	snprintf(szFontName, MAX_PATH, "Font.default_size = %s", FontSize);
+	Sleep(20);
 
 	if (gRGSSEval != NULL) {
-		gRGSSEval(szFontName);
+		snprintf(szFontName, MAX_PATH, "Font.default_name = [\"%s\"]", FontName);
+		gRGSSEval(Conv(szFontName));
+		snprintf(szFontName, MAX_PATH, "Font.default_size = %s", FontSize);
+		gRGSSEval(Conv(szFontName));
+
 	}
+
 }
+

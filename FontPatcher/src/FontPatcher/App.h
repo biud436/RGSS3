@@ -51,6 +51,8 @@ protected:
 
 	BOOL m_bResult;
 
+	BOOL m_bInit;
+
 };
 
 #endif

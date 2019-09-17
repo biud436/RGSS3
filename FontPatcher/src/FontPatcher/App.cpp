@@ -3,6 +3,7 @@
 #include <tchar.h>
 #include <cstdio>
 #include <cstdlib>
+#include <locale.h>
 #include "constants.h"
 
 LOGFONT logfont[MAX_FONT];
@@ -27,7 +28,8 @@ App::App(HINSTANCE inst) :
 	m_font(NULL),
 	m_oldfont(NULL),
 	m_nComboIndex(-1),
-	m_bResult(FALSE)
+	m_bResult(FALSE),
+	m_bInit(FALSE)
 {
 
 }
@@ -227,8 +229,12 @@ void App::OnPaint(HWND hWnd, UINT iMessage, WPARAM wParam, LPARAM lParam) {
 		// Clear the rect
 		FillRect(hdc, &backRt, (HBRUSH)WHITE_BRUSH);
 
+		TCHAR szFontFace[64];
+		GetTextFaceA(hdc, 64, szFontFace);
+
 		// Draw the text
-		wsprintf(str, TEXT("%s"), m_tmpFont.lfFaceName);
+		wsprintf(str, TEXT("%s"), szFontFace);
+		/*wsprintf(str, TEXT("%s"), m_tmpFont.lfFaceName);*/
 		DrawText(hdc, str, lstrlen(str), &rt,DT_CENTER);
 
 		// Copy the path
@@ -263,6 +269,11 @@ void App::OnPaint(HWND hWnd, UINT iMessage, WPARAM wParam, LPARAM lParam) {
 
 BOOL App::InjectDll2(LPCTSTR szDllPath)
 {
+	if (m_bInit) {
+		MessageBox(m_hWnd, "The program is still in use.", _T(""), MB_OK);
+		return FALSE;
+	}
+
 	HANDLE hProcess = INVALID_HANDLE_VALUE;
 	HANDLE hThread = NULL;
 	HMODULE hMod = NULL;
@@ -295,6 +306,8 @@ BOOL App::InjectDll2(LPCTSTR szDllPath)
 
 	WaitForInputIdle(pi.hProcess, INFINITE);
 
+	m_bInit = TRUE;
+
 	hProcess = pi.hProcess;
 
 	pRemoteBuf = VirtualAllocEx(hProcess, NULL, dwBufSize, MEM_COMMIT, PAGE_READWRITE);
@@ -321,6 +334,8 @@ BOOL App::InjectDll2(LPCTSTR szDllPath)
 	CloseHandle(hProcess);
 	CloseHandle(hThread);
 	CloseHandle(pi.hThread);
+
+	m_bInit = FALSE;
 
 	if (!m_bResult) {
 		ShowErrorMessage();
