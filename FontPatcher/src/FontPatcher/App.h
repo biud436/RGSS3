@@ -4,6 +4,7 @@
 #define WIN32_LEAN_AND_MEAN
 
 #include <Windows.h>
+#include <string>
 
 class App
 {
@@ -35,6 +36,7 @@ public:
 
 	int GetWindowWidth() const;
 	int GetWindowHeight() const;
+	std::string ToString(int value);
 
 protected:
 

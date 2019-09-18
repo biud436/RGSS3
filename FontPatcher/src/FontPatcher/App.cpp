@@ -4,6 +4,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <locale.h>
+#include <sstream>
 #include "constants.h"
 
 LOGFONT logfont[MAX_FONT];
@@ -127,6 +128,14 @@ void App::OnCreate(HWND hWnd, UINT iMessage, WPARAM wParam, LPARAM lParam) {
 	
 }
 
+std::string App::ToString(int value)
+{
+	std::ostringstream oss;
+	oss << value;
+
+	return oss.str();
+}
+
 void App::OnComboItem(HWND hWnd, UINT iMessage, WPARAM wParam, LPARAM lParam)
 {
 	LPDRAWITEMSTRUCT lpdis;
@@ -172,14 +181,14 @@ void App::OnComboItem(HWND hWnd, UINT iMessage, WPARAM wParam, LPARAM lParam)
 	}
 	break;
 	case ID_SIZE_COMBOBOX: {
-		TCHAR szTextSize[64];
-		snprintf(szTextSize, 64, "%d", g_fontSizeTable[lpdis->itemID]);
+
+		std::string sTextSize = ToString(g_fontSizeTable[lpdis->itemID]);
 
 		TextOut(lpdis->hDC,
 			lpdis->rcItem.left + 5,
 			lpdis->rcItem.top + 2,
-			szTextSize,
-			lstrlen(szTextSize)
+			sTextSize.c_str(),
+			sTextSize.size()
 		);
 	}
 
@@ -192,10 +201,7 @@ void App::OnComboItem(HWND hWnd, UINT iMessage, WPARAM wParam, LPARAM lParam)
 void App::OnPaint(HWND hWnd, UINT iMessage, WPARAM wParam, LPARAM lParam) {
 	HDC hdc;
 	PAINTSTRUCT ps;
-	TCHAR str[128];
-	TCHAR szFontText[128];
 	TCHAR iniDir[MAX_PATH];
-	TCHAR szFontSize[64];
 	SIZE sz = { 0 };
 
 	hdc = BeginPaint(hWnd, &ps);
@@ -229,36 +235,31 @@ void App::OnPaint(HWND hWnd, UINT iMessage, WPARAM wParam, LPARAM lParam) {
 		// Clear the rect
 		FillRect(hdc, &backRt, (HBRUSH)WHITE_BRUSH);
 
-		TCHAR szFontFace[64];
-		GetTextFaceA(hdc, 64, szFontFace);
-
 		// Draw the text
-		wsprintf(str, TEXT("%s"), szFontFace);
-		/*wsprintf(str, TEXT("%s"), m_tmpFont.lfFaceName);*/
-		DrawText(hdc, str, lstrlen(str), &rt,DT_CENTER);
+		DrawText(hdc, m_tmpFont.lfFaceName, lstrlen(m_tmpFont.lfFaceName), &rt, DT_CENTER);
 
 		// Copy the path
 		GetCurrentDirectory(MAX_PATH, iniDir);
-		_tcsncat_s(iniDir, MAX_PATH, _T("\\Game.ini"), MAX_PATH);
+		_tcsncat_s(iniDir, MAX_PATH, _T("\\Game.ini"), MAX_PATH); // it is possible to replace with std::ostringstream
 
 		// Change the Game.ini file
 		WritePrivateProfileString(_T("Game"), _T("Font"), m_tmpFont.lfFaceName, iniDir);
 
-		_snprintf(szFontSize, 64, "%d", nFontHeight);
-		WritePrivateProfileString(_T("Game"), _T("FontSize"), szFontSize, iniDir);
+		std::string sFontSize = ToString(nFontHeight);
+		WritePrivateProfileString(_T("Game"), _T("FontSize"), sFontSize.c_str(), iniDir);
 
 		// Select the system font.
 		SelectObject(hdc, m_oldfont);
 
 		// Draw the font text section
-		lstrcpy(szFontText, "FONT : ");
-		GetTextExtentPoint32(hdc, szFontText, lstrlen(szFontText), &sz);
-		TextOut(hdc, DEFAULT_COMBO_WIDTH / 2 - sz.cx / 2, DEFAULT_COMBO_HEIGHT / 2 - sz.cy / 2, szFontText, lstrlen(szFontText));
+		std::string sFontText = "FONT :" ;
+		GetTextExtentPoint32(hdc, sFontText.c_str(), sFontText.size(), &sz);
+		TextOut(hdc, DEFAULT_COMBO_WIDTH / 2 - sz.cx / 2, DEFAULT_COMBO_HEIGHT / 2 - sz.cy / 2, sFontText.c_str(), sFontText.size());
 
 		// Draw the font size section
-		lstrcpy(szFontText, "SIZE : ");
-		GetTextExtentPoint32(hdc, szFontText, lstrlen(szFontText), &sz);
-		TextOut(hdc, DEFAULT_COMBO_WIDTH / 2 - sz.cx / 2, PAD + DEFAULT_COMBO_HEIGHT + DEFAULT_COMBO_HEIGHT / 2 - sz.cy / 2, szFontText, lstrlen(szFontText));
+		sFontText = "SIZE : ";
+		GetTextExtentPoint32(hdc, sFontText.c_str(), sFontText.size(), &sz);
+		TextOut(hdc, DEFAULT_COMBO_WIDTH / 2 - sz.cx / 2, PAD + DEFAULT_COMBO_HEIGHT + DEFAULT_COMBO_HEIGHT / 2 - sz.cy / 2, sFontText.c_str(), sFontText.size());
 
 		DeleteObject(m_font);
 	}

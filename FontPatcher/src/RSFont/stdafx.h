@@ -14,9 +14,12 @@
 extern "C" {
 	typedef int(*RGSSEvalProto)(const char*);
 	typedef int(*RGSSSetStringUTF16Proto)(const char*, const wchar_t*);
+	typedef const wchar_t*(*RGSSGetStringUTF16Proto)(const char*);
+	typedef int(*RGSSGetIntProto)(const char*);
+	typedef BOOL(*RGSSGetBoolProto)(const char*);
 }
 
 // TODO: 프로그램에 필요한 추가 헤더는 여기에서 참조합니다.
 
-void RGSSInit();
+int RGSSInit(DWORD threadId);
 
