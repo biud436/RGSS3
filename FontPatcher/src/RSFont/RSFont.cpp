@@ -15,6 +15,8 @@
 RGSSEvalProto gRGSSEval;
 RGSSSetStringUTF16Proto gRGSSSetStringUTF16;
 RGSSGetStringUTF16Proto gRGSSGetStringUTF16;
+RGSSSetStringUTF8Proto gRGSSSetStringUTF8;
+RGSSGetStringUTF8Proto gRGSSGetStringUTF8;
 RGSSGetIntProto gRGSSGetInt;
 RGSSGetBoolProto gRGSSGetBool;
 
@@ -52,6 +54,32 @@ const wchar_t* AllocWideChar(const char* law)
 	return lpszWideChar;
 }
 
+std::string ToUTF8(const std::wstring& law)
+{
+	int length = WideCharToMultiByte(CP_UTF8, 0, law.c_str(), -1, NULL, 0, NULL, NULL);
+
+	if (length == 0)
+	{
+		return "";
+	}
+
+	std::string utf8(length + 1, 0);
+
+	if (&utf8[0] == NULL)
+	{
+		return "";
+	}
+
+	int ret = WideCharToMultiByte(CP_UTF8, 0, law.c_str(), -1, &utf8[0], length + 1, NULL, NULL);
+
+	if (ret == 0)
+	{
+		return "";
+	}
+
+	return utf8;
+}
+
 int RGSSInit(DWORD threadId)
 {
 	TCHAR RGSSSystemFilePath[MAX_PATH];
@@ -73,8 +101,7 @@ int RGSSInit(DWORD threadId)
 	}
 
 	gRGSSEval = (RGSSEvalProto)GetProcAddress(g_hRGSSSystemDLL, "RGSSEval");
-	gRGSSSetStringUTF16 = (RGSSSetStringUTF16Proto)GetProcAddress(g_hRGSSSystemDLL, "RGSSSetStringUTF16");
-	gRGSSGetStringUTF16 = (RGSSGetStringUTF16Proto)GetProcAddress(g_hRGSSSystemDLL, "RGSSGetStringUTF16");
+
 	gRGSSGetInt = (RGSSGetIntProto)GetProcAddress(g_hRGSSSystemDLL, "RGSSGetInt");
 	gRGSSGetBool = (RGSSGetBoolProto)GetProcAddress(g_hRGSSSystemDLL, "RGSSGetBool");
 
@@ -85,12 +112,35 @@ int RGSSInit(DWORD threadId)
 		return -1;
 	}
 
+	// These function doesn't exist in the RPG Maker XP.
+	// so it needs the new logic to convert a string in UTF16 to UTF8.
+#ifdef USE_UTF16
+	gRGSSSetStringUTF16 = (RGSSSetStringUTF16Proto)GetProcAddress(g_hRGSSSystemDLL, "RGSSSetStringUTF16");
+	gRGSSGetStringUTF16 = (RGSSGetStringUTF16Proto)GetProcAddress(g_hRGSSSystemDLL, "RGSSGetStringUTF16");
+#else
+	gRGSSSetStringUTF8 = (RGSSSetStringUTF8Proto)GetProcAddress(g_hRGSSSystemDLL, "RGSSSetStringUTF8");
+	gRGSSGetStringUTF8 = (RGSSGetStringUTF8Proto)GetProcAddress(g_hRGSSSystemDLL, "RGSSGetStringUTF8");
+#endif
+
 	HANDLE hThread = GetCurrentThread();
 		
 	// C언어의 wchar_t* 타입과 같다.
+#ifdef USE_UTF16
 	gRGSSSetStringUTF16("$font_name", FontName);
+#else
+	gRGSSSetStringUTF8(ToUTF8(L"$font_name").c_str(), ToUTF8(FontName).c_str());
+#endif
 
-	int nValidId = gRGSSGetInt("Game_BattlerBase::FEATURE_ELEMENT_RATE");
+	std::string sRubyVersion = gRGSSGetStringUTF8("RUBY_VERSION");
+	
+	int	nValidId = 0;
+
+	if (sRubyVersion == "1.9.2") {
+		nValidId = gRGSSGetInt("Game_BattlerBase::FEATURE_ELEMENT_RATE");
+	}
+	else {
+		nValidId = gRGSSGetInt("Input::DOWN");
+	}
 
 	// 폰트 크기를 설정한다.
 	std::ostringstream oss;
@@ -117,17 +167,22 @@ int RGSSInit(DWORD threadId)
 
 VOID CALLBACK APCProc(ULONG_PTR dwParam)
 {
-	std::ostringstream oss;
 
-	oss << "$imported[" << "\"YEA-MessageSystem\"" << "]";
-	std::string sValid = oss.str();
+	std::string sRubyVersion = gRGSSGetStringUTF8("RUBY_VERSION");
 
-	BOOL isValid = gRGSSGetBool(sValid.c_str());
+	if (sRubyVersion == "1.9.2") {
+		std::ostringstream oss;
 
-	if (isValid == TRUE) 
-	{
-		gRGSSEval("YEA::MESSAGE.const_set(:MESSAGE_WINDOW_FONT_NAME, Font.default_name)");
-		gRGSSEval("YEA::MESSAGE.const_set(:MESSAGE_WINDOW_FONT_SIZE, Font.default_size)");
+		oss << "$imported[" << "\"YEA-MessageSystem\"" << "]";
+		std::string sValid = oss.str();
+
+		BOOL isValid = gRGSSGetBool(sValid.c_str());
+
+		if (isValid == TRUE)
+		{
+			gRGSSEval("YEA::MESSAGE.const_set(:MESSAGE_WINDOW_FONT_NAME, Font.default_name)");
+			gRGSSEval("YEA::MESSAGE.const_set(:MESSAGE_WINDOW_FONT_SIZE, Font.default_size)");
+		}
 	}
 
 }
