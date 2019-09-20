@@ -6,6 +6,12 @@
 #include <Windows.h>
 #include <string>
 
+#ifdef _UNICODE 
+using TString = std::wstring;
+#else
+using TString = std::string;
+#endif
+
 class App
 {
 public:
@@ -27,16 +33,28 @@ public:
 	// DLL Inject function
 	BOOL InjectDll2(LPCTSTR szDllPath);
 
+	// Exit EventHandler
+	void OnExit(HWND hWnd, UINT iMessage, WPARAM wParam, LPARAM lParam);
+
 	void ShowErrorMessage();
 
 public:
 
-	int GetComboBoxIndex() const;
+	int GetComboBoxIndex() const { 
+		return m_nComboIndex; 
+	}
+
 	void SetComboBoxIndex(int index);
 
 	int GetWindowWidth() const;
 	int GetWindowHeight() const;
-	std::string ToString(int value);
+
+	TString ToString(int value);
+
+	TString GetString(TString key);
+	const int GetInt(TString key);
+	BOOL WriteString(TString key, TString value);
+	BOOL WriteInt(TString key, const int value);
 
 protected:
 
@@ -44,8 +62,8 @@ protected:
 
 	HWND m_hWnd;
 	HWND m_hBtnOK;
-	HWND m_hCombo;
-	HWND m_hSizeCombo;
+	HWND m_hCombo, m_hSizeCombo;
+	HWND m_hLabel1, m_hLabel2;
 
 	LOGFONT m_tmpFont;
 	HFONT m_font, m_oldfont;

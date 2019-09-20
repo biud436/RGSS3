@@ -26,6 +26,8 @@ App::App(HINSTANCE inst) :
 	m_hBtnOK(NULL),
 	m_hCombo(NULL),
 	m_hSizeCombo(NULL),
+	m_hLabel1(NULL),
+	m_hLabel2(NULL),
 	m_font(NULL),
 	m_oldfont(NULL),
 	m_nComboIndex(-1),
@@ -74,6 +76,7 @@ LRESULT App::CallProc(HWND hWnd, UINT iMessage, WPARAM wParam, LPARAM lParam)
 		OnPaint(hWnd, iMessage, wParam, lParam);
 		return 0;
 	case WM_DESTROY:
+		OnExit(hWnd, iMessage, wParam, lParam);
 		PostQuitMessage(0);
 		return 0;
 	}
@@ -104,6 +107,9 @@ void App::OnCreate(HWND hWnd, UINT iMessage, WPARAM wParam, LPARAM lParam) {
 	m_hCombo = CreateWindow(TEXT("combobox"), NULL, WS_CHILD | WS_VISIBLE | CBS_DROPDOWNLIST | WS_VSCROLL | CBS_OWNERDRAWFIXED,
 		100, 0, GetWindowWidth() - 100, 200, hWnd, (HMENU)ID_COMBOBOX, m_hInst, NULL);
 
+	// Create Static Control
+	m_hLabel1 = CreateWindow(TEXT("static"), "Font : ", WS_CHILD | WS_VISIBLE | SS_CENTER, 0, 16 - 12 / 2, 100, 32, hWnd, (HMENU)ID_LABEL1, m_hInst, NULL);
+
 	// Enumerate the font families to callback
 	hdc = GetDC(hWnd);
 	EnumFontFamilies(hdc, NULL, (FONTENUMPROC)EnumFamCallBack, (LPARAM)NULL);
@@ -115,18 +121,95 @@ void App::OnCreate(HWND hWnd, UINT iMessage, WPARAM wParam, LPARAM lParam) {
 		SendMessage(m_hCombo, CB_ADDSTRING, 0, (LPARAM)&logfont[i]);
 	}
 
-	SetComboBoxIndex(0);
+	const int fontIndex = GetInt(TEXT("FontIndex"));
 
+	SetComboBoxIndex(fontIndex);
+
+	// Create the ComboBox
 	m_hSizeCombo = CreateWindow(TEXT("combobox"), NULL, WS_CHILD | WS_VISIBLE | CBS_DROPDOWNLIST | WS_VSCROLL | CBS_OWNERDRAWFIXED,
 		100, DEFAULT_COMBO_HEIGHT + PAD, GetWindowWidth() - 100, 200, hWnd, (HMENU)ID_SIZE_COMBOBOX, m_hInst, NULL);
+
+	// Create Static Control
+	m_hLabel2 = CreateWindow(TEXT("static"), "Size : ", WS_CHILD | WS_VISIBLE | SS_CENTER, 0, 32 + 10 + 16 - 12 / 2, 100, 32, hWnd, (HMENU)ID_LABEL2, m_hInst, NULL);
 
 	SendMessage(m_hSizeCombo, CB_RESETCONTENT, 0, 0);
 	for (int i = 0; i<33; i++) {
 		SendMessage(m_hSizeCombo, CB_ADDSTRING, 0, (LPARAM)g_fontSizeTable[i]);
 	}
-	SendMessage(m_hSizeCombo, CB_SETCURSEL, 8, 0);
+
+	const int fontCount = GetInt(TEXT("FontCount"));
+	int fontSizeIndex = GetInt(TEXT("FontSizeIndex"));
+	if (fontCount == 0) {
+		fontSizeIndex = 8;
+	}
+
+	SendMessage(m_hSizeCombo, CB_SETCURSEL, fontSizeIndex, 0);
 	
 }
+
+TString App::GetString(TString key)
+{
+	TCHAR lpszIniFile[MAX_PATH];
+	TCHAR lpszValue[MAX_PATH];
+
+	std::stringstream ss;
+
+	GetCurrentDirectory(MAX_PATH, lpszIniFile);
+	ss << lpszIniFile << "\\Game.ini";
+	TString sIniFile = ss.str();
+
+	GetPrivateProfileString(_T("Game"), &key[0], TEXT(""), lpszValue, MAX_PATH, &sIniFile[0]);
+
+	TString sRetText = lpszValue;
+
+	return sRetText;
+}
+
+const int App::GetInt(TString key)
+{
+	std::string sRet = GetString(key);
+	int ret = 0;
+
+	if (sRet != "") {
+		ret = std::stoi(sRet);
+	}
+
+	return ret;
+}
+
+BOOL App::WriteString(TString key, TString value)
+{
+	TCHAR lpszIniFile[MAX_PATH];
+
+	std::stringstream ss;
+
+	GetCurrentDirectory(MAX_PATH, lpszIniFile);
+	ss << lpszIniFile << "\\Game.ini";
+	std::string sIniFile = ss.str();
+
+	BOOL ret = WritePrivateProfileString(_T("Game"), &key[0], &value[0], &sIniFile[0]);
+
+	return ret;
+}
+
+BOOL App::WriteInt(TString key, const int value)
+{
+	TCHAR lpszIniFile[MAX_PATH];
+
+	std::stringstream ss;
+
+	GetCurrentDirectory(MAX_PATH, lpszIniFile);
+	ss << lpszIniFile << "\\Game.ini";
+	std::string sIniFile = ss.str();
+
+	ss.str("");
+	ss << value;
+
+	BOOL ret = WritePrivateProfileString(_T("Game"), &key[0], &ss.str()[0], &sIniFile[0]);
+
+	return ret;
+}
+
 
 std::string App::ToString(int value)
 {
@@ -182,7 +265,7 @@ void App::OnComboItem(HWND hWnd, UINT iMessage, WPARAM wParam, LPARAM lParam)
 	break;
 	case ID_SIZE_COMBOBOX: {
 
-		std::string sTextSize = ToString(g_fontSizeTable[lpdis->itemID]);
+		TString sTextSize = ToString(g_fontSizeTable[lpdis->itemID]);
 
 		TextOut(lpdis->hDC,
 			lpdis->rcItem.left + 5,
@@ -198,7 +281,8 @@ void App::OnComboItem(HWND hWnd, UINT iMessage, WPARAM wParam, LPARAM lParam)
 
 }
 
-void App::OnPaint(HWND hWnd, UINT iMessage, WPARAM wParam, LPARAM lParam) {
+void App::OnPaint(HWND hWnd, UINT iMessage, WPARAM wParam, LPARAM lParam) 
+{
 	HDC hdc;
 	PAINTSTRUCT ps;
 	TCHAR iniDir[MAX_PATH];
@@ -232,11 +316,9 @@ void App::OnPaint(HWND hWnd, UINT iMessage, WPARAM wParam, LPARAM lParam) {
 		SetRect(&rt, 10, 200, GetWindowWidth(), h);
 		SetRect(&backRt, 0, 180, GetWindowWidth(), h);
 
-		// Clear the rect
-		FillRect(hdc, &backRt, (HBRUSH)WHITE_BRUSH);
-
 		// Draw the text
-		DrawText(hdc, m_tmpFont.lfFaceName, lstrlen(m_tmpFont.lfFaceName), &rt, DT_CENTER);
+		SetBkMode(hdc, TRANSPARENT);
+		DrawText(hdc, m_tmpFont.lfFaceName, lstrlen(m_tmpFont.lfFaceName), &rt, DT_CENTER| DT_VCENTER);
 
 		// Copy the path
 		GetCurrentDirectory(MAX_PATH, iniDir);
@@ -245,26 +327,27 @@ void App::OnPaint(HWND hWnd, UINT iMessage, WPARAM wParam, LPARAM lParam) {
 		// Change the Game.ini file
 		WritePrivateProfileString(_T("Game"), _T("Font"), m_tmpFont.lfFaceName, iniDir);
 
-		std::string sFontSize = ToString(nFontHeight);
+		TString sFontSize = ToString(nFontHeight);
 		WritePrivateProfileString(_T("Game"), _T("FontSize"), sFontSize.c_str(), iniDir);
 
 		// Select the system font.
 		SelectObject(hdc, m_oldfont);
 
-		// Draw the font text section
-		std::string sFontText = "FONT :" ;
-		GetTextExtentPoint32(hdc, sFontText.c_str(), sFontText.size(), &sz);
-		TextOut(hdc, DEFAULT_COMBO_WIDTH / 2 - sz.cx / 2, DEFAULT_COMBO_HEIGHT / 2 - sz.cy / 2, sFontText.c_str(), sFontText.size());
-
-		// Draw the font size section
-		sFontText = "SIZE : ";
-		GetTextExtentPoint32(hdc, sFontText.c_str(), sFontText.size(), &sz);
-		TextOut(hdc, DEFAULT_COMBO_WIDTH / 2 - sz.cx / 2, PAD + DEFAULT_COMBO_HEIGHT + DEFAULT_COMBO_HEIGHT / 2 - sz.cy / 2, sFontText.c_str(), sFontText.size());
-
 		DeleteObject(m_font);
 	}
 
 	EndPaint(hWnd, &ps);
+}
+
+void App::OnExit(HWND hWnd, UINT iMessage, WPARAM wParam, LPARAM lParam)
+{
+	const int fontIndex = SendMessage(m_hCombo, CB_GETCURSEL, 0, 0);
+	const int sizeIndex = SendMessage(m_hSizeCombo, CB_GETCURSEL, 0, 0);
+	const int numberOfFonts = SendMessage(m_hCombo, CB_GETCOUNT, 0, 0);
+
+	WriteInt(TEXT("FontIndex"), fontIndex);
+	WriteInt(TEXT("FontSizeIndex"), sizeIndex);
+	WriteInt(TEXT("FontCount"), numberOfFonts);
 }
 
 
@@ -356,11 +439,6 @@ void App::ShowErrorMessage()
 	MessageBox(m_hWnd, (LPTSTR)lpMsgBuf, _T(""), MB_OK);
 
 	LocalFree(lpMsgBuf);
-}
-
-int App::GetComboBoxIndex() const
-{
-	return m_nComboIndex;
 }
 
 void App::SetComboBoxIndex(int index)

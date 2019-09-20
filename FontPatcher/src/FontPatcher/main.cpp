@@ -2,7 +2,7 @@
 #include "constants.h"
 #include "App.h"
 
-LPCTSTR lpszClass = TEXT("Font Patcher");
+LPCTSTR lpszClass = TEXT("Font Patcher By Biud436");
 
 App* g_pApp = nullptr;
 
@@ -14,7 +14,7 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpszCmd
 
 	WndClass.cbClsExtra = 0;
 	WndClass.cbWndExtra = 0;
-	WndClass.hbrBackground = (HBRUSH)(WHITE_BRUSH);
+	WndClass.hbrBackground = (HBRUSH)(COLOR_WINDOW);
 	WndClass.hCursor = LoadCursor(NULL, IDC_ARROW);
 	WndClass.hIcon = LoadIcon(NULL, IDI_APPLICATION);
 	WndClass.hInstance = hInstance;
