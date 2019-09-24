@@ -2,8 +2,11 @@
 #   Name      : Ruby Command Prompt (RPG Maker VX Ace)
 #   Date      : 2015.07.14
 #   Author    : 러닝은빛(biud436)
-#   Version   : 1.0.4 (2015.08.03)
 #   Link      : http://biud436.blog.me/220419412203
+#   Version   : 
+# 2019.09.24 (v1.0.5) : 
+# - 왼쪽, 오른쪽, 홈, 삭제, 백스페이스 키로 커서 이동 추가
+# - DLL 파일 소스 코드 전면 재작성
 #==============================================================================
 # ** 설정
 #==============================================================================
@@ -15,8 +18,9 @@ module RS
   #--------------------------------------------------------------------------
   # * 기본 설정
   #--------------------------------------------------------------------------
-  VERSION = "1.0.4"
+  VERSION = "1.0.5"
   TEXT_LENGTH = 40
+  # 콘솔을 열기 위한 가상 키코드를 지정한다. 기본적으로는 ~키로 설정되어있다
   CHAT_TOGGLE = 0xC0
   DEFAULT_MESSAGE = "> 명령어를 입력하세요."
 end
@@ -62,17 +66,74 @@ module IME
   #--------------------------------------------------------------------------
   # * DLL Setup
   #--------------------------------------------------------------------------
-  DLL = 'RSModule.dll'
+  DLL = 'RSEditHost.dll'
+  
+  # 에디트 박스를 보이지 않는 상태로 동적으로 생성하고 포커스를 설정한다
   CreateEdit = Win32API.new(DLL,'CreateEdit','ii','i')
-  SetIME = Win32API.new(DLL,'SetIME','v','i')
+  
+  # 에디트 박스에 포커스를 설정한다
+  SetIME = Win32API.new(DLL,'SetIME','i','i')
+  
+  # 에디트 박스를 제거하고 화면에 포커스를 설정한다
   ReleaseIME = Win32API.new(DLL,'ReleaseIME','v','i')
+  
+  # 에디트 박스 내의 전체 문장을 가져온다
   GetCharText = Win32API.new(DLL,'GetCharText','p','i')
+  
+  # 에디트 박스의 EditProc에서 마지막으로 조합된 한글 문자를 가져온다
+  GetLastChar = Win32API.new(DLL, 'GetLastChar', 'v', 'p')
+  
+  # 에디트 박스의 EditProc에서 현재 조합 중인 한글 문자를 가져온다
+  GetCompStr = Win32API.new(DLL, 'GetCompStr', 'v', 'p')
+  
+  # 특수 문자와 이스케이프를 포함한 문장의 폭을 가져올 수 있다
+  # 하지만 폰트 선택이 되어있지 않기 때문에 폰트에 따라 폭이 달라지므로 부정확하다
+  GetTextWidth = Win32API.new(DLL, 'GetTextWidth', 'pi', 'l')
+  
+  # 캐럿의 현재 인덱스를 가져온다
+  GetCaretIndex = Win32API.new(DLL, 'GetCaretIndex', 'v', 'i')
+  
   #--------------------------------------------------------------------------
   # * IME Setup
   #--------------------------------------------------------------------------
   def self.setup(max_char)
     CreateEdit.call(max_char,0)
   end
+  #--------------------------------------------------------------------------
+  # * 폭 (폰트 선택이 되어있지 않기 때문에 정확하지 않음)
+  #--------------------------------------------------------------------------  
+  def self.width(str, c)
+    l = GetTextWidth.call(str.unicode!, c)
+  end
+  #--------------------------------------------------------------------------
+  # * 한글 문자 체크
+  #--------------------------------------------------------------------------    
+  def self.double_byte?(str)
+    return false if not str.is_a?(String)
+    return true if str =~ /[가-힣]/
+    return true if str =~ /[ㄱ-ㅎ]/
+    return false
+  end
+  #--------------------------------------------------------------------------
+  # * 특수 문자 체크
+  #--------------------------------------------------------------------------    
+  def self.specific_char?(str)
+    return false if not str.is_a?(String)
+    code = str.ord
+    return true if code.between?(32, 47)
+    return true if code.between?(58, 64)
+    return false
+  end
+  #--------------------------------------------------------------------------
+  # * 숫자 문자 체크
+  #--------------------------------------------------------------------------    
+  def self.number_char?(str)
+    return false if not str.is_a?(String)
+    code = str.ord
+    return true if code.between?(48, 57)
+    return false
+  end
+  
 end
 
 #==============================================================================
@@ -95,6 +156,9 @@ class Carat
   VK_END = 0x23
   VK_RIGHT = 0x27
   VK_LEFT = 0x25
+  VK_BACK = 0x08
+  VK_DELETE = 0x2E
+
   #--------------------------------------------------------------------------
   # * 초기화
   #--------------------------------------------------------------------------
@@ -109,7 +173,7 @@ class Carat
     @body.bitmap = Bitmap.new(1,Font.default_size)
     @rect = Rect.new(0,0,2,Font.default_size)
     @body.bitmap.fill_rect(@rect, Color.White)
-    @pos = -1
+    @pos = 0
   end
   #--------------------------------------------------------------------------
   # * Visible (State)
@@ -119,36 +183,56 @@ class Carat
     @state = t
   end
   #--------------------------------------------------------------------------
-  # * 키 체크 (확장)
-  #--------------------------------------------------------------------------
-  def pressed?(vkey)
-    Win32API.new('user32','GetAsyncKeyState','i','i').call(vkey) & 1 != 0
-  end
-  #--------------------------------------------------------------------------
-  # * 캐럿의 위치 설정
+  # * 현재 커서 위치 설정
   #--------------------------------------------------------------------------
   def set_pos(n, text)
-    return @pos unless n.between?( -1 + (-text.size) , -1 )
     @pos = n
   end
   #--------------------------------------------------------------------------
-  # * 캐럿의 위치
+  # * 현재 커서 위치를 반환
+  #--------------------------------------------------------------------------  
+  def get_pos
+    @pos
+  end
+  #--------------------------------------------------------------------------
+  # * 조합 중인 텍스트 획득
+  #--------------------------------------------------------------------------  
+  def get_comp_char
+    last_char = IME::GetCompStr.call
+    last_char.unicode_s.slice(0, 1) rescue ""
+  end  
+  #--------------------------------------------------------------------------
+  # * 조합 끝난 텍스트 획득
+  #--------------------------------------------------------------------------  
+  def get_last_char
+    last_char = IME::GetLastChar.call
+    last_char.unicode_s.slice(0, 1) rescue ""
+  end  
+  #--------------------------------------------------------------------------
+  # * 캐럿의 위치를 키보드 입력에 따라 변경
   #--------------------------------------------------------------------------
   def pos(text_box, text = "")
-    if @text == text
-      set_pos( @pos - 1, @text )         if pressed?(VK_LEFT)
-      set_pos( @pos + 1, @text )         if pressed?(VK_RIGHT)
-      @pos = text.size                  if pressed?(VK_END)
-      @pos = (-text.size) - 1           if pressed?(VK_HOME)
-    else
-      @pos = -1
-    end
-
+    @pos = IME::GetCaretIndex.call
+    set_caret_pos(text_box, text)
+  end
+  #--------------------------------------------------------------------------
+  # * 캐럿 스프라이트의 위치 설정
+  #--------------------------------------------------------------------------  
+  def set_caret_pos(text_box, text)
+    
     @text = text
-
-    rect = @body.bitmap.text_size(text[0..@pos])
-    @body.x = text_box.x + rect.width
-    @body.y = text_box.height / 2 - Font.default_size / 2
+    
+    width_s = 0
+    if @pos > 0
+      text = @text.dup.slice(0, @pos)
+      c = @body.bitmap.text_size(text)
+      width_s += c.width 
+    elsif @pos == 0
+      width_s = 0
+    end
+    
+    @body.x = text_box.x + width_s
+    @body.y = text_box.height / 2 - Font.default_size / 2    
   end
   #--------------------------------------------------------------------------
   # * 캐럿의 깜빡임
@@ -272,7 +356,7 @@ class EditBox
       Graphics.update
       get_input
       Input.update
-      break if KEY_STATE.call(0x0D) == 0x8000
+      break if (KEY_STATE.call(0x0D) == 0x8001) || (KEY_STATE.call(0x0D) == 0x8000)
     end
     end_edit
     @fiber = nil
@@ -283,7 +367,7 @@ class EditBox
   def start_edit
     @buf = "\u0000" * 128
     @text = ""
-    IME::SetIME.call
+    IME::SetIME.call(RS::TEXT_LENGTH)
     @state = true
     @carat.visible(true)
     @carat.pos(@text_sprite)
