@@ -2,9 +2,7 @@
 # ** Self Variables
 # Author : biud436
 # Date : 2015.03.21
-# Version Log :
-# 1.0
-# 1.1
+# Version Log : 2019.10.20 (v1.2) 
 #==============================================================================
 # ** 스크립트 소개
 #==============================================================================
@@ -34,6 +32,9 @@
 $imported = {} if $imported.nil?
 $imported["RS_SelfVariables"] = true
 
+#==============================================================================
+# ** Game_SelfVariables
+#============================================================================== 
 class Game_SelfVariables
   def initialize
     @data = {}
@@ -42,7 +43,11 @@ class Game_SelfVariables
     $game_map.map_id
   end
   def event_id
-    $game_map.interpreter.event_id
+    if $game_party.in_battle
+      "BATTLE_TROOP:#{$game_troop.troop.id}"
+    else
+      $game_map.interpreter.event_id
+    end
   end
   def [](index)
     @data[[map_id,event_id,index]] || 0
@@ -54,8 +59,18 @@ class Game_SelfVariables
   def on_change
     $game_map.need_refresh = true
   end
+  def set_data(mid, eid, id, value)
+    @data[[mid,eid,id]] = value
+    on_change
+  end
+  def get_data(mid, eid, id)
+    @data[[mid,eid,id]] || 0
+  end  
 end
 
+#==============================================================================
+# ** DataManager
+#============================================================================== 
 module DataManager
  class << self
     alias self_var_create_game_objects create_game_objects
@@ -77,27 +92,30 @@ module DataManager
   end
 end
 
-class Game_SelfVariables
-  def set_data(mid, eid, id, value)
-    @data[[mid,eid,id]] = value
-    on_change
+#==============================================================================
+# ** Game_Event
+#==============================================================================
+class Game_Event < Game_Character
+  def set_sv(id, value)
+    $self_variables.set_data(@map_id, @id, id, value)
   end
-  def get_data(mid, eid, id)
-    @data[[mid,eid,id]] || 0
+  def get_sv(id)
+    $self_variables.get_data(@map_id, @id, id)
   end
 end
 
-class Game_Event < Game_Character
-  alias xxxx_eval eval
-  def eval(*args)
-    if args[0] && args[0].match(/\$(?:SELF_VARIABLES)\[(.+?)\][ ]*=[ ]*(.*)/i)
-      id = $1.to_s
-      value = $2.to_i
-      $self_variables.set_data(@map_id, @event_id, id, value)
-    elsif args[0] && args[0].match(/\$(?:SELF_VARIABLES)\[(.+?)\]/i)
-      $self_variables.get_data(@map_id, @event_id, $1.to_s)
-    else
-      xxxx_eval(*args)
-    end
+#==============================================================================
+# ** Game_Troop
+#==============================================================================
+class Game_Troop < Game_Unit
+  def set_sv(id, value)
+    map_id = $game_map.map_id
+    battle_troop_id = "BATTLE_TROOP:#{@troop_id}"
+    $self_variables.set_data(map_id, battle_troop_id, id, value)
   end
+  def get_sv(id)
+    map_id = $game_map.map_id
+    battle_troop_id = "BATTLE_TROOP:#{@troop_id}"    
+    $self_variables.get_data(map_id, battle_troop_id, id)
+  end  
 end
