@@ -25,7 +25,7 @@
 # - Added the repeat? method into Input class.
 # v1.0.7 (2019.11.13) :
 # - 마우스 왼쪽 클릭으로 비행선을 탑승할 수 없었던 문제를 수정하였습니다.
-# - Added a new feature that can hide the destination sprite on the screen.
+# - 목적지 스프라이트를 화면에서 감출 수 있는 기능을 추가하였습니다.
 # - 비행선 탑승 후, 마우스 자동 이동 시 한 칸만 움직이고 멈추는 현상을 수정하였습니다.
 #-------------------------------------------------------------------------------
 # 사용법 / How to use
