@@ -1503,8 +1503,11 @@ class Spriteset_Map
   def create_destination
   
     @destination = Sprite.new(destination_viewport)
+    
+    # 목적지 스프라이트의 그래픽을 변경하려면 아래 코드를 적절히 수정해야 합니다.
     @destination.bitmap = Bitmap.new(32, 32)
     @destination.bitmap.fill_rect(0, 0, 32, 32, RS::Input::Config[:DESTINATION_NORMAL_COLOR])
+    
     @destination.opacity = 128
     @destination.z = RS::Input::Config[:DESTINATION_Z]
     @destination.visible = false
