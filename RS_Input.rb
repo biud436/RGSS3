@@ -1,7 +1,7 @@
 #===============================================================================
 # Name : RS_Input
 # Author : biud436
-# Version : 1.0.6 (2019.03.25)
+# Version : 1.0.7 (2019.11.13)
 # Link : https://biud436.blog.me/220289463681
 # Description : This script provides the extension keycode and easy to use.
 #-------------------------------------------------------------------------------
@@ -23,6 +23,10 @@
 # - Added feature that can use the mouse left button in the Window_DebugRight
 # v1.0.6 (2019.03.25) :
 # - Added the repeat? method into Input class.
+# v1.0.7 (2019.11.13) :
+# - 마우스 왼쪽 클릭으로 비행선을 탑승할 수 없었던 문제를 수정하였습니다.
+# - Added a new feature that can hide the destination sprite on the screen.
+# - 비행선 탑승 후, 마우스 자동 이동 시 한 칸만 움직이고 멈추는 현상을 수정하였습니다.
 #-------------------------------------------------------------------------------
 # 사용법 / How to use
 #-------------------------------------------------------------------------------
@@ -115,7 +119,11 @@ module RS::Input
     # 시작 지점부터 목표 지점까지의 이동 비용이 최적화 값보다 커지게 되면,
     # 알고리즘을 즉각 끝내고 지금까지 계산된 경로를 반환한다. 
     :SEARCH_LIMIT => 12,
-
+    
+    # 목적지 표시 스프라이트 표시
+    # 표시하려면 true, 감추려면 false
+    :SHOW_DESTINATION => true,
+  
     # 목적지 표시 그래픽의 뷰포트 설정
     # 1로 설정하면 타일맵, 원경, 캐릭터들과 동일한 뷰포트를 사용한다.
     # 2로 설정하면 그림, 타이머, 날씨 효과 등과 동일한 뷰포트를 사용한다
@@ -784,6 +792,9 @@ module TouchInput
     def hide_mouse_cursor
       ShowCursor.call(0)
     end
+    def update
+      Input.update_mouse
+    end
   end
 end
 
@@ -1222,6 +1233,23 @@ end
 # Game_Player
 #===============================================================================
 class Game_Player < Game_Character
+  alias rs_game_player_initialize initialize
+  def initialize
+    rs_game_player_initialize
+    @dashing = false
+  end
+  #--------------------------------------------------------------------------
+  # * Determine if Dashing
+  #--------------------------------------------------------------------------
+  def dash?
+    @dashing
+  end 
+  #--------------------------------------------------------------------------
+  # * in_vehicle?
+  #--------------------------------------------------------------------------  
+  def in_vehicle?
+    in_boat? or in_ship? or in_airship?
+  end  
   #--------------------------------------------------------------------------
   # * can_move?
   #--------------------------------------------------------------------------  
@@ -1229,7 +1257,7 @@ class Game_Player < Game_Character
     return false if $game_map.interpreter.running? || $game_message.busy?
     return false if @move_route_forcing || @followers.gathering?
     return false if @vehicle_getting_on || @vehicle_getting_off
-    return false if vehicle && !vehicle.movable?
+    return false if in_vehicle? && !vehicle.can_move?
     return true    
   end
   #--------------------------------------------------------------------------
@@ -1320,7 +1348,7 @@ class Game_Player < Game_Character
     # 현재 좌표에 바로 위에 비행선이 놓여 있으면
     if $game_map.airship.pos?(x1, y1)
       # 마우스 왼쪽 버튼을 클릭하고 비행선 탑승 또는 하차 처리
-      if TouchInput.trigger?(:LEFT) && get_on_off_vehicle
+      if TouchInput.press?(:LEFT) && get_on_off_vehicle
           return true
       end
     end
@@ -1362,10 +1390,23 @@ class Game_Player < Game_Character
     return $game_map.setup_starting_event
   end
   #--------------------------------------------------------------------------
+  # * update_dashing
+  #--------------------------------------------------------------------------   
+  def update_dashing
+    return false if moving?
+    if can_move? && in_vehicle? && !$game_map.disable_dash?
+      @dashing = false
+    else
+      @dashing = Input.press?(:SHIFT) || $game_temp.destination_valid?
+    end
+    return true
+  end
+  #--------------------------------------------------------------------------
   # * move_by_input
   #--------------------------------------------------------------------------  
   def move_by_input
-    if (!moving?) && (can_move?)
+    return if not update_dashing
+    if !moving? && can_move?
       direction = Input.dir4
       if direction > 0
         $game_temp.clear_destination
@@ -1379,14 +1420,18 @@ class Game_Player < Game_Character
       end
     end
   end  
+end
+
+#===============================================================================
+# Game_Vehicle
+#===============================================================================
+class Game_Vehicle < Game_Character
   #--------------------------------------------------------------------------
-  # * 대시가 가능한 상태인가
-  #--------------------------------------------------------------------------    
-  def dash?
-    return false if @move_route_forcing
-    return false if $game_map.disable_dash?
-    return false if vehicle
-    return Input.press?(:A) || $game_temp.destination_valid?
+  # * can_move?
+  #--------------------------------------------------------------------------   
+  def can_move?
+    @altitude >= max_altitude if @type == :airship
+    return true
   end
 end
 
@@ -1471,7 +1516,7 @@ class Spriteset_Map
   #--------------------------------------------------------------------------     
   def update_destination
     return if not @destination
-    @destination.visible = true
+    @destination.visible = RS::Input::Config[:SHOW_DESTINATION]
     if $game_temp.destination_valid? and $game_temp.destination_time > 0
       speed = RS::Input::Config[:DESTINATION_ZOOM_EFFECT_SPEED]
       @destination.x = ($game_map.adjust_x($game_temp.destination_x) * 32) + 16
