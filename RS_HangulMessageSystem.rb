@@ -1,12 +1,15 @@
 #==============================================================================
-# ** Hangul Message System 1.5.26 (RPG Maker VX Ace)
+# ** Hangul Message System 1.5.27 (RPG Maker VX Ace)
 #==============================================================================
 # Name       : Hangul Message System
 # Author     : biud436
-# Version    : 1.5.26
+# Version    : 1.5.27
 #==============================================================================
 # ** 업데이트 로그
 #==============================================================================
+# 2019.12.12 (v1.5.27) :
+# - 한국어 조사 처리 스크립트가 작동하지 않는 문제를 수정하였습니다.
+# (한국어 조사 처리 스크립트를 더 먼저 삽입해주세요)
 # 2019.09.23 (v1.5.26) :
 # - 텍스트 정렬 명령어를 사용하지 않았을 때에도, 왼쪽으로 강제 정렬되는 문제를 수정하였습니다.
 # 2019.08.29 (v1.5.25) : 
@@ -1055,7 +1058,7 @@ end
 #------------------------------------------------------------------------------
 # 메시지 시스템이 구현되어있는 클래스입니다
 #==============================================================================
-class Window_Message
+class Window_Message < Window_Base
   include RS::BNSprite
   include RS::Color
   include RS::BALLOON
@@ -1238,8 +1241,9 @@ class Window_Message
   #    starting actual drawing. The character "\" is replaced with the escape
   #    character (\e).
   #--------------------------------------------------------------------------
+  alias rs_hms_convert_escape_characters convert_escape_characters
   def convert_escape_characters(text)
-    result = text.to_s.clone
+    result = rs_hms_convert_escape_characters(text)
     result.gsub!(/\\/)            { "\e" }
     result.gsub!(/\e\e/)          { "\\" }
     result.gsub!(/(?:\eV|\e변수)\[(\d+)\]/i) { $game_variables[$1.to_i] }
