@@ -1,10 +1,11 @@
 #==============================================================================
 #   Name      : 화면 중앙 상단 메시지 / Floating Message (GUI)
-#   Date      : 2015.06.23
-#   Version   : 1.5.3
+#   Date      : 2019.12.19
+#   Version   : 1.5.4
 # -----------------------------------------------------------------------------
 #  * Change Log
 # -----------------------------------------------------------------------------
+#   2019.12.19 (v1.5.4) - 장비 해제 시 아이템 획득으로 나오는 문제 수정
 #   2015.06.23 - 게임 로드 버그 수정
 #   2015.02.16 - 버그 픽스(경험치 획득 메시지)
 #   2015.02.14 - 버그 픽스(경험치 획득 메시지)
@@ -359,6 +360,7 @@ end
 # ** Game_Party
 #==============================================================================
 class Game_Party
+  
   alias chat_gain_item gain_item
   alias chat_add_actor add_actor
   alias chat_remove_actor remove_actor
@@ -428,6 +430,20 @@ class Game_Actor
     $hud.message(Temp::EXP_UP,g) if g > 0
     $hud.message(Temp::EXP_DOWN,g) if g < 0
   end
+  #--------------------------------------------------------------------------
+  # * Trade Item with Party
+  #     new_item:  Item to get from party
+  #     old_item:  Item to give to party
+  #--------------------------------------------------------------------------
+  def trade_item_with_party(new_item, old_item)
+    return false if new_item && !$game_party.has_item?(new_item)
+    temp = UI_MSG::ITEM
+    UI_MSG.const_set(:ITEM, false)
+    $game_party.gain_item(old_item, 1)
+    $game_party.lose_item(new_item, 1)
+    UI_MSG.const_set(:ITEM, temp)
+    return true
+  end  
 end
 #==============================================================================
 # ** DataManager
