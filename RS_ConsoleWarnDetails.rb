@@ -7,6 +7,8 @@
 #==============================================================================
 # Free for commercial and non-commercial use
 #==============================================================================
+$imported = {} if $imported.nil?
+$imported["RS_ConsoleWarnDetails"] = true
 
 module RS
     module ConsoleWarnDetails
@@ -26,11 +28,42 @@ module RS
         # false면 오류를 전달하고 오류와 함께 게임이 종료 됩니다.
         # false면 저장하지 않은 모든 데이터를 잃게 됩니다 (기본값은 false)
         INLINE = false
+        
+        def self.trace(e)
+        
+          lines = []
+          lines << "----------"
+          lines << sprintf(TIME_FMT, Time.now.to_s)
+          lines << sprintf(ERROR_MESSAGE_FMT, e.message)
+          lines << "----------"
+          lines << ERROR_BACKTRACE_FMT
+          lines << e.backtrace
+          lines << "----------"
+          
+          f = File.open(DEBUG_FILE_NAME, "w+")
+          lines.each { |line| f.puts line }
+          f.close
+          
+          if INLINE
+            puts lines.join("\r\n")
+          else
+            raise lines.join("\r\n")
+          end        
+          
+        end
     end
 end
 
-$imported = {} if $imported.nil?
-$imported["RS_ConsoleWarnDetails"] = true
+class Game_Character < Game_CharacterBase
+  alias detail_error_update_routine_move update_routine_move
+  def update_routine_move
+    begin
+      detail_error_update_routine_move
+    rescue => e
+      RS::ConsoleWarnDetails.trace(e)
+    end
+  end  
+end
 
 class Game_Interpreter
   def command_355
@@ -42,26 +75,7 @@ class Game_Interpreter
     begin
       eval(script)
     rescue => e
-      
-      lines = []
-      lines << "----------"
-      lines << sprintf(RS::ConsoleWarnDetails::TIME_FMT, Time.now.to_s)
-      lines << sprintf(RS::ConsoleWarnDetails::ERROR_MESSAGE_FMT, e.message)
-      lines << "----------"
-      lines << RS::ConsoleWarnDetails::ERROR_BACKTRACE_FMT
-      lines << e.backtrace
-      lines << "----------"
-      
-      f = File.open(RS::ConsoleWarnDetails::DEBUG_FILE_NAME, "w+")
-      lines.each { |line| f.puts line }
-      f.close
-      
-      if RS::ConsoleWarnDetails::INLINE
-        puts lines.join("\r\n")
-      else
-        raise lines.join("\r\n")
-      end
-      
+      RS::ConsoleWarnDetails.trace(e)
     end
   end  
 end
