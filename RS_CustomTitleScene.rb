@@ -1,8 +1,18 @@
 =begin
-Name : 눈보라 효과가 적용된 타이틀 메뉴 / RS_CustomTitleScene.rb
-Author : biud436
-First Release Date : 2014. 06. 27
-Version Log : 
+# * Name : 눈보라 효과가 적용된 타이틀 메뉴 / RS_CustomTitleScene.rb
+# * Author : biud436
+# * First Release Date : 2014. 06. 27
+# * Description : 
+This script allows you to change the UI of Window_TitleCommand on title scene and also adds weather effect.
+
+To use this script, 
+Place decompressed resource files in your Graphics/Picture folder after download resource file at following the link.
+
+Link : http://biud436.blog.me/220042810055
+
+But, This is pretty old script.
+
+# * Version Log : 
   2019.12.20 (v1.1.0) : 
     - 리팩토링 및 이미지 수정
 =end
