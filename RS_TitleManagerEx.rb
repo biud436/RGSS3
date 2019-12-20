@@ -9,7 +9,7 @@
 # In a script calls, you can be used as below codes. The parameters are the name
 # of an ending within a game and its name can set in Tool module.
 #
-# EndingManager.ending_setup("엔딩1")
+# DataManager.ending_setup("엔딩1")
 #==============================================================================
 # ** Terms of Use
 #==============================================================================
