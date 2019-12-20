@@ -6,7 +6,7 @@
 This script allows you to change the UI of Window_TitleCommand on title scene and also adds weather effect.
 
 To use this script, 
-Place decompressed resource files in your Graphics/Pictures folder after download resource file at following the link.
+Place decompressed resource files in your Graphics/Pictures folder after downloading resource file at following the link.
 
 Link : http://biud436.blog.me/220042810055
 
