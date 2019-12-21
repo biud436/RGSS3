@@ -23,26 +23,35 @@ $imported["RS_CustomTitleScene.rb"] = true
 module RS
   module CustomTitle
     
-    # Graphics/Pictures
+    # Image
+    # Our first step is to set all the images we need for the menu.
+    # You will see that it changes an animation of the menu button pressing the arrow key, 
+    # When you press an up or down arrow key, it will change the index of menu image and 
+    # it will pick the correct appearance for the title command.
+    # The image loads from Graphics/Pictures folder on the your root game directory.
     IMAGE = {
-      :BASE => "base_1",
-      :START => "base_2",
+      :BASE => "base_1", # if the image is to symbol named :BASE, it represents there is a no selected image.
+      :START => "base_2", # if the image is to symbol called ":START", it represents it is selected the start button.
       :CONTINUE => "base_3", 
       :SHUTDOWN => "base_4",
     }
   
+    # All images must have a z-index in order to perform a z-index layering.
     Z = {
-      :VIEWPORT => 1000,
+      :VIEWPORT => 1000, # Weather effect. its z-index must be pretty higher than other images.
       :ICON => 156,
       :MENU_BACKGROUND => 154,
       :MENU_COMMAND_SPRITE => 155,
     }
 
     # 타이틀 커맨드의 위치
-    # :LEFT, :CENTER, :RIGHT 중 하나
-    DEFAULT_ALIGN = :LEFT
+    # :LEFT, :CENTER, :RIGHT 중 하나여야 합니다.
+    DEFAULT_ANCHOR = :LEFT
 
-    # 아이콘
+    # 아이콘의 인덱스
+    # 아이콘을 표시하고 싶지 않다면 0으로 설정하세요.
+    # The icon allows you to show a icon label to certain button. 
+    # But if you don't need to use it, you have to set the icon number is to 0.
     ICON_INDEX = 272
 
   end
@@ -268,7 +277,7 @@ class RS::Window_TitleCommand < Window_TitleCommand
     @remain_line_height = value
   end
   def update_placement
-    case RS::CustomTitle::DEFAULT_ALIGN
+    case RS::CustomTitle::DEFAULT_ANCHOR
     when :RIGHT
       self.x = (Graphics.width - width) - 20
     when :LEFT
