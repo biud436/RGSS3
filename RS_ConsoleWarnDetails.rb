@@ -21,8 +21,23 @@ module RS
     # 오류 시간 텍스트
     TIME_FMT = "오류 시간 : %s"
     
+    # 오류 타입 텍스트
+    ERROR_TYPE_FMT = "오류 타입 : %s"
+    
+    # 오류 스크립트 텍스트
+    SCRIPT_NAME_FMT = "오류가 난 스크립트 : %s"
+    
+    # 오류 라인 텍스트
+    SCRIPT_LINE_FMT = "오류가 발생한 라인 : %d"
+    
+    # 오류가 난 스크립트 토큰
+    SCRIPT_TOKEN_FMT = "오류가 발생한 토큰 : %s"
+    
+    # 자세한 오류
+    SCRIPT_DETAIL_ERROR_FMT = "%s --> %d번 라인, %s에서 오류"
+    
     # 오류 메시지 텍스트
-    ERROR_MESSAGE_FMT = "메시지 : %s"
+    ERROR_MESSAGE_FMT = "오류 메시지 : %s"
     ERROR_BACKTRACE_FMT = "오류 스택 : "
     
     # true이면 콘솔에만 오류를 표시하고 게임을 계속 진행합니다.
@@ -36,17 +51,39 @@ module RS
     # 오류가 난 스크립트 에디터 라인을 자동으로 띄워주는 기능은 사용할 수 없게 됩니다.
     ALL = true
     
+    def self.extract(lines, backtraces)
+      return if backtraces && !backtraces.is_a?(Array)
+      backtraces.each do |t|
+        if t =~ /^\{(\d+)\}\:(\d+)\:(.*)/    
+          script_name = $RGSS_SCRIPTS[$1.to_i][1]
+          script_line = $2.to_i
+          script_token = $3.gsub!("in ", "")
+          lines << sprintf(SCRIPT_DETAIL_ERROR_FMT, script_name, script_line, script_token)
+        end
+      end
+    end
+    
     def self.trace(e)
       
       lines = []
-      lines << "----------"
+      if $@[0].to_s =~ /^\{(\d+)\}\:(\d+)\:(.*)/
+        # 오류 타입 표시
+        lines << sprintf(ERROR_TYPE_FMT, $!.class.to_s)
+        lines << "----------"              
+        script_name = $RGSS_SCRIPTS[$1.to_i][1]
+        script_line = $2.to_i
+        script_token = $3.gsub!("in ", "")
+        lines << sprintf(SCRIPT_DETAIL_ERROR_FMT, script_name, script_line, script_token)
+      end
+      # 오류 시간 표시
       lines << sprintf(TIME_FMT, Time.now.to_s)
+      lines << "----------"      
+      # 오류 메시지 표시
       lines << sprintf(ERROR_MESSAGE_FMT, e.message)
       lines << "----------"
       lines << ERROR_BACKTRACE_FMT
-      lines << e.backtrace
+      self.extract(lines, e.backtrace)
       lines << "----------"
-      
       f = File.open(DEBUG_FILE_NAME, "w+")
       lines.each { |line| f.puts line }
       f.close
@@ -155,3 +192,10 @@ else
     end  
   end
 end
+
+s = ScriptError.new("")
+f = File.open("debug2.log", "w+")
+RubyVM::InstructionSequence.disasm(s.method(:backtrace))
+f.puts RubyVM::InstructionSequence.disasm(s.method(:exception))
+f.close
+
