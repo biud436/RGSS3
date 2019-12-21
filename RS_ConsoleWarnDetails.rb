@@ -192,10 +192,3 @@ else
     end  
   end
 end
-
-s = ScriptError.new("")
-f = File.open("debug2.log", "w+")
-RubyVM::InstructionSequence.disasm(s.method(:backtrace))
-f.puts RubyVM::InstructionSequence.disasm(s.method(:exception))
-f.close
-
