@@ -1,0 +1,38 @@
+{
+	// Place your RGSS3 작업 영역 snippets here. Each snippet is defined under a snippet name and has a scope, prefix, body and 
+	// description. Add comma separated ids of the languages where the snippet is applicable in the scope field. If scope 
+	// is left empty or omitted, the snippet gets applied to all languages. The prefix is what is 
+	// used to trigger the snippet and the body will be expanded and inserted. Possible variables are: 
+	// $1, $2 for tab stops, $0 for the final cursor position, and ${1:label}, ${2:another} for placeholders. 
+	// Placeholders with the same ids are connected.
+	// Example:
+	// "Print to console": {
+	// 	"scope": "javascript,typescript",
+	// 	"prefix": "log",
+	// 	"body": [
+	// 		"console.log('$1');",
+	// 		"$2"
+	// 	],
+	// 	"description": "Log output to console"
+	// }
+	"header": {
+		"scope": "ruby",
+		"prefix": "h",
+		"body": [
+			"#==============================================================================",
+			"# Name : ${TM_FILENAME_BASE/RS_(.*)$/$1/}",
+			"# Author : biud436",
+			"# Date : ${CURRENT_YEAR}.${CURRENT_MONTH}.${CURRENT_DATE} (v1.0.0)",
+			"#==============================================================================",
+			"# ** Terms of Use",
+			"#==============================================================================",
+			"# Free for commercial and non-commercial use",
+			"#==============================================================================",
+			"$imported = {} if $imported.nil?",
+			"$imported[\"${TM_FILENAME_BASE}\"] = true",
+			"",
+			"$0",
+		],
+		"description": "루비 준비"
+	}
+}
