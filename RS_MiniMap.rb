@@ -1,7 +1,7 @@
 =begin
 Name : MiniMap
 Author : biud436
-Version : 1.54
+Version : 1.57
 #==============================================================================
 # ** 사용법
 #==============================================================================
@@ -19,7 +19,7 @@ $game_map.minimap_visible = true
 
 5. 스크린의 위치는 SCREEN 상수의 값을 변경해주면 변경할 수 있습니다
 
-6. 이벤트를 이벤트의 그래픽으료 묘화할 땐 주석에 "미니맵 설정"이라고 쓰세요.
+6. 이벤트를 이벤트의 그래픽으로 묘화할 땐 주석에 "미니맵 설정"이라고 쓰세요.
 미니맵 설정 0
 
 '미니맵 설정 0'으로 설정하면 캐릭터 정면 모습만 그려집니다
@@ -37,6 +37,12 @@ $game_map.minimap_visible = true
 #==============================================================================
 # ** 업데이트 정보
 #==============================================================================
+
+## 1.57 (2019.12.25) =========================================================
+- 동적 묘화 옵션(최적화 옵션)을 추가했습니다. 플레이어가 정지 상태일 때에만 묘화 
+작업을 최대로 처리하고 이외에는 최소한으로 처리하게 됩니다. 
+- 맵 속성의 메모 란에서 ScaleY 노트 태그가 지정되지 않는 문제 수정
+- 배율 값을 높게 설정할 때, 캐릭터 아이콘이 정확하지 않은 위치에 표시되는 문제 수정
 
 ## 1.54 (2015.04.10) =========================================================
 - 비율 오차값 수정
@@ -84,8 +90,8 @@ $game_map.minimap_visible = true
 #------------------------------------------------------------------------------
 # MiniMap         - 미니맵 관련 기본 설정을 할 수 있는 모듈입니다
 # Game_Map        - 맵의 폭과 높이를 구해줍니다
-# Box             - 미니맵에 사각형을 그려줍니다
-# Icon            - 미니맵에 아이콘을 만들어줍니다
+# MinimapBox             - 미니맵에 사각형을 그려줍니다
+# MinimapIcon            - 미니맵에 아이콘을 만들어줍니다
 # Game_Player     - 플레이어의 가시 상태를 체크해줍니다
 # Game_Event      - 이벤트의 이름과 가시 상태를 체크해줍니다
 # Game_Map        - 미니맵의 스케일을 설정합니다
@@ -123,10 +129,10 @@ module MiniMap
   PD = 10
 
   # 스케일 X
-  Scale_X = 2
+  Scale_X = 2.0
 
   # 스케일 Y
-  Scale_Y = 2
+  Scale_Y = 2.0
 
   # 지역 태그 번호
   TAG = 1
@@ -164,14 +170,58 @@ module MiniMap
   # 색상 : 하얀색
   WHITE = Color.new(200,200,200,200)
 
+  # 미니맵 묘화는 반복문이 중첩되어 있어서 성능에 불리했으나,
+  # 동적 프레임 분산 처리를 도입하여 성능이 향상되었습니다.
+  # 
+  # :ROW면 Y 방향으로 한 줄마다 프레임을 갱신합니다. 
+  # 그려지는 속도는 빠르지만 잦은 갱신 시 끊김 현상이 있을 수 있습니다.
+  #
+  # :COL이면 X 방향으로 한 줄마다 프레임을 갱신합니다. 
+  # 그려지는 속도는 :ROW보다 약간 느릴 수 있습니다.
+  #
+  # :ALL이면 모든 블럭에서 한 번씩 프레임을 갱신합니다.
+  # 즉, 모든 블럭을 1프레임에 한 번씩만 그립니다.
+  # 맵이 클수록 그려지는 속도가 굉장히 느리지만 부하가 제일 적습니다.
+  FRAME_UPDATE = :ALL
+  
+  # 지정한 주기마다 프레임을 동적으로 갱신합니다.
+  # 플레이어가 움직이고 있을 때는 프레임 업데이트를 자주 처리하므로 렉이 사라지고,
+  # 플레이어가 멈춰있을 때는 미니맵 묘화(이중 반복문) 처리에 집중합니다.
+  ELAPSED = 16
+  ELAPSED_WHEN_MOVING = 2
+  
+  # 데이터
+  DATA = {}
+  
+  DATA[:BACKGROUND_OPACITY] = 230
+  DATA[:LOWER_VIEWPORT_Z] = 151
+  DATA[:HIGH_VIEWPORT_Z] = 152
+  
+  DEBUG_CONSOLE = false
+
+end
+
+#==============================================================================
+# ** Game_System
+#------------------------------------------------------------------------------
+# 미니맵의 스케일을 조정합니다
+#==============================================================================
+class Game_System
+  alias minimap_game_system_initialize initialize
+  attr_accessor :view_scale_x
+  attr_accessor :view_scale_y
+  def initialize
+    minimap_game_system_initialize
+    @view_scale_x = MiniMap::Scale_X
+    @view_scale_y = MiniMap::Scale_Y
+  end
 end
 
 #==============================================================================
 # ** Game_Map
-#------------------------------------------------------------------------------
-# 맵의 폭과 높이를 구해줍니다
 #==============================================================================
 class Game_Map
+  attr_accessor :minimap_visible  
   attr_reader :need_refresh
   #--------------------------------------------------------------------------
   # * 폭
@@ -185,14 +235,123 @@ class Game_Map
   def height
     @map.height
   end
+  #--------------------------------------------------------------------------
+  # * 초기화
+  #--------------------------------------------------------------------------
+  alias minimap_setup setup  
+  def setup(map_id)
+    minimap_setup(map_id)
+    @minimap_visible = map_name?
+  end
+  #--------------------------------------------------------------------------
+  # * 미니맵 사용 여부를 확인합니다
+  #--------------------------------------------------------------------------
+  def map_name?
+    return true if ($data_mapinfos[@map_id].name =~ /^\[MAP\](.+$)/)
+    return false
+  end
+  #--------------------------------------------------------------------------
+  # * 켜고/끄기
+  #--------------------------------------------------------------------------
+  def minimap_visible=(var=map_name?)
+    @minimap_visible = var
+    $minimap_high_viewport.visible = @minimap_visible
+    $minimap_lower_view.visible = @minimap_visible
+  end  
+  #--------------------------------------------------------------------------
+  # * 미니맵의 스케일을 설정합니다
+  #-------------------------------------------------------------------------- 
+  alias minimap_game_map_setup setup
+  def setup(map_id)
+    minimap_game_map_setup(map_id)
+    
+    @map.note.gsub(/<ScaleX=(.*)>/i) do
+      $game_system.view_scale_x = $1.to_i || MiniMap::Scale_X
+    end
+    
+    @map.note.gsub(/<ScaleY=(.*)>/i) do
+      $game_system.view_scale_y = $1.to_i || MiniMap::Scale_Y
+    end
+    
+  end  
 end
 
 #==============================================================================
-# ** Box
+# ** Game_Player
+#------------------------------------------------------------------------------
+# 미니맵 시야 확보를 위해 걸음 수를 체크해줍니다
+#==============================================================================
+class Game_Player
+  alias minimap_increase_steps increase_steps
+  alias minimap_initialize initialize
+  attr_accessor :mstep
+  #--------------------------------------------------------------------------
+  # * 초기화
+  #--------------------------------------------------------------------------
+  def initialize
+    minimap_initialize
+    @mstep = 0
+  end
+  #--------------------------------------------------------------------------
+  # * 보행 수 증가
+  #--------------------------------------------------------------------------
+  def increase_steps
+    minimap_increase_steps
+    if @mstep.between?(0,MiniMap::STEP - 1)
+      @mstep += 1
+    end
+  end
+  #--------------------------------------------------------------------------
+  # * 가시 상태
+  #--------------------------------------------------------------------------
+  def visible
+    @visible = if @character_name == "" || @transparent
+      false
+    else
+      true
+    end
+  end  
+end
+
+#==============================================================================
+# ** Game_Event
+#------------------------------------------------------------------------------
+# 이벤트의 이름과 가시 상태를 체크해줍니다
+#==============================================================================
+class Game_Event
+  attr_accessor :visible
+  #--------------------------------------------------------------------------
+  # * 이벤트의 이름
+  #--------------------------------------------------------------------------
+  def name
+    @event.name
+  end
+  #--------------------------------------------------------------------------
+  # * 가시 상태
+  #--------------------------------------------------------------------------
+  def visible
+     @visible = if @character_name == "" || @erased || @transparent
+       false
+     else
+       true
+     end
+   end
+  #--------------------------------------------------------------------------
+  # * 이벤트의 일시 삭제
+  #--------------------------------------------------------------------------
+  def erase
+    @erased = true
+    visible
+    refresh
+  end
+end
+
+#==============================================================================
+# ** MinimapBox
 #------------------------------------------------------------------------------
 # 미니맵에 사각형을 그려줍니다
 #==============================================================================
-class Box < Sprite
+class MinimapBox < Sprite
   #--------------------------------------------------------------------------
   # * 초기화
   #--------------------------------------------------------------------------
@@ -221,7 +380,7 @@ class Box < Sprite
     self.x = 0
     self.y = 0
     self.z = 150
-    self.bitmap.fill_rect(0,0,@width,@height,set_color)
+    self.bitmap.fill_rect(0, 0, @width, @height, set_color)
     self.visible = $game_map.minimap_visible
   end
   #--------------------------------------------------------------------------
@@ -266,16 +425,16 @@ class Box < Sprite
 end
 
 #==============================================================================
-# ** Icon
+# ** MinimapIcon
 #------------------------------------------------------------------------------
 # 미니맵에 아이콘을 만들어줍니다
 #==============================================================================
-class Icon < Sprite
+class MinimapIcon < Sprite
   attr_accessor :origin
   #--------------------------------------------------------------------------
   # * 초기화
   #--------------------------------------------------------------------------
-  def initialize(viewport,index,x,y,char_icon = true,origin=0)
+  def initialize(viewport, index, x, y, char_icon=true, origin=0)
     super(viewport)
     @char_icon = char_icon
     @origin = origin
@@ -325,7 +484,7 @@ class Icon < Sprite
   #--------------------------------------------------------------------------
   def draw_char_icon(icon_index, x, y,obj = $game_map.events[icon_index])
     str = obj.character_name
-    self.bitmap = Bitmap.new(16,16)
+    self.bitmap = Bitmap.new(16, 16)
 
     bitmap = Cache.character(str.to_s)
     character = obj
@@ -345,7 +504,7 @@ class Icon < Sprite
     sx = (index % 4 * 3 + pattern) * @cw
     sy = (index / 4 * 4 + (direction - 2) / 2) * @ch
 
-    dest_rect = Rect.new(0,0,16,16)
+    dest_rect = Rect.new(0, 0, 16, 16)
     src_rect = Rect.new(sx,sy,@cw,@ch)
 
     self.bitmap.stretch_blt(dest_rect, bitmap, src_rect)
@@ -357,171 +516,180 @@ class Icon < Sprite
 end
 
 #==============================================================================
-# ** Game_Player
-#------------------------------------------------------------------------------
-# 플레이어의 가시 상태를 체크해줍니다
-#==============================================================================
-class Game_Player
-  #--------------------------------------------------------------------------
-  # * 가시 상태
-  #--------------------------------------------------------------------------
-  def visible
-     @visible = if @character_name == "" || @transparent
-       false
-     else
-       true
-     end
-   end
-end
-
-#==============================================================================
-# ** Game_Event
-#------------------------------------------------------------------------------
-# 이벤트의 이름과 가시 상태를 체크해줍니다
-#==============================================================================
-class Game_Event
-  attr_accessor :visible
-  #--------------------------------------------------------------------------
-  # * 이벤트의 이름
-  #--------------------------------------------------------------------------
-  def name
-    @event.name
-  end
-  #--------------------------------------------------------------------------
-  # * 가시 상태
-  #--------------------------------------------------------------------------
-  def visible
-     @visible = if @character_name == "" || @erased || @transparent
-       false
-     else
-       true
-     end
-   end
-  #--------------------------------------------------------------------------
-  # * 이벤트의 일시 삭제
-  #--------------------------------------------------------------------------
-  def erase
-    @erased = true
-    visible
-    refresh
-  end
-end
-
-#==============================================================================
-# ** Game_Map
-#------------------------------------------------------------------------------
-# 미니맵의 스케일을 설정합니다
-#==============================================================================
-class Game_Map
-  alias minimap_game_map_setup setup
-  def setup(map_id)
-    minimap_game_map_setup(map_id)
-    @map.note.gsub(/<ScaleX=(\d+)>/i) {
-    $game_system.view_scale_x = $1.to_i || MiniMap::Scale_X}
-    @map.note.gsub(/<ScaleX=(\d+)>/i) {
-    $game_system.view_scale_y = $1.to_i || MiniMap::Scale_Y}
-  end
-end
-
-#==============================================================================
-# ** Game_System
-#------------------------------------------------------------------------------
-# 미니맵의 스케일을 조정합니다
-#==============================================================================
-class Game_System
-  alias minimap_game_system_initialize initialize
-  attr_accessor :view_scale_x
-  attr_accessor :view_scale_y
-  def initialize
-    minimap_game_system_initialize
-    @view_scale_x = MiniMap::Scale_X
-    @view_scale_y = MiniMap::Scale_Y
-  end
-end
-
-#==============================================================================
 # ** MiniMap_Manager
 #------------------------------------------------------------------------------
 # 미니맵을 그리기 위한 구성 요소들이 모여있는 클래스입니다
 #==============================================================================
 class MiniMap_Manager
+  attr_reader :player_rect
+  
   #--------------------------------------------------------------------------
   # * 미니맵 관리자 : 초기화
   #--------------------------------------------------------------------------
   def initialize
+    init_members
+    read_map
+    create_instance
+  end
+  #--------------------------------------------------------------------------
+  # * init_members
+  #--------------------------------------------------------------------------
+  def init_members
     @redraw = false
     @size = []
     @event = []
     @large_event = []
     @viewrect = []
-    read_map
-    create_instance
+    @width = 1
+    @height = 1
+    @ratio_w = 1.0
+    @ratio_h = 1.0
+    @completed = true
+    @fiber = nil
   end
   #--------------------------------------------------------------------------
   # * 배경 생성
   #--------------------------------------------------------------------------
   def create_background
     read_map
-    @background = Box.new($minimap_lower_view,MiniMap::W, MiniMap::H,:gray)
-    @background.opacity = 230
+    @background = MinimapBox.new($minimap_lower_view,MiniMap::W, MiniMap::H,:gray)
+    @background.opacity = MiniMap::DATA[:BACKGROUND_OPACITY]
     @background.set_coord(MiniMap::OFFSET[0],MiniMap::OFFSET[1])
   end
+  #--------------------------------------------------------------------------
+  # * create_player_icon
+  #--------------------------------------------------------------------------
+  def create_player_icon
+    mx = MiniMap::OFFSET[0] + $game_player.real_x * @ratio_w
+    my = MiniMap::OFFSET[1] + $game_player.real_y * @ratio_h
+    mz = 200
+    viewport = $minimap_high_viewport
+
+    @char = MinimapIcon.new(viewport, 0, @ratio_w, @ratio_h, 2)
+    @char.x = mx
+    @char.y = my
+    @char.z = mz 
+  end  
   #--------------------------------------------------------------------------
   # * 인스턴스 생성
   #--------------------------------------------------------------------------
   def create_instance
     create_background
     create_character
-    @char = Icon.new($minimap_high_viewport,0,@ratio_w,@ratio_h,2)
-    @char.x = MiniMap::OFFSET[0] + $game_player.real_x * @ratio_w
-    @char.y = MiniMap::OFFSET[1] + $game_player.real_y * @ratio_h
-    @char.z = 200
+    create_player_icon
   end
   #--------------------------------------------------------------------------
   # * 맵 블록 생성
   #--------------------------------------------------------------------------
   def create_map_object(i,tx,ty,color = :black)
-    @viewrect[i] = Box.new($minimap_high_viewport,@ratio_w,@ratio_h,color)
-    @viewrect[i].z = 90
-    @viewrect[i].set_coord(
-    MiniMap::OFFSET[0] + tx * @ratio_w.to_i,
-    MiniMap::OFFSET[1] + ty * @ratio_h.to_i)
+    mx = MiniMap::OFFSET[0] + tx * @ratio_w.to_i
+    my = MiniMap::OFFSET[1] + ty * @ratio_h.to_i
+    mz = 90
+    viewport = $minimap_high_viewport
+
+    @viewrect[i] = MinimapBox.new(viewport, @ratio_w, @ratio_h, color)
+    @viewrect[i].z = mz
+    @viewrect[i].set_coord(mx, my)
+
   end
   #--------------------------------------------------------------------------
   # * 통행 가능 지역 생성
   #--------------------------------------------------------------------------
   def create_viewrect
+    @completed = false
+    @fiber = nil
+    
+    n = MiniMap::STEP
+    mx = $game_player.x - n
+    dx = $game_player.x + n
+    my = $game_player.y - n
+    dy = $game_player.y + n    
+    @player_rect = Rect.new(mx, my, dx, dy)        
+    
+  end
+  #--------------------------------------------------------------------------
+  # * 속도가 더 빠른 버전
+  #--------------------------------------------------------------------------  
+  def update_viewrect2
+
+    # 완료된 상태이면 빠져나갑니다.
+    return if @completed
+
+    if @fiber
+      @fiber.resume 
+      return
+    end
+
+    @fiber = Fiber.new { fiber_main }
+  end  
+  #--------------------------------------------------------------------------
+  # * 코루틴 처리
+  #--------------------------------------------------------------------------   
+  def fiber_main
+
     read_map
-    i, n = 0, MiniMap::STEP
+
+    i = 0
+    n = MiniMap::STEP
     flags = $game_map.tileset.flags
-    mx,dx = $game_player.x-n,$game_player.x+n
-    my,dy = $game_player.y-n,$game_player.y+n
+    mx = $game_player.x - n
+    dx = $game_player.x + n
+    my = $game_player.y - n
+    dy = $game_player.y + n
+    
+    elapsed = 0
+    max_elapsed = MiniMap::ELAPSED
+    
     for tx in 0 ... @width
+            
       for ty in 0 ... @height
+
         # 플레이어 시야 체크
-        next unless tx.between?(mx,dx) and ty.between?(my,dy)
+        next unless tx.between?(mx,dx) && ty.between?(my,dy)
+        
         # 오토타일 체크
-        next if $game_map.autotile_type(tx,ty,0) != -1 and
-        $game_map.tile_id(tx,ty,0).between?(4367,8192)
+        next if $game_map.autotile_type(tx,ty,0) != -1 && $game_map.tile_id(tx,ty,0).between?(4367,8192)
+        
         # 4방향 통행 가능 체크
         if check_boundary(tx,ty)
           create_map_object(i,tx,ty)
           i+=1
           next
         end
+        
         # 지형 태그 체크
         if $game_map.terrain_tag(tx,ty) == MiniMap::TAG
           create_map_object(i,tx,ty,MiniMap::TAG_COLOR)
           i+=1
           next
         end
+        
         # 통행 가능 체크
         next unless $game_map.check_passage(tx,ty,0x000F)
         create_map_object(i,tx,ty)
         i+=1
+        
+        elapsed += 1
+        max_elapsed = $game_player.moving? ? MiniMap::ELAPSED_WHEN_MOVING : MiniMap::ELAPSED
+                
+        if [:ALL, :COL].include?(MiniMap::FRAME_UPDATE) && elapsed >= max_elapsed
+          Fiber.yield 
+          elapsed = 0
+        end        
+
       end
-    end
-    @player_rect = Rect.new(mx,my,dx,dy)
+      
+      elapsed += 1
+      max_elapsed = $game_player.moving? ? MiniMap::ELAPSED_WHEN_MOVING : MiniMap::ELAPSED
+            
+      if [:ALL, :ROW].include?(MiniMap::FRAME_UPDATE) && elapsed >= max_elapsed
+        Fiber.yield
+        elapsed = 0
+      end
+
+    end      
+
+    @completed = true    
   end
   #--------------------------------------------------------------------------
   # * 통행 여부 체크
@@ -556,12 +724,6 @@ class MiniMap_Manager
       dir4_check(x,y,true,false,true,false)  #오른쪽/아래가 막힘
   end
   #--------------------------------------------------------------------------
-  # * 플레이어의 뷰 영역 반환
-  #--------------------------------------------------------------------------
-  def player_rect
-    @player_rect unless @player_rect.nil?
-  end
-  #--------------------------------------------------------------------------
   # * 통행 가능 지역 메모리 해제
   #--------------------------------------------------------------------------
   def dispose_viewrect
@@ -579,14 +741,14 @@ class MiniMap_Manager
       list = event.list.select {|i| i.code == 108 or i.code == 408}
       list.each { |m|
       m.parameters[0].gsub(/\u{bbf8}\u{b2c8}\u{b9f5}\u{20}\u{c124}\u{c815}( \d+)/) {
-        @event[i] = Icon.new($minimap_high_viewport,event.id,
+        @event[i] = MinimapIcon.new($minimap_high_viewport,event.id,
         MiniMap::OFFSET[0] + event.x * @ratio_w.to_i,
         MiniMap::OFFSET[1] + event.y * @ratio_h.to_i,
         true,($1.to_i rescue 0))
         @event[i].visible = event.visible
       }
       m.parameters[0].gsub(/\u{c544}\u{c774}\u{cf58}\u{20}\u{c124}\u{c815}\u{20}(\d+)/) {
-        @large_event[i] = Icon.new($minimap_high_viewport,$1.to_i,
+        @large_event[i] = MinimapIcon.new($minimap_high_viewport,$1.to_i,
         MiniMap::OFFSET[0] + event.x * @ratio_w.to_i,
         MiniMap::OFFSET[1] + event.y * @ratio_h.to_i,false)
         @large_event[i].visible = event.visible}
@@ -641,34 +803,27 @@ class MiniMap_Manager
     @char.y = MiniMap::OFFSET[1] + $game_player.real_y * @ratio_h
     update_character
     set_camera
+    update_viewrect2
   end
-
   #--------------------------------------------------------------------------
   # * 미니맵 카메라 설정
   #--------------------------------------------------------------------------
   def set_camera
     cx = $game_player.real_x
     cy = $game_player.real_y
-
-    $minimap_high_viewport.ox = MiniMap::OFFSET[0] + cx * @ratio_w.to_i - MiniMap::W/2
-    $minimap_high_viewport.oy = MiniMap::OFFSET[1] + cy * @ratio_h.to_i - MiniMap::H/2
-
-    if $minimap_high_viewport.ox <= MiniMap::OFFSET[0]
-      $minimap_high_viewport.ox = MiniMap::OFFSET[0]
-    end
-
-    if $minimap_high_viewport.oy <= MiniMap::OFFSET[1]
-      $minimap_high_viewport.oy = MiniMap::OFFSET[1]
-    end
-
-    if $minimap_high_viewport.ox >= MiniMap::OFFSET[0] + MiniMap::W - @ratio_w * 2
-      $minimap_high_viewport.ox = MiniMap::OFFSET[0] + MiniMap::W - @ratio_w * 2
-    end
-
-    if $minimap_high_viewport.oy >= MiniMap::OFFSET[1] + MiniMap::H
-      $minimap_high_viewport.oy = MiniMap::OFFSET[1] + MiniMap::H
-    end
-
+    
+    block_width = (MiniMap::W / $game_map.width)
+    block_height = (MiniMap::H / $game_map.height)
+    mdx = cx * block_width
+    mdy = cy * block_height
+    sx = mdx * MiniMap::Scale_X
+    sy = mdy * MiniMap::Scale_Y
+    ox = (block_width * MiniMap::Scale_X) / 2
+    oy = (block_height * MiniMap::Scale_Y) / 2
+    
+    $minimap_high_viewport.ox = MiniMap::OFFSET[0] + (sx - MiniMap::W / 2 - ox)
+    $minimap_high_viewport.oy = MiniMap::OFFSET[1] + (sy - MiniMap::H / 2 - oy) - (block_height * 2) * MiniMap::Scale_Y
+    
   end
   #--------------------------------------------------------------------------
   # * 메모리 해제
@@ -727,14 +882,19 @@ class Mapster
   #--------------------------------------------------------------------------
   def create_viewports
     $minimap_lower_view = Viewport.new
-    $minimap_lower_view.z = 151
+    $minimap_lower_view.z = MiniMap::DATA[:LOWER_VIEWPORT_Z]
     $minimap_lower_view.visible = $game_map.minimap_visible
 
-    $minimap_high_viewport = Viewport.new(MiniMap::OFFSET[0],MiniMap::OFFSET[1],
-    MiniMap::W.to_i,MiniMap::H.to_i)
+    $minimap_high_viewport = Viewport.new(
+      MiniMap::OFFSET[0],
+      MiniMap::OFFSET[1],
+      MiniMap::W.to_i,
+      MiniMap::H.to_i
+    )
+
     $minimap_high_viewport.ox = MiniMap::OFFSET[0]
     $minimap_high_viewport.oy = MiniMap::OFFSET[1]
-    $minimap_high_viewport.z = 152
+    $minimap_high_viewport.z = MiniMap::DATA[:HIGH_VIEWPORT_Z]
     $minimap_high_viewport.visible = $game_map.minimap_visible
   end
   #--------------------------------------------------------------------------
@@ -774,10 +934,18 @@ class Mapster
   # * 두 영역의 거리 차이를 계산하여 참/거짓을 반환합니다
   #--------------------------------------------------------------------------
   def rect_refresh?
-    x,y = $game_player.x,$game_player.y
+    x = $game_player.x
+    y = $game_player.y
     n = MiniMap::STEP
     player = Rect.new(x-n,y-n,x+n,y+n)
-    m = distance(player,@minimap.player_rect)
+    
+    if @minimap.player_rect
+      player_rect = @minimap.player_rect
+    else 
+      return true
+    end
+    
+    m = distance(player, player_rect)
     return true if m[0] >= (n-1) or m[1] >= (n-1)
     return false
   end
@@ -820,58 +988,97 @@ class Mapster
   end
 end
 
+module DebugLayer
+  def create_debug_layer
+    @console = Sprite.new
+    @console.bitmap = Bitmap.new(Graphics.width / 2, Graphics.height)
+  end
+  def update_debug_layer
+    return if !@console
+    @console.update
+  end
+  def dispose_debug_layer
+    return if !@console
+    @console.dispose
+    @console = nil
+  end
+  def draw_debug_text
+    create_debug_layer if !@console
+    @console.bitmap.clear
+    [
+      "ox : #{$minimap_high_viewport.ox}",
+      "oy : #{$minimap_high_viewport.oy}",
+      "x : #{$minimap_high_viewport.rect.x}",    
+      "y : #{$minimap_high_viewport.rect.y}",
+      "w : #{$minimap_high_viewport.rect.width}",    
+      "h : #{$minimap_high_viewport.rect.height}", 
+      "scale_x : #{MiniMap::Scale_X}", 
+      "scale_y : #{MiniMap::Scale_Y}", 
+    ].each_with_index do |text, index|
+      rect = @console.bitmap.text_size(text)
+      x = 0
+      y = 2 + (rect.height * index)
+      w = rect.width
+      h = rect.height      
+      
+      @console.bitmap.draw_text(x, y, w, h, text, 0)
+    end
+  end  
+end
+
 #==============================================================================
 # ** Spriteset_Map
 #------------------------------------------------------------------------------
 # 맵에 미니맵의 구성 요소들을 그려줍니다
 #==============================================================================
 class Spriteset_Map
-  alias sunny_minimap_initialize initialize
-  alias sunny_minimap_refresh_characters refresh_characters
-  alias sunny_minimap_update update
-  alias sunny_minimap_dispose dispose
+  include DebugLayer
   #--------------------------------------------------------------------------
   # * 미니맵 생성
   #--------------------------------------------------------------------------
+  alias rs_minimap_initialize initialize  
   def initialize
     @mapster = Mapster.new
-    sunny_minimap_initialize
+    rs_minimap_initialize
+    if MiniMap::DEBUG_CONSOLE
+      create_debug_layer
+      draw_debug_text        
+    end
   end
   #--------------------------------------------------------------------------
   # * 미니맵 업데이트
   #--------------------------------------------------------------------------
+  alias rs_minimap_update update  
   def update
-    sunny_minimap_update
+    rs_minimap_update
     @mapster.update_minimap
+    if MiniMap::DEBUG_CONSOLE
+      update_debug_layer
+    end
   end
   #--------------------------------------------------------------------------
   # * 미니맵 다시 그리기
   #--------------------------------------------------------------------------
+  alias rs_minimap_refresh_characters refresh_characters  
   def refresh_characters
-    sunny_minimap_refresh_characters
+    rs_minimap_refresh_characters
     @mapster.refresh
   end
   #--------------------------------------------------------------------------
   # * 미니맵 해제
   #--------------------------------------------------------------------------
+  alias rs_minimap_dispose dispose  
   def dispose
-    sunny_minimap_dispose
+    rs_minimap_dispose
     @mapster.dispose_minimap
+    if MiniMap::DEBUG_CONSOLE
+      dispose_debug_layer
+    end
   end
-end
-
-#==============================================================================
-# ** Spriteset_Map
-#------------------------------------------------------------------------------
-# 맵에 미니맵의 뷰포트를 선언합니다
-#==============================================================================
-class Spriteset_Map
-  alias minimap_create_viewports create_viewports
-  alias minimap_update_viewports update_viewports
-  alias minimap_dispose_viewports dispose_viewports
   #--------------------------------------------------------------------------
   # * 뷰 포트 생성
   #--------------------------------------------------------------------------
+  alias minimap_create_viewports create_viewports  
   def create_viewports
     minimap_create_viewports
     @mapster.create_viewports
@@ -879,6 +1086,7 @@ class Spriteset_Map
   #--------------------------------------------------------------------------
   # * 뷰 포트 업데이트
   #--------------------------------------------------------------------------
+  alias minimap_update_viewports update_viewports  
   def update_viewports
     minimap_update_viewports
     @mapster.update_viewports
@@ -886,84 +1094,19 @@ class Spriteset_Map
   #--------------------------------------------------------------------------
   # * 뷰 포트 해제
   #--------------------------------------------------------------------------
+  alias minimap_dispose_viewports dispose_viewports  
   def dispose_viewports
     minimap_dispose_viewports
     @mapster.dispose_viewports
   end
-end
-
-#==============================================================================
-# ** Spriteset_Map
-#------------------------------------------------------------------------------
-# 타일셋이 그려질 때 미니맵도 같이 그려줍니다
-#==============================================================================
-class Spriteset_Map
-  alias minimap_load_tileset load_tileset
   #--------------------------------------------------------------------------
-  # * 타일셋 로드
+  # * 타일셋이 그려질 때 미니맵도 같이 그려줍니다
   #--------------------------------------------------------------------------
+  alias minimap_load_tileset load_tileset  
   def load_tileset
     minimap_load_tileset
     @mapster.create_minimap
     @mapster.create_viewrect
-  end
+  end    
 end
 
-#==============================================================================
-# ** Game_Map
-#------------------------------------------------------------------------------
-# 미니맵의 가시상태를 체크하는 변수에 접근을 할 수 있게 합니다
-#==============================================================================
-class Game_Map
-  alias minimap_setup setup
-  attr_accessor :minimap_visible
-  #--------------------------------------------------------------------------
-  # * 초기화
-  #--------------------------------------------------------------------------
-  def setup(map_id)
-    minimap_setup(map_id)
-    @minimap_visible = map_name?
-  end
-  #--------------------------------------------------------------------------
-  # * 미니맵 사용 여부를 확인합니다
-  #--------------------------------------------------------------------------
-  def map_name?
-    return true if ($data_mapinfos[@map_id].name =~ /^\[MAP\](.+$)/)
-    return false
-  end
-  #--------------------------------------------------------------------------
-  # * 켜고/끄기
-  #--------------------------------------------------------------------------
-  def minimap_visible=(var=map_name?)
-    @minimap_visible = var
-    $minimap_high_viewport.visible = @minimap_visible
-    $minimap_lower_view.visible = @minimap_visible
-  end
-end
-
-#==============================================================================
-# ** Game_Player
-#------------------------------------------------------------------------------
-# 미니맵 시야 확보를 위해 걸음 수를 체크해줍니다
-#==============================================================================
-class Game_Player
-  alias minimap_increase_steps increase_steps
-  alias minimap_initialize initialize
-  attr_accessor :mstep
-  #--------------------------------------------------------------------------
-  # * 초기화
-  #--------------------------------------------------------------------------
-  def initialize
-    minimap_initialize
-    @mstep = 0
-  end
-  #--------------------------------------------------------------------------
-  # * 보행 수 증가
-  #--------------------------------------------------------------------------
-  def increase_steps
-    minimap_increase_steps
-    if @mstep.between?(0,MiniMap::STEP - 1)
-      @mstep += 1
-    end
-  end
-end
