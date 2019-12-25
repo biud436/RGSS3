@@ -158,6 +158,8 @@ if RS::ConsoleWarnDetails::ALL
       rescue RGSSReset # F12
         Audio.__reset__
         Graphics.__reset__     
+      rescue NameError => e
+        RS::ConsoleWarnDetails.trace(e)
       rescue => e
         RS::ConsoleWarnDetails.trace(e)
       end
