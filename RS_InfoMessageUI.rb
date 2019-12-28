@@ -1,10 +1,11 @@
 #==============================================================================
 #   Name      : 화면 중앙 상단 메시지 / Floating Message (GUI)
-#   Date      : 2019.12.19
-#   Version   : 1.5.4
+#   Date      : 2019.12.28
+#   Version   : 1.5.5
 # -----------------------------------------------------------------------------
 #  * Change Log
 # -----------------------------------------------------------------------------
+#   2019.12.28 (v1.5.5) - 텍스트 배경 추가
 #   2019.12.19 (v1.5.4) - 장비 해제 시 아이템 획득으로 나오는 문제 수정
 #   2015.06.23 - 게임 로드 버그 수정
 #   2015.02.16 - 버그 픽스(경험치 획득 메시지)
@@ -51,7 +52,12 @@ module UI_MSG
   RED = Color.new(255,0,0,255)
   WHITE = Color.new(255,255,255,255)
   BLUE = Color.new(65,102,245,255)
-  BKG_COLOR = [Color.new(0,0,0,128),Color.new(0,0,0,0)]
+  BKG_COLOR = [
+    Color.new(0,0,0,128), # 텍스트 배경의 색상 : 회색
+    Color.new(0,0,0,0) # 전체 영역의 색상 : 없음
+  ]
+  # 텍스트 배경 표시
+  SHOW_TEXT_BACKGROUND = true
   # 구조체의 선언
   Coord = Struct.new(:x,:y)
   CRect = Struct.new(:w,:h)
@@ -167,6 +173,20 @@ class M_HUD
     txt.bitmap.font = Font.new
     txt.bitmap.font.color = set_color
     txt.bitmap.font.size = UI_MSG::FONT_SIZE
+    
+    # 텍스트 배경 표시
+    if UI_MSG::SHOW_TEXT_BACKGROUND
+      t_size = txt.bitmap.text_size(str)
+      tw = t_size.width + 1
+      th = t_size.height
+      tx = BKG.width / 2 - tw / 2
+      ty = BKG.height / 2 - th / 2
+    
+      rc = Rect.new(tx - 1, ty, tw, th)
+    
+      txt.bitmap.fill_rect(rc, UI_MSG::BKG_COLOR[0])
+    end
+    
     txt.bitmap.draw_text(BKG,str,1)
     txt.x = 2 + UI_MSG::BG_Center.x
     txt.y = @background.y + (UI_MSG::FONT_SIZE * text_size) - UI_MSG::FONT_SIZE
