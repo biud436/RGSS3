@@ -24,12 +24,12 @@
 # v1.0.6 (2019.03.25) :
 # - Added the repeat? method into Input class.
 # v1.0.7 (2019.11.13) :
-# - 마우스 왼쪽 클릭으로 비행선을 탑승할 수 없었던 문제를 수정하였습니다.
-# - 목적지 스프라이트를 화면에서 감출 수 있는 기능을 추가하였습니다.
+# - Fixed the issue that can't ride the airship when pressing mouse button.
+# - Added a feature that can hide the destination sprite on the screen.
 # - 비행선 탑승 후, 마우스 자동 이동 시 한 칸만 움직이고 멈추는 현상을 수정하였습니다.
-# - TouchInput.update를 추가하였습니다.
+# - Added a new method called TouchInput.update
 # v1.0.8 (2020.01.29) :
-# - 자동 이동 설정을 변경할 수 있습니다.
+# - Added the feature that can change a auto movement setting.
 #-------------------------------------------------------------------------------
 # 사용법 / How to use
 #-------------------------------------------------------------------------------
