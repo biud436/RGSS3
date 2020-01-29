@@ -29,7 +29,7 @@
 # - 비행선 탑승 후, 마우스 자동 이동 시 한 칸만 움직이고 멈추는 현상을 수정하였습니다.
 # - Added a new method called TouchInput.update
 # v1.0.8 (2020.01.29) :
-# - Added the feature that can change a auto movement setting.
+# - Added the feature that can change an auto movement setting.
 #-------------------------------------------------------------------------------
 # 사용법 / How to use
 #-------------------------------------------------------------------------------
