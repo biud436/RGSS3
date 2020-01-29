@@ -169,9 +169,7 @@ class Window
       @mouse_clicked = TouchInput.trigger?(:LEFT)
       on_mouse_over
     else
-      if @prev_mouse_over
-        on_mouse_out
-      end
+      on_mouse_out
     end
     
     if @mouse_clicked
