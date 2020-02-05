@@ -5,6 +5,10 @@ if !$imported["RS_HangulMessageSystem"]
   raise %Q(텍스트 효과 스크립트는 한글 메시지 시스템 스크립트가 필요합니다.)
 end
 
+module RS
+  LIST["텍스트 이펙트"] = :Shock
+end
+
 module RS::Messages
   Effects = {}
 end
@@ -318,9 +322,14 @@ class Window_Message < Window_Base
   def new_page(text, pos)
     rs_message_effects_new_page(text, pos)
   end  
-  
+  alias rs_message_effects_process_normal_character process_normal_character
   def process_normal_character(c, pos, text)
 
+    effect_type = RS::LIST["텍스트 이펙트"]
+    if not effect_type
+      return rs_message_effects_process_normal_character(c, pos, text)
+    end
+    
     valid = !@is_used_text_width_ex
 
     # 자동 개행 여부 판단
@@ -331,7 +340,6 @@ class Window_Message < Window_Base
       end
     end    
     
-    effect_type = :Shock
     target_viewport = @text_layer_viewport
     if [:HighRotation, :NormalRotation, :RandomRotation].include?(effect_type)
       target_viewport = self.viewport
