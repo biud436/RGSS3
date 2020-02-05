@@ -346,7 +346,7 @@ class Spread < TextEffect
     when 2
       self.y = @origin[:y] + @power
     end
-    if @power >= 60 * 10
+    if @power >= 60 * 10 # 잠시 후 텍스트가 표시됨.
       flush
     end
     @power += 4
