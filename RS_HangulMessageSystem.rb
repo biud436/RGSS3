@@ -9,6 +9,7 @@
 #==============================================================================
 # 2020.02.05 (v1.5.29) :
 # - 색상 변경 코드 수정
+# - 텍스트 속도가 조절되지 않는 문제 수정
 # 2019.12.15 (v1.5.28) :
 # - 8줄 이상으로 변경하는 기능이 동작하지 않는 문제를 수정하였습니다. 
 # 2019.12.12 (v1.5.27) :
@@ -2457,6 +2458,7 @@ class Window_Message
     
     unless @line_show_fast or @show_fast
       request_text_sound if (Graphics.frame_count % RS::LIST["텍스트 사운드 주기"]) == 0
+      wait($game_message.message_speed || 0) if valid 
     end
     
   end

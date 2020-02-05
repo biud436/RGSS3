@@ -267,21 +267,17 @@ RS::Messages::Effects[:Shock] = Shock
 class ZoomOut < TextEffect
   def update_effects
     return if !@started
-    if @power >= @index
-      self.zoom_x = (200 - @power) / 100.0
-      self.zoom_y = (200 - @power) / 100.0
-    end
+    self.zoom_x = (200 - @power) / 100.0
+    self.zoom_y = (200 - @power) / 100.0
     if self.zoom_x <= 1.0
       flush
     end    
-    @power += 1.2
+    @power += 10
   end
   def start(index)
     super(index)
-    self.zoom_x = 2.0
-    self.zoom_y = 2.0
-    self.ox = -self.bitmap.width
-    self.oy = -self.bitmap.height
+    self.zoom_x = 1.5
+    self.zoom_y = 1.5
   end
 end
 
@@ -517,12 +513,13 @@ class Window_Message < Window_Base
     @layers.push(sprite)
     
     pos[:x] += w
-            
+                    
     # 텍스트 사운드 재생
     unless @line_show_fast or @show_fast
       request_text_sound if (Graphics.frame_count % RS::LIST["텍스트 사운드 주기"]) == 0
+      wait($game_message.message_speed || 0) if valid       
     end
-    
+        
     # Pause 아이콘 위치 조절
     if $imported["RS_PauseIconPosition"]
       mx = standard_padding + pos[:x] + 8
