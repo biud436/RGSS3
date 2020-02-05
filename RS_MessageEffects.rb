@@ -398,7 +398,7 @@ class Window_Message < Window_Base
     
     sprite.bitmap = Bitmap.new(w * 2, pos[:height])
     sprite.bitmap.font = self.contents.font
-    
+
     b = sprite.bitmap
     sprite.bitmap.draw_text(0, 0, b.width, b.height, c)
     padding = standard_padding
