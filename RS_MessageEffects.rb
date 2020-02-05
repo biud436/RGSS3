@@ -263,7 +263,7 @@ class ZoomOut < TextEffect
     super(index)
     @random = index
     self.zoom_x = 2.0
-    self.zoom_y = 1.0
+    self.zoom_y = 2.0
   end
 end
 
