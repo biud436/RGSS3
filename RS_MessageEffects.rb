@@ -250,18 +250,17 @@ RS::Messages::Effects[:Shock] = Shock
 class ZoomOut < TextEffect
   def update_effects
     return if !@started
-    if @power >= @random
+    if @power >= @index
       self.zoom_x = (200 - @power) / 100.0
       self.zoom_y = (200 - @power) / 100.0
     end
     if self.zoom_x <= 1.0
       flush
     end    
-    @power += 1
+    @power += 2
   end
   def start(index)
     super(index)
-    @random = index
     self.zoom_x = 2.0
     self.zoom_y = 2.0
   end
