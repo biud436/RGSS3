@@ -18,6 +18,7 @@
 # ZoomOut
 # Marquee
 # Wave
+# Spread
 #
 #==============================================================================
 # ** 업데이트 로그
@@ -311,10 +312,6 @@ RS::Messages::Effects[:Marquee] = Marquee
 # ** Wave (빠른 흔들기)
 #==============================================================================
 class Wave < TextEffect
-  def flush
-    super
-    @message_window = nil
-  end
   def update_effects
     return if !@started
     self.wave_speed = 60 * [@origin[:x] % 5, 1].max
@@ -331,6 +328,37 @@ class Wave < TextEffect
 end
 
 RS::Messages::Effects[:Wave] = Wave
+
+#==============================================================================
+# ** Spread
+#==============================================================================
+class Spread < TextEffect
+  def update_effects
+    return if !@started
+    return if !(Time.now.to_i - @lazy >= 2)
+    case @index
+    when 3
+      self.x = @origin[:x] - @power
+    when 1
+      self.x = @origin[:x] + @power
+    when 0
+      self.y = @origin[:y] - @power
+    when 2
+      self.y = @origin[:y] + @power
+    end
+    if @power >= 60 * 10
+      flush
+    end
+    @power += 4
+  end
+  def start(index)
+    super(index)
+    @lazy = Time.now.to_i
+    @index = index % 4
+  end
+end
+
+RS::Messages::Effects[:Spread] = Spread
 
 #==============================================================================
 # ** 텍스트 이펙트 팩토리 객체
