@@ -257,16 +257,42 @@ class ZoomOut < TextEffect
     if self.zoom_x <= 1.0
       flush
     end    
-    @power += 2
+    @power += 1.2
   end
   def start(index)
     super(index)
     self.zoom_x = 2.0
     self.zoom_y = 2.0
+    self.ox = -self.bitmap.width
+    self.oy = -self.bitmap.height
   end
 end
 
 RS::Messages::Effects[:ZoomOut] = ZoomOut
+
+#==============================================================================
+# ** Marquee
+#==============================================================================
+class Marquee < TextEffect
+  def flush
+    super
+    @message_window = nil
+  end
+  def update_effects
+    return if !@started
+    self.ox -= 1
+    if self.ox < 0
+      flush
+    end
+  end
+  def start(index, message_window)
+    super(index)
+    @message_window = message_window
+    self.ox += message_window.width
+  end
+end
+
+RS::Messages::Effects[:Marquee] = Marquee
 
 #==============================================================================
 # ** 텍스트 이펙트 팩토리 객체
@@ -431,7 +457,12 @@ class Window_Message < Window_Base
     sprite.x = self.x + padding + pos[:x]
     sprite.y = self.y + padding + pos[:y]
     sprite.z = self.z + 60
-    sprite.start(@layers.size + 1)
+    
+    if effect_type == :Marquee
+      sprite.start(@layers.size + 1, self)
+    else  
+      sprite.start(@layers.size + 1)
+    end
     
     update_text_layer_viewport
     
