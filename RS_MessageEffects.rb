@@ -4,6 +4,22 @@
 # Name       : Hangul Message Effects
 # Author     : 러닝은빛(biud436)
 #==============================================================================
+# ** 텍스트 코드
+#==============================================================================
+# \텍스트효과<텍스트효과명> 또는 \TE<텍스트효과명>
+#
+# 현재까지 추가된 텍스트 효과 :
+# PingPong
+# Slide
+# HighRotation
+# NormalRotation
+# RandomRotation
+# Shock
+# ZoomOut
+# Marquee
+# Wave
+#
+#==============================================================================
 # ** 업데이트 로그
 #==============================================================================
 # Version    :
@@ -36,6 +52,7 @@ class TextEffect < Sprite
   
   PI_2 = Math::PI * 2
   DEG_TO_RAD = Math::PI / 180.0
+  RAD_TO_DEG = 180.0 / Math::PI
   
   #--------------------------------------------------------------------------
   # * 생성자
@@ -295,6 +312,31 @@ end
 RS::Messages::Effects[:Marquee] = Marquee
 
 #==============================================================================
+# ** Wave (빠른 흔들기)
+#==============================================================================
+class Wave < TextEffect
+  def flush
+    super
+    @message_window = nil
+  end
+  def update_effects
+    return if !@started
+    self.wave_speed = 60 * [@origin[:x] % 5, 1].max
+    self.wave_phase = RAD_TO_DEG * @power
+    if @power >= 60
+      flush
+    end
+    @power += 1
+  end
+  def start(index)
+    super(index)
+    self.wave_amp = self.height / 3
+  end
+end
+
+RS::Messages::Effects[:Wave] = Wave
+
+#==============================================================================
 # ** 텍스트 이펙트 팩토리 객체
 #============================================================================== 
 class TextEffectFactory
@@ -398,7 +440,10 @@ class Window_Message < Window_Base
     case code
     when '텍스트효과'
     when 'TE'
-      RS::LIST["텍스트 이펙트"] = obtain_text_effects(text)
+      effect = obtain_text_effects(text)
+      if !@is_used_text_width_ex
+        RS::LIST["텍스트 이펙트"] = effect
+      end
     else
       rs_message_effects_process_escape_character(code, text, pos)
     end
@@ -458,7 +503,8 @@ class Window_Message < Window_Base
     sprite.y = self.y + padding + pos[:y]
     sprite.z = self.z + 60
     
-    if effect_type == :Marquee
+    case effect_type
+    when :Marquee
       sprite.start(@layers.size + 1, self)
     else  
       sprite.start(@layers.size + 1)
