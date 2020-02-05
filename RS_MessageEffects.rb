@@ -231,9 +231,10 @@ RS::Messages::Effects[:RandomRotation] = RandomRotation
 class Shock < TextEffect
   def update_effects
     return if !@started
-    if @power <= 60
+    if @power <= 360 # 6초 동안 흔들립니다
       self.ox = -3 * rand
       self.oy = -3 * rand
+      @power += 1 # 영원히 흔들리게 하고 싶다면 이 라인을 삭제
     else
       flush
     end
