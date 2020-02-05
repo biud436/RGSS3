@@ -508,7 +508,7 @@ class Window_Message < Window_Base
     rect = text_size(c)
     w = rect.width + 1
     h = rect.height
-    
+        
     sprite.bitmap = Bitmap.new(w * 2, pos[:height])
     sprite.bitmap.font = self.contents.font
 
@@ -529,7 +529,7 @@ class Window_Message < Window_Base
     update_text_layer_viewport
     
     # 화면에 텍스트 추가
-    @layers.push(sprite)
+    @layers.push(sprite) if !@is_used_text_width_ex
     
     pos[:x] += w
                     
