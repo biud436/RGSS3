@@ -38,7 +38,7 @@ end
 
 module RS
   LIST["텍스트 이펙트"] = :Shock
-  CODE["텍스트 이펙트"] = /^\<(.*)\>/
+  CODE["텍스트 이펙트"] = /^\<([a-zA-Z]+)\>/
 end
 
 module RS::Messages
@@ -483,6 +483,7 @@ class Window_Message < Window_Base
 
     # 텍스트 레이어 생성
     sprite = TextEffectFactory.create(effect_type, target_viewport)
+    p effect_type
     rect = text_size(c)
     w = rect.width + 1
     h = rect.height
