@@ -473,9 +473,6 @@ class Window_Message < Window_Base
     end    
     
     target_viewport = @text_layer_viewport
-    if [:HighRotation, :NormalRotation, :RandomRotation].include?(effect_type)
-      target_viewport = self.viewport
-    end
 
     # 텍스트 레이어 생성
     sprite = TextEffectFactory.create(effect_type, target_viewport)
