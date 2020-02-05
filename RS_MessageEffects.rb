@@ -92,8 +92,9 @@ class TextEffect < Sprite
   #--------------------------------------------------------------------------
   # * 시작
   #--------------------------------------------------------------------------   
-  def start
+  def start(index)
     @power = 1
+    @index = index
     @started = true
     @random = (rand * 60).floor
     @origin = {
@@ -242,6 +243,31 @@ class Shock < TextEffect
 end
 
 RS::Messages::Effects[:Shock] = Shock
+
+#==============================================================================
+# ** ZoomOut
+#==============================================================================
+class ZoomOut < TextEffect
+  def update_effects
+    return if !@started
+    if @power >= @random
+      self.zoom_x = (200 - @power) / 100.0
+      self.zoom_y = (200 - @power) / 100.0
+    end
+    if self.zoom_x <= 1.0
+      flush
+    end    
+    @power += 1
+  end
+  def start(index)
+    super(index)
+    @random = index
+    self.zoom_x = 2.0
+    self.zoom_y = 1.0
+  end
+end
+
+RS::Messages::Effects[:ZoomOut] = ZoomOut
 
 #==============================================================================
 # ** 텍스트 이펙트 팩토리 객체
@@ -406,7 +432,7 @@ class Window_Message < Window_Base
     sprite.x = self.x + padding + pos[:x]
     sprite.y = self.y + padding + pos[:y]
     sprite.z = self.z + 60
-    sprite.start
+    sprite.start(@layers.size + 1)
     
     update_text_layer_viewport
     
