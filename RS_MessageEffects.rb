@@ -1,3 +1,18 @@
+#==============================================================================
+# ** Hangul Message Effects (RPG Maker VX Ace)
+#==============================================================================
+# Name       : Hangul Message Effects
+# Author     : 러닝은빛(biud436)
+#==============================================================================
+# ** 업데이트 로그
+#==============================================================================
+# Version    :
+# 2020.02.05 (v1.0.0) - First Release
+#==============================================================================
+# ** Terms of Use
+#==============================================================================
+# Free for commercial and non-commercial use
+#==============================================================================
 $imported = {} if $imported.nil?
 $imported["RS_MessageEffects"] = true
 
@@ -7,6 +22,7 @@ end
 
 module RS
   LIST["텍스트 이펙트"] = :Shock
+  CODE["텍스트 이펙트"] = /^\<(.*)\>/
 end
 
 module RS::Messages
@@ -322,6 +338,29 @@ class Window_Message < Window_Base
   def new_page(text, pos)
     rs_message_effects_new_page(text, pos)
   end  
+  #--------------------------------------------------------------------------
+  # * 텍스트 코드 처리
+  #--------------------------------------------------------------------------
+  alias rs_message_effects_process_escape_character process_escape_character
+  def process_escape_character(code, text, pos)
+    case code
+    when '텍스트효과'
+    when 'TE'
+      RS::LIST["텍스트 이펙트"] = obtain_text_effects(text)
+    else
+      rs_message_effects_process_escape_character(code, text, pos)
+    end
+  end  
+  #--------------------------------------------------------------------------
+  # * 텍스트 이펙트 추출
+  #--------------------------------------------------------------------------
+  def obtain_text_effects(text)
+    effect_type = text.slice!(RS::CODE["텍스트 이펙트"])[$1] rescue "PingPong"
+    effect_type.to_sym
+  end    
+  #--------------------------------------------------------------------------
+  # * 텍스트 묘화 처리
+  #--------------------------------------------------------------------------  
   alias rs_message_effects_process_normal_character process_normal_character
   def process_normal_character(c, pos, text)
 
