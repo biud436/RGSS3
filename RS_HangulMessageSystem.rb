@@ -1,12 +1,14 @@
 #==============================================================================
-# ** Hangul Message System 1.5.28 (RPG Maker VX Ace)
+# ** Hangul Message System 1.5.29 (RPG Maker VX Ace)
 #==============================================================================
 # Name       : Hangul Message System
 # Author     : biud436
-# Version    : 1.5.28
+# Version    : 1.5.29
 #==============================================================================
 # ** 업데이트 로그
 #==============================================================================
+# 2020.02.05 (v1.5.29) :
+# - 색상 변경 코드 수정
 # 2019.12.15 (v1.5.28) :
 # - 8줄 이상으로 변경하는 기능이 동작하지 않는 문제를 수정하였습니다. 
 # 2019.12.12 (v1.5.27) :
@@ -288,7 +290,7 @@ module RS
   # 대화창의 전체 투명도를 설정합니다.
   # 투명도의 경우, 배경 창의 투명도, 텍스트의 투명도가 따로 나뉘지만
   # 여기에서는 그 둘을 포함한 전체 투명도를 조절합니다.
-  LIST["투명도"] = 250
+  LIST["투명도"] = 200
   LIST["배경투명도"] = 255
   
   # 이름 윈도우의 X좌표는 얼굴 이미지가 왼쪽에 표시되면 왼쪽에 표시되고,
@@ -973,11 +975,11 @@ class Window_Base
   def process_escape_character(code, text, pos)
     case code.upcase
     when '색'
-      color = Color.gm_color(obtain_name_color(text))
-      change_color(color)
+      color = Color.gm_color(obtain_name_color(text))  
+      change_color(color) if !@is_used_text_width_ex
     when '#'
       color = "##{to_hex(text)}".hex_to_color
-      change_color(color)
+      change_color(color) if !@is_used_text_width_ex
     else
       color_process_escape_character(code, text, pos)
     end
