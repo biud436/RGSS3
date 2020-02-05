@@ -293,7 +293,7 @@ class Marquee < TextEffect
   end
   def update_effects
     return if !@started
-    self.ox -= 1
+    self.ox -= 4
     if self.ox < 0
       flush
     end
@@ -480,12 +480,6 @@ class Window_Message < Window_Base
     rect = text_size(c)
     w = rect.width + 1
     h = rect.height
-    
-    # 일부 텍스트 효과는 창 밖에서도 그려져야 하므로 뷰포트를 직접 구성해야 함
-    if ((self.x + self.contents.width) < self.x + padding + pos[:x] + w) &&
-        (target_viewport != @text_layer_viewport)
-      return
-    end
     
     sprite.bitmap = Bitmap.new(w * 2, pos[:height])
     sprite.bitmap.font = self.contents.font
