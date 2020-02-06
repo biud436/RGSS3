@@ -6,24 +6,33 @@
 #==============================================================================
 # ** 텍스트 코드
 #==============================================================================
-# \텍스트효과<텍스트효과명> 또는 \TE<텍스트효과명>
 #
 # 현재까지 추가된 텍스트 효과 :
-#   PingPong
-#   Slide
-#   HighRotation
-#   NormalRotation
-#   RandomRotation
-#   Shock
-#   ZoomOut
-#   Marquee
-#   Wave
-#   Spread
-#   MouseTracking (RS_Input 필요)
-#   MousePointer (RS_Input 필요)
-#   Colorize
-#   OpacityWave
-#   TongTong
+#   1. PingPong
+#   2. Slide
+#   3. HighRotation
+#   4. NormalRotation
+#   5. RandomRotation
+#   6. Shock
+#   7. ZoomOut
+#   8. Marquee
+#   9. Wave
+#   10. Spread
+#   11. MouseTracking (RS_Input 필요)
+#   12. MousePointer (RS_Input 필요)
+#   13. Colorize
+#   14. OpacityWave
+#   15. TongTong
+#
+# 사용 방법은 다음과 같습니다.
+#
+# \TE<텍스트효과명>
+#
+# 또는 
+#
+# \E[번호]를 사용할 수 있습니다.
+# 
+# 예를 들면, \효과[1]은 PingPong 효과입니다.
 #
 #==============================================================================
 # ** 업데이트 로그
@@ -31,7 +40,8 @@
 # Version    :
 # 2020.02.05 (v1.0.0) - First Release
 # 2020.02.06 (v1.0.1) :
-# - 효과 추가
+# - 새로운 효과 추가
+# - 텍스트 코드 추가
 #==============================================================================
 # ** Terms of Use
 #==============================================================================
@@ -690,7 +700,15 @@ class Window_Message < Window_Base
   alias rs_message_effects_process_escape_character process_escape_character
   def process_escape_character(code, text, pos)
     case code
-    when '텍스트효과'
+    when 'E'
+      index = obtain_escape_param(text)
+      if !@is_used_text_width_ex
+        data = RS::Messages::Effects
+        effect = data.keys[index - 1]
+        if data.has_key?(effect)
+          RS::LIST["텍스트 이펙트"] = effect
+        end
+      end    
     when 'TE'
       effect = obtain_text_effects(text)
       if !@is_used_text_width_ex
