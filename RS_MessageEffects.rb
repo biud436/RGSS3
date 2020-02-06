@@ -8,23 +8,24 @@
 #==============================================================================
 #
 # 현재까지 추가된 텍스트 효과 :
-#   1. PingPong
-#   2. Slide
-#   3. HighRotation
-#   4. NormalRotation
-#   5. RandomRotation
-#   6. Shock
-#   7. ZoomOut
-#   8. Marquee
-#   9. Wave
-#   10. Spread
-#   11. MouseTracking (RS_Input 필요)
-#   12. MousePointer (RS_Input 필요)
-#   13. MouseOver (RS_Input 필요)
-#   14. Colorize
-#   15. OpacityWave
-#   16. TongTong
-#   17. Spoiler (RS_Input 필요)
+#
+# 1. PingPong : 아래에서 위로 튕기듯 올라오는 효과.
+# 2. Slide : 글자가 미끄러지듯 천천히 등장함.
+# 3. HighRotation : 글자가 어딘가에서 날라옴
+# 4. NormalRotation : 글자가 어딘가에서 날라옴
+# 5. RandomRotation : 글자가 어딘가에서 날라옴
+# 6. Shock : 글자가 전기 충격을 준 것처럼 마구마구 흔들림.
+# 7. ZoomOut : 글자가 확대되면서 줄어듦.
+# 8. Marquee : 글자가 전광판처럼 왼쪽에서 오른쪽으로 이동.
+# 9. Wave : 글자가 강하게 흔들림.
+# 10. Spread : 글자가 동서남북 4방향으로 이동함
+# 11. MouseTracking (RS_Input 필요) : 마우스 포인터에서 글자가 생성되고, 대화창까지 이동함
+# 12. MousePointer (RS_Input 필요) : 글자가 대화창에서 생성된 후, 현재 마우스 포인터 쪽으로 이동함.
+# 13. MouseOver  (RS_Input 필요) : 마우스가 위에 있으면 글자의 색깔이 변함.
+# 14. Colorize : 글자가 마구 흔들리면서 글자의 색깔이 미친듯히 바뀜.
+# 15. OpacityWave : 투명도가 파도를 타듯 바뀜.
+# 16. TongTong : 파도를 타듯 위 아래로 공이 통통 튕기는 것처럼 흔들림.
+# 17. Spoiler (RS_Input 필요) : 마우스가 위에 있었어만 글자가 보임. 이외에는 *로 표시.
 #
 # 사용 방법은 다음과 같습니다.
 #
