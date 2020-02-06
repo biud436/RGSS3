@@ -25,7 +25,6 @@
 # 14. Colorize : 글자가 마구 흔들리면서 글자의 색깔이 미친듯히 바뀜.
 # 15. OpacityWave : 투명도가 파도를 타듯 바뀜.
 # 16. TongTong : 파도를 타듯 위 아래로 공이 통통 튕기는 것처럼 흔들림.
-# 17. Spoiler (RS_Input 필요) : 마우스가 위에 있었야만 글자가 보임. 이외에는 *로 표시.
 #
 # 사용 방법은 다음과 같습니다.
 #
@@ -605,43 +604,55 @@ RS::Messages::Effects[:TongTong] = TongTong
 # ** Spoiler
 #==============================================================================    
   
-if $imported["RS_Input"]
-  
-  class Spoiler < TextEffect
-    def distance(x1,y1,x2,y2)
-      Math.sqrt(((x2 - x1) ** 2) + ((y2 - y1) ** 2))
-    end
-    def update_effects
-      return if !@started     
-      
-      dist = distance(TouchInput.x, TouchInput.y, self.x, self.y).round(1)
-      if dist < (self.width / 2)
-        self.bitmap = @origin[:bitmap]
-      else
-        self.bitmap = @spoiler
-      end
-      
-    end
-    def dispose
-      super
-      @origin[:bitmap] = nil
-      @spoiler.dispose if @spoiler
-    end
-    def create_spoiler_bitmap
-      @spoiler = Bitmap.new(self.bitmap.width, self.bitmap.height)
-      @spoiler.font = self.bitmap.font
-      @spoiler.draw_text(0, 0, self.bitmap.width, self.bitmap.height, '*', 0)
-    end
-    def start(index)
-      super(index)
-      @origin[:bitmap] = self.bitmap      
-      create_spoiler_bitmap
-    end
-  end
+#~ if $imported["RS_Input"]
+#~   
+#~   class Spoiler < TextEffect
+#~     def distance(x1,y1,x2,y2)
+#~       Math.sqrt(((x2 - x1) ** 2) + ((y2 - y1) ** 2))
+#~     end
+#~     def update_effects
+#~       return if !@started   
+#~       
+#~       if self.bitmap.disposed?
+#~         flush
+#~       end
+#~       
+#~       dist = distance(TouchInput.x, TouchInput.y, self.x, self.y).round(1)
+#~       if dist < (self.width / 2)
+#~         self.bitmap = @origin[:bitmap]
+#~       else
+#~         self.bitmap = @spoiler
+#~       end
+#~       
+#~     end
+#~     def dispose
+#~       super
+#~       @spoiler.dispose if @spoiler
+#~     end
+#~     def create_spoiler_bitmap
+#~       @spoiler = Bitmap.new(self.bitmap.width, self.bitmap.height)
+#~       @spoiler.font = self.bitmap.font
+#~       
+#~       items = (97..122).to_a
+#~       index = (rand * items.size).floor
+#~       number = items[index]
+#~       
+#~       char = number.chr
+#~       size = @spoiler.text_size(char)
+#~       
+#~       @spoiler.fill_rect(0, 0, self.bitmap.width, self.bitmap.height, Color.new(0, 0, 0, 255))
+#~       
+#~     end
+#~     def start(index)
+#~       super(index)
+#~       @origin[:bitmap] = self.bitmap      
+#~       create_spoiler_bitmap
+#~     end
+#~   end
 
-  RS::Messages::Effects[:Spoiler] = Spoiler    
+#~   RS::Messages::Effects[:Spoiler] = Spoiler    
 
-end
+#~ end
 
 #==============================================================================
 # ** 텍스트 이펙트 팩토리 객체
