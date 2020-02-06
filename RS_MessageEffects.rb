@@ -22,6 +22,7 @@
 #
 # RS_Input 필요 :
 #   MouseTracking
+#   MousePointer
 #
 #==============================================================================
 # ** 업데이트 로그
@@ -30,7 +31,8 @@
 # 2020.02.05 (v1.0.0) - First Release
 # 2020.02.06 (v1.0.1) :
 # - 타입이 없을 때, 오류 메시지 추가.
-# - MouseTracking 효과 추가 
+# - Added MouseTracking effect
+# - Added MousePointer effect
 #==============================================================================
 # ** Terms of Use
 #==============================================================================
@@ -420,6 +422,55 @@ if $imported["RS_Input"]
   
   RS::Messages::Effects[:MouseTracking] = MouseTracking
 
+  class MousePointer < TextEffect
+    def distance(x1,y1,x2,y2)
+      Math.sqrt(((x2 - x1) ** 2) + ((y2 - y1) ** 2))
+    end
+    def update_effects
+      return if !@started     
+      return if (Time.now.to_i - @lazy) < 1
+            
+      move_speed = @dist / 60.0
+      
+      x1 = (TouchInput.x - self.x)
+      x_dist = if x1 < 0
+        move_speed
+      elsif x1 > 0
+        -move_speed
+      else
+        0
+      end
+      
+      y1 = (TouchInput.y - self.y)
+      y_dist = if y1 < 0
+        move_speed
+      elsif y1 > 0
+        -move_speed
+      else
+        0
+      end
+              
+      tx = self.x - x_dist
+      ty = self.y - y_dist
+      
+      self.x = tx
+      self.y = ty
+      
+      dist = distance(TouchInput.x, TouchInput.y, self.x, self.y).round(1)
+      if dist < 16
+        flush
+      end
+      
+    end
+    def start(index)
+      super(index)
+      @lazy = Time.now.to_i
+      @dist = distance(TouchInput.x, TouchInput.y, self.x, self.y).floor
+    end
+  end
+  
+  RS::Messages::Effects[:MousePointer] = MousePointer  
+  
 end
 
 #==============================================================================
@@ -564,7 +615,7 @@ class Window_Message < Window_Base
     
     target_viewport = @text_layer_viewport
     
-    if effect_type == :MouseTracking
+    if [:MouseTracking, :MousePointer].include?(effect_type) && valid
       target_viewport = self.viewport
     end
 
