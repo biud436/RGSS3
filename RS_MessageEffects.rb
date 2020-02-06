@@ -22,7 +22,6 @@
 #
 # RS_Input 필요 :
 #   MouseTracking
-#   MousePointer
 #
 #==============================================================================
 # ** 업데이트 로그
@@ -31,8 +30,7 @@
 # 2020.02.05 (v1.0.0) - First Release
 # 2020.02.06 (v1.0.1) :
 # - 타입이 없을 때, 오류 메시지 추가.
-# - Added MouseTracking effect
-# - Added MousePointer effect
+# - MouseTracking 효과 추가 
 #==============================================================================
 # ** Terms of Use
 #==============================================================================
@@ -428,9 +426,9 @@ if $imported["RS_Input"]
     end
     def update_effects
       return if !@started     
-      return if (Time.now.to_i - @lazy) < 1
+      return if (Time.now.to_i - @lazy) < 2
             
-      move_speed = @dist / 60.0
+      move_speed = @dist / 30.0
       
       x1 = (TouchInput.x - self.x)
       x_dist = if x1 < 0
