@@ -29,7 +29,7 @@
 # Version    :
 # 2020.02.05 (v1.0.0) - First Release
 # 2020.02.06 (v1.0.1) :
-# - 타입이 없을 때 오류 메시지 추가
+# - 타입이 없을 때, 오류 메시지 추가.
 # - MouseTracking 효과 추가 
 #==============================================================================
 # ** Terms of Use
@@ -377,17 +377,19 @@ if $imported["RS_Input"]
             
       move_speed = @dist / 30.0
       
-      x_dist = if (@origin[:x] - self.x) < 0
+      x1 = (@origin[:x] - self.x)
+      x_dist = if x1 < 0
         move_speed
-      elsif (@origin[:x] - self.x) > 0
+      elsif x1 > 0
         -move_speed
       else
         0
       end
       
-      y_dist = if (@origin[:y] - self.y) < 0
+      y1 = (@origin[:y] - self.y)
+      y_dist = if y1 < 0
         move_speed
-      elsif (@origin[:y] - self.y) > 0
+      elsif y1 > 0
         -move_speed
       else
         0
