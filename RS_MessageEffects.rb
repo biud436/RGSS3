@@ -365,11 +365,10 @@ end
 
 RS::Messages::Effects[:Spread] = Spread
 
+if $imported["RS_Input"]
 #==============================================================================
 # ** MouseTracking
 #==============================================================================
-if $imported["RS_Input"]
-
   class MouseTracking < TextEffect
     def distance(x1,y1,x2,y2)
       Math.sqrt(((x2 - x1) ** 2) + ((y2 - y1) ** 2))
@@ -419,6 +418,9 @@ if $imported["RS_Input"]
   
   RS::Messages::Effects[:MouseTracking] = MouseTracking
 
+#==============================================================================
+# ** MousePointer
+#==============================================================================  
   class MousePointer < TextEffect
     def distance(x1,y1,x2,y2)
       Math.sqrt(((x2 - x1) ** 2) + ((y2 - y1) ** 2))
