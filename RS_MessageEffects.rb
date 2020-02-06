@@ -9,22 +9,28 @@
 # \텍스트효과<텍스트효과명> 또는 \TE<텍스트효과명>
 #
 # 현재까지 추가된 텍스트 효과 :
-# PingPong
-# Slide
-# HighRotation
-# NormalRotation
-# RandomRotation
-# Shock
-# ZoomOut
-# Marquee
-# Wave
-# Spread
+#   PingPong
+#   Slide
+#   HighRotation
+#   NormalRotation
+#   RandomRotation
+#   Shock
+#   ZoomOut
+#   Marquee
+#   Wave
+#   Spread
+#
+# RS_Input 필요 :
+#   MouseTracking
 #
 #==============================================================================
 # ** 업데이트 로그
 #==============================================================================
 # Version    :
 # 2020.02.05 (v1.0.0) - First Release
+# 2020.02.06 (v1.0.1) :
+# - 타입이 없을 때 오류 메시지 추가
+# - MouseTracking 효과 추가 
 #==============================================================================
 # ** Terms of Use
 #==============================================================================
@@ -360,6 +366,57 @@ end
 
 RS::Messages::Effects[:Spread] = Spread
 
+if $imported["RS_Input"]
+
+  class MouseTracking < TextEffect
+    def distance(x1,y1,x2,y2)
+      Math.sqrt(((x2 - x1) ** 2) + ((y2 - y1) ** 2))
+    end
+    def update_effects
+      return if !@started      
+            
+      move_speed = @dist / 30.0
+      
+      x_dist = if (@origin[:x] - self.x) < 0
+        move_speed
+      elsif (@origin[:x] - self.x) > 0
+        -move_speed
+      else
+        0
+      end
+      
+      y_dist = if (@origin[:y] - self.y) < 0
+        move_speed
+      elsif (@origin[:y] - self.y) > 0
+        -move_speed
+      else
+        0
+      end
+              
+      tx = self.x - x_dist
+      ty = self.y - y_dist
+      
+      self.x = tx
+      self.y = ty
+      
+      dist = distance(@origin[:x], @origin[:y], self.x, self.y).round(1)
+      if dist < 16
+        flush
+      end
+      
+    end
+    def start(index)
+      super(index)
+      self.x = TouchInput.x
+      self.y = TouchInput.y
+      @dist = distance(@origin[:x], @origin[:y], self.x, self.y).floor
+    end
+  end
+  
+  RS::Messages::Effects[:MouseTracking] = MouseTracking
+
+end
+
 #==============================================================================
 # ** 텍스트 이펙트 팩토리 객체
 #============================================================================== 
@@ -501,13 +558,20 @@ class Window_Message < Window_Base
     end    
     
     target_viewport = @text_layer_viewport
+    
+    if effect_type == :MouseTracking
+      target_viewport = self.viewport
+    end
 
     # 텍스트 레이어 생성
     sprite = TextEffectFactory.create(effect_type, target_viewport)
-    p effect_type
     rect = text_size(c)
     w = rect.width + 1
     h = rect.height
+    
+    if !sprite
+      raise "#{effect_type.to_s}타입이 없습니다."
+    end
         
     sprite.bitmap = Bitmap.new(w * 2, pos[:height])
     sprite.bitmap.font = self.contents.font
