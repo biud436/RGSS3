@@ -366,6 +366,9 @@ end
 
 RS::Messages::Effects[:Spread] = Spread
 
+#==============================================================================
+# ** MouseTracking
+#==============================================================================
 if $imported["RS_Input"]
 
   class MouseTracking < TextEffect
