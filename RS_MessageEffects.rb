@@ -21,6 +21,9 @@
 #   Spread
 #   MouseTracking (RS_Input 필요)
 #   MousePointer (RS_Input 필요)
+#   Colorize
+#   OpacityWave
+#   TongTong
 #
 #==============================================================================
 # ** 업데이트 로그
@@ -28,8 +31,7 @@
 # Version    :
 # 2020.02.05 (v1.0.0) - First Release
 # 2020.02.06 (v1.0.1) :
-# - 타입이 없을 때, 오류 메시지 추가.
-# - MouseTracking 및 MousePointer 효과 추가 
+# - 효과 추가
 #==============================================================================
 # ** Terms of Use
 #==============================================================================
@@ -427,7 +429,7 @@ if $imported["RS_Input"]
     end
     def update_effects
       return if !@started     
-      return if (Time.now.to_i - @lazy) < 2
+      return if (Time.now.to_i - @lazy) < 1
             
       move_speed = @dist / 30.0
       
@@ -470,7 +472,121 @@ if $imported["RS_Input"]
   
   RS::Messages::Effects[:MousePointer] = MousePointer  
   
+#==============================================================================
+# ** MouseOver
+#==============================================================================    
+  
+  class MouseOver < TextEffect
+    def distance(x1,y1,x2,y2)
+      Math.sqrt(((x2 - x1) ** 2) + ((y2 - y1) ** 2))
+    end
+    def update_effects
+      return if !@started     
+      
+      dist = distance(TouchInput.x, TouchInput.y, self.x, self.y).round(1)
+      if dist < self.width
+        self.oy = PI_2 * Math.sin(Graphics.frame_count)
+        self.tone.set(255, 0, 0, 0)
+      else
+        self.oy = 0
+        self.tone.set(0, 0, 0, 0)
+      end
+      
+    end
+    def start(index)
+      super(index)
+      @lazy = Time.now.to_i
+      @dist = distance(TouchInput.x, TouchInput.y, self.x, self.y).floor
+    end
+  end
+
+  RS::Messages::Effects[:MouseOver] = MouseOver    
+
 end
+
+#==============================================================================
+# ** Colorize
+#============================================================================== 
+class Colorize < TextEffect
+  def update_effects
+    return if !@started 
+    
+    proc = ->(rate){
+      self.ox = rate * Math.sin(Graphics.frame_count) * 0.5
+      self.oy = rate * Math.cos(Graphics.frame_count) * 0.5
+    }
+    
+    if Graphics.frame_count - @lazy >= 60
+      self.tone.set(
+        (self.tone.red + 16 * @index) % 255, 
+        ((self.tone.red - self.tone.green) * @index) % 255,
+        (self.tone.blue + 8 * @index) % 255, 
+        0)
+      @lazy = Graphics.frame_count
+    end
+    
+    proc.call(@index + 1)
+    
+  end
+  def start(index)
+    super(index)
+    @index = (index % 3) + 1
+    @lazy = Graphics.frame_count
+  end
+end
+
+RS::Messages::Effects[:Colorize] = Colorize
+
+#==============================================================================
+# ** OpacityWave
+#============================================================================== 
+class OpacityWave < TextEffect
+  def update_effects
+    return if !@started 
+    
+    proc = ->(rate){
+      self.ox = rate * Math.sin(Graphics.frame_count) * 0.25
+      self.oy = rate * Math.cos(Graphics.frame_count) * 0.25
+    }
+    
+    if Graphics.frame_count - @lazy >= 30
+      self.opacity = (self.opacity + 48 * @index) % 255
+      @lazy = Graphics.frame_count
+    end
+    
+    proc.call(@index + 1)
+    
+  end
+  def start(index)
+    super(index)
+    @index = (index % 3) + 1
+    @lazy = Graphics.frame_count
+  end
+end
+
+RS::Messages::Effects[:OpacityWave] = OpacityWave
+
+#==============================================================================
+# ** TongTong
+#============================================================================== 
+class TongTong < TextEffect
+  def update_effects
+    return if !@started 
+    
+    if Graphics.frame_count - @lazy >= 2
+      self.y = @origin[:y] + (PI_2 / @power) * 4.0
+      @lazy = Graphics.frame_count
+      @power = [(@power + 1) % 60, 1].max
+    end
+    
+  end
+  def start(index)
+    super(index)
+    @lazy = Graphics.frame_count
+  end
+end
+
+RS::Messages::Effects[:TongTong] = TongTong
 
 #==============================================================================
 # ** 텍스트 이펙트 팩토리 객체
@@ -625,7 +741,7 @@ class Window_Message < Window_Base
     h = rect.height
     
     if !sprite
-      raise "#{effect_type.to_s}타입이 없습니다."
+      raise "#{effect_type.to_s} 타입이 없습니다."
     end
         
     sprite.bitmap = Bitmap.new(w * 2, pos[:height])
