@@ -20,9 +20,11 @@
 #   10. Spread
 #   11. MouseTracking (RS_Input 필요)
 #   12. MousePointer (RS_Input 필요)
-#   13. Colorize
-#   14. OpacityWave
-#   15. TongTong
+#   13. MouseOver (RS_Input 필요)
+#   14. Colorize
+#   15. OpacityWave
+#   16. TongTong
+#   17. Spoiler (RS_Input 필요)
 #
 # 사용 방법은 다음과 같습니다.
 #
@@ -597,6 +599,48 @@ class TongTong < TextEffect
 end
 
 RS::Messages::Effects[:TongTong] = TongTong
+
+#==============================================================================
+# ** Spoiler
+#==============================================================================    
+  
+if $imported["RS_Input"]
+  
+  class Spoiler < TextEffect
+    def distance(x1,y1,x2,y2)
+      Math.sqrt(((x2 - x1) ** 2) + ((y2 - y1) ** 2))
+    end
+    def update_effects
+      return if !@started     
+      
+      dist = distance(TouchInput.x, TouchInput.y, self.x, self.y).round(1)
+      if dist < (self.width / 2)
+        self.bitmap = @origin[:bitmap]
+      else
+        self.bitmap = @spoiler
+      end
+      
+    end
+    def dispose
+      super
+      @origin[:bitmap] = nil
+      @spoiler.dispose if @spoiler
+    end
+    def create_spoiler_bitmap
+      @spoiler = Bitmap.new(self.bitmap.width, self.bitmap.height)
+      @spoiler.font = self.bitmap.font
+      @spoiler.draw_text(0, 0, self.bitmap.width, self.bitmap.height, '*', 0)
+    end
+    def start(index)
+      super(index)
+      @origin[:bitmap] = self.bitmap      
+      create_spoiler_bitmap
+    end
+  end
+
+  RS::Messages::Effects[:Spoiler] = Spoiler    
+
+end
 
 #==============================================================================
 # ** 텍스트 이펙트 팩토리 객체
