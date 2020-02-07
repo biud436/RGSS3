@@ -1,7 +1,10 @@
 #==============================================================================
 # ** 자세한 오류 출력 및 로그 저장
 # Author : biud436
-# Date : 2019.12.21 (v1.0.0)
+# Version Log : 
+# 2019.12.21 (v1.0.0) : First Release
+# 2020.02.07 (v1.0.1) :
+# - Fixed an issue about the error location.
 #==============================================================================
 # ** Terms of Use
 #==============================================================================
@@ -12,7 +15,7 @@ $imported["RS_ConsoleWarnDetails"] = true
 
 module RS
   module ConsoleWarnDetails
-      
+  
     # 오류를 기록할 디버그 로그 파일의 이름
     # 바탕화면에 저장하고 싶다면 다음과 같습니다.
     #   예:) File.join(ENV["HOME"], "Desktop", "debug.log")
@@ -88,11 +91,17 @@ module RS
       lines.each { |line| f.puts line }
       f.close
       
+      f = File.open('scripts.txt', 'w+')
+      f.puts $RGSS_SCRIPTS
+      f.close      
+      
       if INLINE
         puts lines.join("\r\n")
       else
-        raise lines.join("\r\n")
-      end        
+        error = StandardError.new(lines.join("\r\n"))
+        error.set_backtrace($@)
+        raise error
+      end      
       
     end
   end
