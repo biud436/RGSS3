@@ -50,8 +50,7 @@ module RS
     
     # true이면 모든 영역에서 자세한 오류 출력
     # false면 Game_Character와 Game_Interpreter에서만 자세한 오류 출력
-    # true을 사용하면 자세한 오류는 출력하지만 
-    # 오류가 난 스크립트 에디터 라인을 자동으로 띄워주는 기능은 사용할 수 없게 됩니다.
+    # true을 사용하면 모든 곳에서 자세한 오류를 출력합니다.
     ALL = true
     
     def self.extract(lines, backtraces)
@@ -108,56 +107,6 @@ module RS
 end
 
 if RS::ConsoleWarnDetails::ALL
-  
-  # == disasm: <RubyVM::InstructionSequence:rgss_main@>=====================
-  # == catch table
-  # | catch type: break  st: 0004 ed: 0011 sp: 0000 cont: 0011
-  # |------------------------------------------------------------------------
-  # 0000 trace            8                                               (   1)
-  # 0002 trace            1
-  # 0004 putnil           
-  # 0005 send             :loop, 0, block in rgss_main, 8, <ic:0>
-  # 0011 trace            16
-  # 0013 leave            
-  # == disasm: <RubyVM::InstructionSequence:block in rgss_main@>============
-  # == catch table
-  # | catch type: rescue st: 0002 ed: 0013 sp: 0000 cont: 0014
-  # == disasm: <RubyVM::InstructionSequence:rescue in block in rgss_main@>==
-  # local table (size: 2, argc: 0 [opts: 0, rest: -1, post: 0, block: -1] s0)
-  # [ 2] #$!        
-  # 0000 getinlinecache   7, <ic:0>                                       (   1)
-  # 0003 getconstant      :RGSSReset
-  # 0005 setinlinecache   <ic:0>
-  # 0007 getdynamic       #$!, 0
-  # 0010 send             :===, 1, nil, 0, <ic:1>
-  # 0016 branchunless     50
-  # 0018 trace            1
-  # 0020 getinlinecache   27, <ic:2>
-  # 0023 getconstant      :Audio
-  # 0025 setinlinecache   <ic:2>
-  # 0027 send             :__reset__, 0, nil, 0, <ic:3>
-  # 0033 pop              
-  # 0034 trace            1
-  # 0036 getinlinecache   43, <ic:4>
-  # 0039 getconstant      :Graphics
-  # 0041 setinlinecache   <ic:4>
-  # 0043 send             :__reset__, 0, nil, 0, <ic:5>
-  # 0049 leave            
-  # 0050 getdynamic       #$!, 0
-  # 0053 throw            0
-  # | catch type: retry  st: 0013 ed: 0014 sp: 0000 cont: 0002
-  # | catch type: redo   st: 0000 ed: 0014 sp: 0000 cont: 0000
-  # | catch type: next   st: 0000 ed: 0014 sp: 0000 cont: 0014
-  # |------------------------------------------------------------------------
-  # 0000 trace            1                                               (   1)
-  # 0002 trace            1
-  # 0004 invokeblock      0, 0
-  # 0007 pop              
-  # 0008 trace            1
-  # 0010 putnil           
-  # 0011 throw            2
-  # 0013 nop              
-  # 0014 leave            
        
   def rgss_main
     loop do
