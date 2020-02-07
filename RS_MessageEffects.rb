@@ -10,21 +10,22 @@
 # 현재까지 추가된 텍스트 효과 :
 #
 # 1. PingPong : 아래에서 위로 튕기듯 올라오는 효과.
-# 2. Slide : 글자가 미끄러지듯 천천히 등장함.
-# 3. HighRotation : 글자가 어딘가에서 날라옴
-# 4. NormalRotation : 글자가 어딘가에서 날라옴
-# 5. RandomRotation : 글자가 어딘가에서 날라옴
-# 6. Shock : 글자가 전기 충격을 준 것처럼 마구마구 흔들림.
+# 2. Slide : 글자가 미끄러지듯 천천히 등장.
+# 3. HighRotation : 글자가 어딘가에서 날라옵니다.
+# 4. NormalRotation : 글자가 어딘가에서 날라옵니다.
+# 5. RandomRotation : 글자가 어딘가에서 날라옵니다.
+# 6. Shock : 글자가 전기 충격을 준 것처럼 마구마구 흔들립니다.
 # 7. ZoomOut : 글자가 확대되면서 줄어듦.
-# 8. Marquee : 글자가 전광판처럼 왼쪽에서 오른쪽으로 이동.
-# 9. Wave : 글자가 강하게 흔들림.
-# 10. Spread : 글자가 동서남북 4방향으로 이동함
-# 11. MouseTracking (RS_Input 필요) : 마우스 포인터에서 글자가 생성되고, 대화창까지 이동함
-# 12. MousePointer (RS_Input 필요) : 글자가 대화창에서 생성된 후, 현재 마우스 포인터 쪽으로 이동함.
-# 13. MouseOver  (RS_Input 필요) : 마우스가 글자 위에 있으면 글자의 색깔이 변함.
-# 14. Colorize : 글자가 마구 흔들리면서 글자의 색깔이 미친듯히 바뀜.
+# 8. Marquee : 글자가 전광판처럼 왼쪽에서 오른쪽으로 이동합니다.
+# 9. Wave : 글자가 강하게 흔들립니다.
+# 10. Spread : 글자가 동서남북 4방향으로 이동합니다.
+# 11. MouseTracking (RS_Input 필요) : 마우스 포인터에서 글자가 생성되고, 대화창까지 이동.
+# 12. MousePointer (RS_Input 필요) : 글자가 대화창에서 생성된 후, 현재 마우스 포인터 쪽으로 이동.
+# 13. MouseOver  (RS_Input 필요) : 마우스가 글자 위에 있으면 글자의 색깔이 변합니다.
+# 14. Colorize : 글자가 마구 흔들리면서 글자의 색깔이 바뀝니다.
 # 15. OpacityWave : 투명도가 파도를 타듯 바뀜.
-# 16. TongTong : 파도를 타듯 위 아래로 공이 통통 튕기는 것처럼 흔들림.
+# 16. TongTong : 파도를 타듯 위 아래로 공이 통통 튕기는 것처럼 흔들립니다.
+# 17. Spoiler (RS_Input 필요) : 글자를 감추는 효과입니다. 마우스를 가져다대면 글자가 표시됩니다.
 #
 # 사용 방법은 다음과 같습니다.
 #
@@ -44,6 +45,8 @@
 # 2020.02.06 (v1.0.1) :
 # - 새로운 효과 추가
 # - 텍스트 코드 추가
+# 2020.02.07 (v1.0.2) :
+# - 새로운 효과 추가
 #==============================================================================
 # ** Terms of Use
 #==============================================================================
@@ -604,55 +607,60 @@ RS::Messages::Effects[:TongTong] = TongTong
 # ** Spoiler
 #==============================================================================    
   
-#~ if $imported["RS_Input"]
-#~   
-#~   class Spoiler < TextEffect
-#~     def distance(x1,y1,x2,y2)
-#~       Math.sqrt(((x2 - x1) ** 2) + ((y2 - y1) ** 2))
-#~     end
-#~     def update_effects
-#~       return if !@started   
-#~       
-#~       if self.bitmap.disposed?
-#~         flush
-#~       end
-#~       
-#~       dist = distance(TouchInput.x, TouchInput.y, self.x, self.y).round(1)
-#~       if dist < (self.width / 2)
-#~         self.bitmap = @origin[:bitmap]
-#~       else
-#~         self.bitmap = @spoiler
-#~       end
-#~       
-#~     end
-#~     def dispose
-#~       super
-#~       @spoiler.dispose if @spoiler
-#~     end
-#~     def create_spoiler_bitmap
-#~       @spoiler = Bitmap.new(self.bitmap.width, self.bitmap.height)
-#~       @spoiler.font = self.bitmap.font
-#~       
-#~       items = (97..122).to_a
-#~       index = (rand * items.size).floor
-#~       number = items[index]
-#~       
-#~       char = number.chr
-#~       size = @spoiler.text_size(char)
-#~       
-#~       @spoiler.fill_rect(0, 0, self.bitmap.width, self.bitmap.height, Color.new(0, 0, 0, 255))
-#~       
-#~     end
-#~     def start(index)
-#~       super(index)
-#~       @origin[:bitmap] = self.bitmap      
-#~       create_spoiler_bitmap
-#~     end
-#~   end
+if $imported["RS_Input"]
+  
+  class Spoiler < TextEffect
+    
+    @@spoiler = nil
+    
+    def self.create_spoiler_bitmap(bitmap)
+      return @@spoiler if @@spoiler
+      @@spoiler = Bitmap.new(bitmap.width, bitmap.height)
+      @@spoiler.font = bitmap.font
+                  
+      char = '*'
+      size = @@spoiler.text_size(char)      
+      
+      @@spoiler.fill_rect(0, 0, bitmap.width, bitmap.height, Color.new(0, 0, 0, 200))
+      @@spoiler.draw_text(0, 0, size.width, size.height, char, 0)
+      
+    end  
+    
+    def self.dispose_spoiler_bitmap
+      return if not @@spoiler
+      @@spoiler.dispose if @@spoiler.is_a?(Bitmap)
+      @@spoiler = nil
+    end
+    
+    def distance(x1,y1,x2,y2)
+      Math.sqrt(((x2 - x1) ** 2) + ((y2 - y1) ** 2))
+    end
+    def dispose
+      super
+      Spoiler.dispose_spoiler_bitmap
+    end
+    def update_effects
+      return if !@started   
+            
+      dist = distance(TouchInput.x, TouchInput.y, self.x, self.y).round(1)
+      if dist < (self.width / 2)
+        self.bitmap = @origin[:bitmap]
+      else
+        self.bitmap = @@spoiler
+      end
+    
+    end
+    def start(index)
+      super(index)
+      @origin[:bitmap] = self.bitmap      
+      
+      Spoiler.create_spoiler_bitmap(self.bitmap)
+    end
+  end
 
-#~   RS::Messages::Effects[:Spoiler] = Spoiler    
+  RS::Messages::Effects[:Spoiler] = Spoiler    
 
-#~ end
+end
 
 #==============================================================================
 # ** 텍스트 이펙트 팩토리 객체
