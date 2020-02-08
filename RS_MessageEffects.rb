@@ -1,14 +1,26 @@
 #==============================================================================
-# ** Hangul Message Effects (RPG Maker VX Ace)
+# ** Message Effects (RPG Maker VX Ace)
 #==============================================================================
-# Name       : Hangul Message Effects
-# Author     : 러닝은빛(biud436)
+# Name       : Message Effects
+# Author     : biud436
 #==============================================================================
-# ** 텍스트 코드
+# ** Usage
 #==============================================================================
+# This script allows you to use an extra text efffects on the message window.
 #
-# 현재까지 추가된 텍스트 효과 :
+# Texts are showed that happen in the message window how they move around and 
+# react to each other.
+# 
+# To use a text effect, 
+# from the message window, you need to add a text code as follows.
 #
+# \E[index]
+#
+# The index is the number that starts with to 1. 
+# For example, \E[1] means a 'PingPong' and the same as \TE<PingPong>
+#
+# Some text effects need to require an additional script called 'RS_Input'
+#  
 # 1. PingPong : 아래에서 위로 튕기듯 올라오는 효과.
 # 2. Slide : 글자가 미끄러지듯 천천히 등장.
 # 3. HighRotation : 글자가 어딘가에서 날라옵니다.
@@ -27,26 +39,13 @@
 # 16. TongTong : 파도를 타듯 위 아래로 공이 통통 튕기는 것처럼 흔들립니다.
 # 17. Spoiler (RS_Input 필요) : 글자를 감추는 효과입니다. 마우스를 가져다대면 글자가 표시됩니다.
 #
-# 사용 방법은 다음과 같습니다.
-#
-# \TE<텍스트효과명>
-#
-# 또는 
-#
-# \E[번호]를 사용할 수 있습니다.
-# 
-# 예를 들면, \E[1]은 PingPong 효과입니다.
-#
 #==============================================================================
-# ** 업데이트 로그
+# ** Change Logs
 #==============================================================================
 # Version    :
 # 2020.02.05 (v1.0.0) - First Release
-# 2020.02.06 (v1.0.1) :
-# - 새로운 효과 추가
-# - 텍스트 코드 추가
-# 2020.02.07 (v1.0.2) :
-# - 새로운 효과 추가
+# 2020.02.07 (v1.0.2) : 
+# - Added a new text effect
 #==============================================================================
 # ** Terms of Use
 #==============================================================================
@@ -55,11 +54,13 @@
 $imported = {} if $imported.nil?
 $imported["RS_MessageEffects"] = true
 
-if !$imported["RS_HangulMessageSystem"]
-  raise %Q(텍스트 효과 스크립트는 한글 메시지 시스템 스크립트가 필요합니다.)
-end
-
 module RS
+  
+  if !$imported["RS_HangulMessageSystem"]
+    LIST = {}
+    CODE = {}
+  end
+  
   LIST["텍스트 이펙트"] = :Shock
   CODE["텍스트 이펙트"] = /^\<([a-zA-Z]+)\>/
 end
@@ -802,13 +803,14 @@ class Window_Message < Window_Base
     
     valid = !@is_used_text_width_ex
 
-    # 자동 개행 여부 판단
-    if $game_message.word_wrap_enabled and valid and $game_message.balloon == -2
-      tw = text_size(c).width
-      if pos[:x] + (tw * 2) > contents_width
-        process_new_line(text, pos)
-      end
-    end    
+    if $imported["RS_HangulMessageSystem"]
+      if $game_message.word_wrap_enabled and valid and $game_message.balloon == -2
+        tw = text_size(c).width
+        if pos[:x] + (tw * 2) > contents_width
+          process_new_line(text, pos)
+        end
+      end    
+    end
     
     target_viewport = @text_layer_viewport
     
@@ -823,7 +825,7 @@ class Window_Message < Window_Base
     h = rect.height
     
     if !sprite
-      raise "#{effect_type.to_s} 타입이 없습니다."
+      raise "There is no #{effect_type.to_s} type"
     end
         
     sprite.bitmap = Bitmap.new(w * 2, pos[:height])
@@ -850,17 +852,18 @@ class Window_Message < Window_Base
     
     pos[:x] += w
                     
-    # 텍스트 사운드 재생
-    unless @line_show_fast or @show_fast
-      request_text_sound if (Graphics.frame_count % RS::LIST["텍스트 사운드 주기"]) == 0
-      wait($game_message.message_speed || 0) if valid       
-    end
-        
-    # Pause 아이콘 위치 조절
-    if $imported["RS_PauseIconPosition"]
-      mx = standard_padding + pos[:x] + 8
-      my = standard_padding + pos[:y] + pos[:height]
-      move_pause_sign(mx, my)      
+    if $imported["RS_HangulMessageSystem"]
+      unless @line_show_fast or @show_fast
+        request_text_sound if (Graphics.frame_count % RS::LIST["텍스트 사운드 주기"]) == 0
+        wait($game_message.message_speed || 0) if valid       
+      end
+      if $imported["RS_PauseIconPosition"]
+        mx = standard_padding + pos[:x] + 8
+        my = standard_padding + pos[:y] + pos[:height]
+        move_pause_sign(mx, my)      
+      end
+    else
+      wait_for_one_character
     end
     
   end
