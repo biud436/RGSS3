@@ -61,8 +61,8 @@ module RS
     CODE = {}
   end
   
-  LIST["텍스트 이펙트"] = :Shock
-  CODE["텍스트 이펙트"] = /^\<([a-zA-Z]+)\>/
+  LIST[:TEXT_EFFECT] = :Shock
+  CODE[:TEXT_EFFECT] = /^\<([a-zA-Z]+)\>/
 end
 
 module RS::Messages
@@ -771,13 +771,13 @@ class Window_Message < Window_Base
         data = RS::Messages::Effects
         effect = data.keys[index - 1]
         if data.has_key?(effect)
-          RS::LIST["텍스트 이펙트"] = effect
+          RS::LIST[:TEXT_EFFECT] = effect
         end
       end    
     when 'TE'
       effect = obtain_text_effects(text)
       if !@is_used_text_width_ex
-        RS::LIST["텍스트 이펙트"] = effect
+        RS::LIST[:TEXT_EFFECT] = effect
       end
     else
       rs_message_effects_process_escape_character(code, text, pos)
@@ -787,7 +787,7 @@ class Window_Message < Window_Base
   # * 텍스트 이펙트 추출
   #--------------------------------------------------------------------------
   def obtain_text_effects(text)
-    effect_type = text.slice!(RS::CODE["텍스트 이펙트"])[$1] rescue "PingPong"
+    effect_type = text.slice!(RS::CODE[:TEXT_EFFECT])[$1] rescue "PingPong"
     effect_type.to_sym
   end    
   #--------------------------------------------------------------------------
@@ -796,7 +796,7 @@ class Window_Message < Window_Base
   alias rs_message_effects_process_normal_character process_normal_character
   def process_normal_character(c, pos, text)
 
-    effect_type = RS::LIST["텍스트 이펙트"]
+    effect_type = RS::LIST[:TEXT_EFFECT]
     if not effect_type
       return rs_message_effects_process_normal_character(c, pos, text)
     end
@@ -854,7 +854,7 @@ class Window_Message < Window_Base
                     
     if $imported["RS_HangulMessageSystem"]
       unless @line_show_fast or @show_fast
-        request_text_sound if (Graphics.frame_count % RS::LIST["텍스트 사운드 주기"]) == 0
+        request_text_sound if (Graphics.frame_count % RS::LIST[:TEXTSOUND_INTERVAL]) == 0
         wait($game_message.message_speed || 0) if valid       
       end
       if $imported["RS_PauseIconPosition"]

@@ -1,12 +1,16 @@
 #==============================================================================
-# ** Hangul Message System 1.5.29 (RPG Maker VX Ace)
+# ** Hangul Message System v1.6.0 (RPG Maker VX Ace)
 #==============================================================================
 # Name       : Hangul Message System
 # Author     : biud436
-# Version    : 1.5.29
+# Version    : v1.6.0
 #==============================================================================
 # ** 업데이트 로그
 #==============================================================================
+# 2020.02.11 (v1.6.0) :
+# - 기본 해쉬 자료 구조에서 키 값을 심볼로 변경
+# - 환경 설정 파일의 파일 이름을 영어로 변경
+# - 텍스트 애니메이션 추가
 # 2020.02.05 (v1.5.29) :
 # - 색상 변경 코드 수정
 # - 텍스트 속도가 조절되지 않는 문제 수정
@@ -196,14 +200,41 @@
 # 숫자 통화 포맷으로 표시하려면 다음과 같은 텍스트 코드를 사용하십시오.
 # \숫자[500000]
 #
+# 텍스트 애니메이션 효과를 사용하려면 다음과 같은 텍스트 코드를 사용하십시오.
+#
+# \E[index]
+#
+# 인덱스는 1부터 시작해야 합니다. 
+# 예를 들어, \E[1]은 'PingPong'을 의미하고 \TE<PingPong>와 같습니다.
+#
+# 일부 텍스트 효과는 'RS_Input'이라는 추가 스크립트가 필요합니다.
+#  
+# 1. PingPong : 아래에서 위로 튕기듯 올라오는 효과.
+# 2. Slide : 글자가 미끄러지듯 천천히 등장.
+# 3. HighRotation : 글자가 어딘가에서 날라옵니다.
+# 4. NormalRotation : 글자가 어딘가에서 날라옵니다.
+# 5. RandomRotation : 글자가 어딘가에서 날라옵니다.
+# 6. Shock : 글자가 전기 충격을 준 것처럼 마구마구 흔들립니다.
+# 7. ZoomOut : 글자가 확대되면서 줄어듦.
+# 8. Marquee : 글자가 전광판처럼 왼쪽에서 오른쪽으로 이동합니다.
+# 9. Wave : 글자가 강하게 흔들립니다.
+# 10. Spread : 글자가 동서남북 4방향으로 이동합니다.
+# 11. MouseTracking (RS_Input 필요) : 마우스 포인터에서 글자가 생성되고, 대화창까지 이동.
+# 12. MousePointer (RS_Input 필요) : 글자가 대화창에서 생성된 후, 현재 마우스 포인터 쪽으로 이동.
+# 13. MouseOver  (RS_Input 필요) : 마우스가 글자 위에 있으면 글자의 색깔이 변합니다.
+# 14. Colorize : 글자가 마구 흔들리면서 글자의 색깔이 바뀝니다.
+# 15. OpacityWave : 투명도가 파도를 타듯 바뀜.
+# 16. TongTong : 파도를 타듯 위 아래로 공이 통통 튕기는 것처럼 흔들립니다.
+# 17. Spoiler (RS_Input 필요) : 글자를 감추는 효과입니다. 마우스를 가져다대면 글자가 표시됩니다.
+#
 #==============================================================================
 # ** 스크립트 호출
 #==============================================================================
 # 한글 메시지 시스템에서 불러오는 기본 설정 값들은 스크립트를 통해 변경이 가능합니다.
 # 루비의 해시로 구성하였기 때문에 키 값만 적으면 값을 Read하고 Write 할 수 있습니다.
 #
-# 예를 들면, RS::LIST["라인"] = 8은 라인을 8줄로 변경합니다.
-# RS::LIST["텍스트 사운드 사용"] = false는 텍스트 사운드 사용을 중단합니다.
+# 예를 들면, RS::LIST[:LINE] = 8은 라인을 8줄로 변경합니다.
+# RS::LIST[:USE_TEXTSOUND] = false는 텍스트 사운드 사용을 중단합니다.
 #
 #==============================================================================
 # ** 노트 태그
@@ -235,121 +266,121 @@ module RS
   # Fonts 폴더에 해당 폰트 파일에 있어야 합니다.
   # 폰트 파일과 글꼴명은 다를 수 있습니다.
   # 여기에 적는 것은 해당 폰트의 실제 글꼴명입니다.
-  LIST["폰트명"] = Font.default_name
+  LIST[:FONT_NAME] = Font.default_name
   
   # 폰트 크기를 변경합니다. 예:) Font.default_size는 기본 폰트 사이즈입니다.
-  LIST["폰트크기"] = Font.default_size
+  LIST[:FONT_SIZE] = Font.default_size
   
   # 얼굴 이미지의 X좌표 설정 
-  # 기준 좌표값 RS::LIST["왼쪽"] 또는 RS::LIST["오른쪽"]로부터 상대적입니다.
+  # 기준 좌표값 RS::LIST[:FACE_LEFTX] 또는 RS::LIST[:FACE_RIGHTX]로부터 상대적입니다.
   # 문장의 표시 커맨드가 시작되기 전에, 다음과 같은 스크립트를 설정하면 
   #
-  #   RS::LIST["X"] = -186
+  #   RS::LIST[:FACE_X] = -186
   #
   # 얼굴 이미지의 X좌표를 언제든지 바꿀 수가 있습니다.
-  LIST["X"] = -186
+  LIST[:FACE_X] = -186
   
   # 얼굴 이미지의 Y좌표 설정
-  # 화면 세로 크기 - RS::LIST["Y"] - 얼굴 이미지의 세로 크기
-  LIST["Y"] = 0
+  # 화면 세로 크기 - RS::LIST[:FACE_Y]- 얼굴 이미지의 세로 크기
+  LIST[:FACE_Y]= 0
 
   # 자동 개행 설정
   # true이면 창의 폭을 넘겼을 때 자동으로 개행합니다.
   # 사용 시 정렬 기능이 제대로 동작하지 않을 수 있으니 주의 바랍니다.
-  LIST["자동개행"] = false
+  LIST[:AUTO_LINEBREAK] = false
   
   # 얼굴 이미지의 Z좌표 설정
   # 1이면 대화창 위, 
   # -1이면 대화창 뒤
   # 나중에 변경하려면 스크립트 커맨드로 변경이 가능합니다.
-  # 예를 들어, RS::LIST["Z"] = -1 라고 입력하면 대화창 뒤로 얼굴 이미지가 가려집니다.
-  LIST["Z"] = -1
+  # 예를 들어, RS::LIST[:Z] = -1 라고 입력하면 대화창 뒤로 얼굴 이미지가 가려집니다.
+  LIST[:Z] = -1
   
-  LIST["높이"] = Graphics.height - LIST["Y"]
+  LIST[:FACE_HEIGHT] = Graphics.height - LIST[:FACE_Y]
   
   # 기본 라인 갯수
-  LIST["라인"] = 4
+  LIST[:LINE] = 4
   
-  LIST["효과음"] = "Attack3"
+  LIST[:DEFAULT_SE] = "Attack3"
   
   # 얼굴 이미지가 오른쪽에 위치할 경우, 이미지를 좌우 반전하여 표시합니다.
   # 페이스칩 인덱스는 왼쪽 위부터 0번이며, 그 다음이 1번인데 1번 이상일 경우,
   # 오른쪽에 표시됩니다.
-  LIST["반전"] = true
+  LIST[:FACE_MIRROR] = true
   
   # 윈도우 스킨
-  LIST["윈도우스킨"] = "Window"
-  LIST["이름윈도우스킨"] = "Window"
+  LIST[:WINDOWSKIN] = "Window"
+  LIST[:NAME_WINDOWSKIN] = "Window"
   
   # 대화창의 배경 이미지를 pictures 폴더에 찾아 설정합니다. 예:) "msgback"
-  LIST["바탕화면"] = nil
+  LIST[:BACKGROUND_IMAGE] = nil
   
   # 얼굴 이미지를 어디에 위치시킬 지 기준 좌표를 정합니다.
-  LIST["왼쪽"] = 190
-  LIST["오른쪽"] = 534
+  LIST[:FACE_LEFTX] = 190
+  LIST[:FACE_RIGHTX] = 534
   
   # 대화창의 전체 투명도를 설정합니다.
   # 투명도의 경우, 배경 창의 투명도, 텍스트의 투명도가 따로 나뉘지만
   # 여기에서는 그 둘을 포함한 전체 투명도를 조절합니다.
-  LIST["투명도"] = 200
-  LIST["배경투명도"] = 255
+  LIST[:OPACITY] = 200
+  LIST[:BACK_OPACITY] = 255
   
   # 이름 윈도우의 X좌표는 얼굴 이미지가 왼쪽에 표시되면 왼쪽에 표시되고,
   # 오른쪽에 표시되면 오른쪽에 표시합니다.
-  # 스크립트 커맨드에서 RS::LIST["이름윈도우X1"] = 10 등으로 수정이 가능합니다.
-  LIST["이름윈도우X1"] = 10
-  LIST["이름윈도우X2"] = 210
+  # 스크립트 커맨드에서 RS::LIST[:NAMEWINDOW_X1] = 10 등으로 수정이 가능합니다.
+  LIST[:NAMEWINDOW_X1] = 10
+  LIST[:NAMEWINDOW_X2] = 210
   
   # 이름 윈도우 Y. 
   # 메시지 윈도우 Y좌표 값을 기준으로 위(+) 또는 아래(-)로 내릴 수 있습니다.
   # 위는 메시지 박스의 위쪽을 말하며, 아래는 메시지 박스와 겹쳐지는 방향을 말합니다.
-  LIST["이름윈도우Y"] = 0
+  LIST[:NAMEWINDOW_Y] = 0
   
   # 얼굴 이미지가 설정되어있을 때 텍스트 시작 좌표입니다.
-  LIST["텍스트시작X"] = 202
+  LIST[:FACE_NEWLINEX] = 202
   
   # 텍스트 속도 조절 텍스트 코드를 사용하실 때의 최소, 최대 속도입니다.
   # 텍스트 속도가 1이라면 일반 글자 묘화 처리 후, 1프레임을 대기합니다.
   # 대기는 메시지 처리를 중단하고 나머지 업데이트 함수를 실행합니다.
-  LIST["텍스트속도-최소"] = 0
-  LIST["텍스트속도-최대"] = 8
+  LIST[:MIN_TEXTSPEED] = 0
+  LIST[:MAX_TEXTSPEED] = 8
   
   # 기본 텍스트 속도를 조절합니다. 
   # 0으로 설정하면 대기 없이 바로 표시됩니다.
-  LIST["기본 텍스트 속도"] = 1
+  LIST[:DEFAULT_TEXTSPEED] = 1
   
   # 말풍선을 화면 영역 안으로 자동 조절하여 표시합니다.
   # 이 옵션을 설정하면 캐릭터가 가장 자리에 있을 경우, 
   # 말풍선의 중앙 지점(anchor)이 옮겨질 수 있습니다.
-  LIST["화면영역내표시"] = true
+  LIST[:INSIDE_SCREEN] = true
   
   # 크기 및 오프셋 설정
-  LIST["가로"] = (Graphics.width / 2 + Graphics.width / 3).floor
-  LIST["오프셋X"] = 0
-  LIST["오프셋Y"] = 0
+  LIST[:WINDOW_WIDTH] = (Graphics.width / 2 + Graphics.width / 3).floor
+  LIST[:MESSAGE_OX] = 0
+  LIST[:MESSAGE_OY] = 0
   
   # 텍스트 사운드 설정
-  LIST["텍스트 사운드 사용"] = true
-  LIST["텍스트 사운드"] = ["Cursor1", "Cursor1"]
-  LIST["텍스트 사운드 볼륨"] = [70, 70]
-  LIST["텍스트 사운드 피치"] = [100, 90]
-  LIST["텍스트 사운드 주기"] = 3  
+  LIST[:USE_TEXTSOUND] = true
+  LIST[:TEXTSOUND_DB] = ["Cursor1", "Cursor1"]
+  LIST[:TEXTSOUND_VOL] = [70, 70]
+  LIST[:TEXTSOUND_PITCH] = [100, 90]
+  LIST[:TEXTSOUND_INTERVAL] = 3  
 
   # 정규 표현식 (잘 아시는 분들만 건드리십시오)
-  CODE["16진수"] = /#([a-zA-Z^\d]*)/i
-  CODE["색상추출"] = /^\p{hangul}+|c_[a-zA-z]+$/
-  CODE["명령어"] = /^[\$\.\|\^!><\{\}\\]|^[A-Z가-힣]+[!]*/i
-  CODE["이름색상코드"] = /\[(\p{hangul}+[\d]*|c_[\p{Latin}]+)\]/
-  CODE["웹색상"] = /([\p{Latin}\d]+)!/
-  CODE["추출"] = /^(\p{hangul}+)/
-  CODE["큰페이스칩"] = /^큰\_+/
-  CODE["효과음"] = /^\[(.+?)\]/i
-  CODE["처리!"] = /^(\p{hangul}+)!/
-  CODE["이름"] = /\e이름\<(.+?)\>/
-  CODE["말풍선"] = /\e말풍선\[(\d+|-\d+)\]/i
-  CODE["이름추출"] = /\[(.*)\]/
-  CODE["이름색상변경1"] = /\eC\[(.+)\]/
-  CODE["이름색상변경2"] = /\e색\[(.+)\]/
+  CODE[:HEX] = /#([a-zA-Z^\d]*)/i
+  CODE[:COLOR] = /^\p{hangul}+|c_[a-zA-z]+$/
+  CODE[:ESCAPE] = /^[\$\.\|\^!><\{\}\\]|^[A-Z가-힣]+[!]*/i
+  CODE[:NAME_COLOR] = /\[(\p{hangul}+[\d]*|c_[\p{Latin}]+)\]/
+  CODE[:WEB_COLOR] = /([\p{Latin}\d]+)!/
+  CODE[:HANGUL_CHAR] = /^(\p{hangul}+)/
+  CODE[:SCG] = /^큰\_+/
+  CODE[:SE] = /^\[(.+?)\]/i
+  CODE[:HANGUL_CHAR2] = /^(\p{hangul}+)!/
+  CODE[:NAME] = /\e이름\<(.+?)\>/
+  CODE[:BALLOON] = /\e말풍선\[(\d+|-\d+)\]/i
+  CODE[:NAME_VALUE] = /\[(.*)\]/
+  CODE[:NAME_COLOR_EX1] = /\eC\[(.+)\]/
+  CODE[:NAME_COLOR_EX2] = /\e색\[(.+)\]/
 
   extend self
   #--------------------------------------------------------------------------
@@ -357,7 +388,7 @@ module RS
   #--------------------------------------------------------------------------
   def import_color(string)
     begin
-      data = INI.read_string("색상목록",string,'색상테이블.ini')
+      data = INI.read_string("Colors",string,'Colors.ini')
       parser = RubyVM::InstructionSequence.compile(data)
       token = parser.to_a[13][2][0]
       case token
@@ -528,9 +559,9 @@ module RS::LoadFace
     @face_sprite.visible = true
     @face_sprite.bitmap = @face_bitmap
     @face_sprite.opacity = 255
-    @face_sprite.x = RS::LIST["X"] + RS::LIST[align ? "오른쪽" : "왼쪽"]
-    @face_sprite.mirror = RS::LIST["반전"] ? align : false
-    @face_sprite.y = RS::LIST["높이"] - @face_bitmap.height
+    @face_sprite.x = RS::LIST[:FACE_X] + RS::LIST[align ? :FACE_RIGHTX : :FACE_LEFTX]
+    @face_sprite.mirror = RS::LIST[:FACE_MIRROR] ? align : false
+    @face_sprite.y = RS::LIST[:FACE_HEIGHT] - @face_bitmap.height
   end
   #--------------------------------------------------------------------------
   # * 스프라이트 설정
@@ -538,9 +569,9 @@ module RS::LoadFace
   def set_sprite(align)
     @face_sprite.visible = true
     @face_sprite.bitmap = @face_bitmap
-    @face_sprite.x = RS::LIST["X"] + RS::LIST[align ? "오른쪽" : "왼쪽"]
-    @face_sprite.mirror = RS::LIST["반전"] ? align : false
-    @face_sprite.y = RS::LIST["높이"] - @face_bitmap.height
+    @face_sprite.x = RS::LIST[:FACE_X] + RS::LIST[align ? :FACE_RIGHTX : :FACE_LEFTX]
+    @face_sprite.mirror = RS::LIST[:FACE_MIRROR] ? align : false
+    @face_sprite.y = RS::LIST[:FACE_HEIGHT] - @face_bitmap.height
     
   end
   #--------------------------------------------------------------------------
@@ -554,7 +585,7 @@ module RS::LoadFace
   #--------------------------------------------------------------------------
   def bigface_valid?
     return false if $game_message.face_name == ""
-    return true if $game_message.face_name[RS::CODE["큰페이스칩"]] == "큰_"
+    return true if $game_message.face_name[RS::CODE[:SCG]] == "큰_"
     return false
   end
   #--------------------------------------------------------------------------
@@ -594,7 +625,7 @@ class RS::Face
     create_face_sprite
     init_params
     @message_window = message_window
-    @face_sprite.z = message_window.z + RS::LIST["Z"]
+    @face_sprite.z = message_window.z + RS::LIST[:Z]
   end
   #--------------------------------------------------------------------------
   # * 인스턴스 초기화
@@ -646,7 +677,7 @@ class RS::Face
   #--------------------------------------------------------------------------
   def draw_bigface(align)
     set_sprite(align)
-    @face_sprite.z = @message_window.z + RS::LIST["Z"]
+    @face_sprite.z = @message_window.z + RS::LIST[:Z]
   end
   #--------------------------------------------------------------------------
   # * 투명도 조절
@@ -708,7 +739,7 @@ module RS::Color
     # 추가로 정의된 색상을 추가합니다
     extend_color {|k,v| color_table[k] = v }
     # INI 파일을 생성합니다
-    color_table.to_ini("색상테이블.ini","색상목록")
+    color_table.to_ini("Colors.ini","Colors")
   end
   #--------------------------------------------------------------------------
   # * 색상을 추가합니다
@@ -916,7 +947,7 @@ class String
   # * 색상 코드 처리
   #--------------------------------------------------------------------------
   def c
-    Color.gm_color(self) if (self =~ RS::CODE["색상추출"])
+    Color.gm_color(self) if (self =~ RS::CODE[:COLOR])
   end
   #--------------------------------------------------------------------------
   # * 웹 색상 코드 처리
@@ -942,13 +973,13 @@ class Window_Base
   # * 문자 처리
   #--------------------------------------------------------------------------
   def obtain_escape_code(text)
-    text.slice!(RS::CODE["명령어"])
+    text.slice!(RS::CODE[:ESCAPE])
   end
   #--------------------------------------------------------------------------
   # * 색상 코드 처리
   #--------------------------------------------------------------------------
   def obtain_name_color(text)
-    text.slice!(RS::CODE["이름색상코드"])[$1]
+    text.slice!(RS::CODE[:NAME_COLOR])[$1]
   end
   #--------------------------------------------------------------------------
   # * 색상 변환 (MV Feature to v0.1.32)
@@ -967,7 +998,7 @@ class Window_Base
   # * 웹 색상 코드 처리
   #--------------------------------------------------------------------------
   def to_hex(text)
-    text.slice!(RS::CODE["웹색상"])[$1] rescue "#FFFFFF"
+    text.slice!(RS::CODE[:WEB_COLOR])[$1] rescue "#FFFFFF"
   end
   #--------------------------------------------------------------------------
   # * 명령 문자 처리
@@ -990,8 +1021,8 @@ class Window_Base
   #--------------------------------------------------------------------------
   def reset_font_settings
     change_color(normal_color)
-    contents.font.name = RS::LIST["폰트명"]
-    contents.font.size = RS::LIST["폰트크기"]
+    contents.font.name = RS::LIST[:FONT_NAME]
+    contents.font.size = RS::LIST[:FONT_SIZE]
     contents.font.bold = Font.default_bold
     contents.font.italic = Font.default_italic
     contents.font.outline = Font.default_outline
@@ -1081,15 +1112,15 @@ class Window_Message < Window_Base
     init_color_table
     @util = RS::Face.new(self)
     create_balloon_sprite
-    set_font(RS::LIST["폰트명"],RS::LIST["폰트크기"])
-    @windowskin_id = RS::LIST["윈도우스킨"].object_id
+    set_font(RS::LIST[:FONT_NAME],RS::LIST[:FONT_SIZE])
+    @windowskin_id = RS::LIST[:WINDOWSKIN].object_id
     $game_message.used_text_width_ex = false
   end
   #--------------------------------------------------------------------------
   # * 윈도우의 폭 (가로 길이)
   #--------------------------------------------------------------------------
   def window_width
-    RS::LIST["가로"]
+    RS::LIST[:WINDOW_WIDTH]
   end  
   #--------------------------------------------------------------------------
   # * 폰트 설정
@@ -1104,10 +1135,10 @@ class Window_Message < Window_Base
   def update_windowskin
     # 문자열의 오브젝트 ID 값이 변경할 때 마다 바뀝니다.
     # 이 점을 이용하여 정확히 한 번만 업데이트 합니다.
-    return if @windowskin_id == RS::LIST["윈도우스킨"].object_id
-    bitmap = Cache.system(RS::LIST["윈도우스킨"])
+    return if @windowskin_id == RS::LIST[:WINDOWSKIN].object_id
+    bitmap = Cache.system(RS::LIST[:WINDOWSKIN])
     self.windowskin = bitmap
-    @windowskin_id = RS::LIST["윈도우스킨"].object_id
+    @windowskin_id = RS::LIST[:WINDOWSKIN].object_id
   end
   #--------------------------------------------------------------------------
   # * 인스턴스 초기화
@@ -1213,7 +1244,7 @@ class Window_Message < Window_Base
     else
       @util.visible = true
     end
-    normal_set_page(pos,@util.align ? 0 : RS::LIST["텍스트시작X"],text)
+    normal_set_page(pos,@util.align ? 0 : RS::LIST[:FACE_NEWLINEX],text)
   end
   #--------------------------------------------------------------------------
   # * 일반 페이스칩 그리기
@@ -1238,7 +1269,7 @@ class Window_Message < Window_Base
   # * 효과음 추출
   #--------------------------------------------------------------------------
   def obtain_escape_sound(text)
-    text.slice!(RS::CODE["효과음"])[$1] rescue RS::LIST["효과음"]
+    text.slice!(RS::CODE[:SE])[$1] rescue RS::LIST[:DEFAULT_SE]
   end
   #--------------------------------------------------------------------------
   # * Preconvert Control Characters
@@ -1401,10 +1432,10 @@ class Window_Message < Window_Base
   #--------------------------------------------------------------------------
   def set_text_speed(text_speed)
     $game_message.message_speed = case text_speed
-    when (RS::LIST["텍스트속도-최소"]..RS::LIST["텍스트속도-최대"])
+    when (RS::LIST[:MIN_TEXTSPEED]..RS::LIST[:MAX_TEXTSPEED])
       text_speed
     else
-      RS::LIST["텍스트속도-최소"]
+      RS::LIST[:MIN_TEXTSPEED]
     end
   end
   #--------------------------------------------------------------------------
@@ -1416,7 +1447,7 @@ class Window_Message < Window_Base
 
     # 이름 윈도우 띄우기 텍스트 코드를 정규 표현식으로 찾아내 텍스트 코드를 없애고
     # 괄호 안에 있는 특정 문자열만 추출합니다.
-    f.gsub!(RS::CODE["이름"]) {
+    f.gsub!(RS::CODE[:NAME]) {
       name_text = $1.to_s
       # 콜론과 정렬 위치 문자가 포함되어있으면 해당 위치에 이름 윈도우를 띄웁니다.
       if (name_text =~ /(.*)(:)(.*)/i)
@@ -1430,7 +1461,7 @@ class Window_Message < Window_Base
       end
       ""
     }
-    f.gsub!(RS::CODE["말풍선"]) { $game_message.balloon = $1.to_i; "" }
+    f.gsub!(RS::CODE[:BALLOON]) { $game_message.balloon = $1.to_i; "" }
     f
   end
   #--------------------------------------------------------------------------
@@ -1444,7 +1475,7 @@ class Window_Message < Window_Base
   # * 이름 뽑아내기
   #--------------------------------------------------------------------------
   def obtain_name_text(text)
-    text.slice!(RS::CODE["이름추출"])[$1]
+    text.slice!(RS::CODE[:NAME_VALUE])[$1]
   end
   #--------------------------------------------------------------------------
   # * 이름 윈도우 띄우기
@@ -1460,8 +1491,8 @@ class Window_Message < Window_Base
   def create_all_windows
     namewindow_create_all_windows
     @name_window = RS::Window_Name.new
-    @name_window.x = self.x + RS::LIST["이름윈도우X1"]
-    @name_window.y = self.y - RS::LIST["이름윈도우Y"]
+    @name_window.x = self.x + RS::LIST[:NAMEWINDOW_X1]
+    @name_window.y = self.y - RS::LIST[:NAMEWINDOW_Y]
     @name_window.openness = 0
   end
   #--------------------------------------------------------------------------
@@ -1482,17 +1513,17 @@ class Window_Message < Window_Base
       return self.x + self.width / 2 - @name_window.width / 2
     else
       if @util.normal_face?
-        return self.x + 112 + RS::LIST["이름윈도우X1"]
+        return self.x + 112 + RS::LIST[:NAMEWINDOW_X1]
       else
         if @util.bigface_valid?
           if @util.bigface_right_alignment?
-            return self.x + RS::LIST["이름윈도우X1"]
+            return self.x + RS::LIST[:NAMEWINDOW_X1]
           else
-            return self.x + RS::LIST["이름윈도우X2"]
+            return self.x + RS::LIST[:NAMEWINDOW_X2]
           end
         end
       end
-      return self.x + RS::LIST["이름윈도우X1"]
+      return self.x + RS::LIST[:NAMEWINDOW_X1]
     end
   end
   #--------------------------------------------------------------------------
@@ -1508,7 +1539,7 @@ class Window_Message < Window_Base
       @name_window.y = 0
       self.y = @name_window.open? ? (@name_window.height) : 0
     else
-      @name_window.y = self.y - @name_window.height - RS::LIST["이름윈도우Y"]
+      @name_window.y = self.y - @name_window.height - RS::LIST[:NAMEWINDOW_Y]
     end
 
     @name_window.update
@@ -1529,8 +1560,8 @@ class Window_Message < Window_Base
   def update_placement
     position = $game_message.position 
     if $game_message.balloon == -2
-      self.x = (Graphics.width / 2) - self.width / 2 + RS::LIST["오프셋X"]
-      self.y = position * (Graphics.height - self.height) + RS::LIST["오프셋Y"]
+      self.x = (Graphics.width / 2) - self.width / 2 + RS::LIST[:MESSAGE_OX]
+      self.y = position * (Graphics.height - self.height) + RS::LIST[:MESSAGE_OY]
     end
     @gold_window.y = y > 0 ? 0 : Graphics.height - @gold_window.height
     if not @name_window.open?
@@ -1627,8 +1658,8 @@ class RS::Window_Name < Window_Base
   def update
     super
     update_back_sprite
-    self.opacity = (@background == 1) ? 0 : RS::LIST["투명도"]
-    self.back_opacity = RS::LIST["배경투명도"]
+    self.opacity = (@background == 1) ? 0 : RS::LIST[:OPACITY]
+    self.back_opacity = RS::LIST[:BACK_OPACITY]
   end
   #--------------------------------------------------------------------------
   # * 말풍선 영역 계산
@@ -1661,8 +1692,8 @@ class RS::Window_Name < Window_Base
     f.gsub!(/\e색\[(.+?)\]/) { "" }
     f.gsub!(/\e테두리색!\[(.+)\]/) { "" }
     f.gsub!(/\e#([\p{Latin}\d]+)!/) { "" }
-    f.gsub!(RS::CODE["이름"]) { "" }
-    f.gsub!(RS::CODE["말풍선"]) { "" }
+    f.gsub!(RS::CODE[:NAME]) { "" }
+    f.gsub!(RS::CODE[:BALLOON]) { "" }
     f.gsub!(/\e효과음!\[(.+?)\]/i) { "" }
     f.gsub!(/\e속도!\[\d+\]/) { "" }
     f.gsub!(/\e크기!\[\d+\]/) { "" }
@@ -1678,8 +1709,8 @@ class RS::Window_Name < Window_Base
   alias rs_extend_name_convert_escape_characters convert_escape_characters
   def convert_escape_characters(text)
     f = rs_extend_name_convert_escape_characters(text)
-    f.gsub!(RS::CODE["이름색상변경1"]) { change_color(text_color($1.to_i)) }
-    f.gsub!(RS::CODE["이름색상변경2"]) do
+    f.gsub!(RS::CODE[:NAME_COLOR_EX1]) { change_color(text_color($1.to_i)) }
+    f.gsub!(RS::CODE[:NAME_COLOR_EX2]) do
       color = Color.gm_color($1)
       change_color(color)
     end
@@ -1689,16 +1720,16 @@ class RS::Window_Name < Window_Base
   # * 리프레쉬
   #--------------------------------------------------------------------------
   def refresh
-    self.windowskin = Cache.system(RS::LIST["이름윈도우스킨"])
+    self.windowskin = Cache.system(RS::LIST[:NAME_WINDOWSKIN])
     contents.clear
     @background = $game_message.background
-    self.opacity = @background == 0 ? RS::LIST["투명도"] : 0
+    self.opacity = @background == 0 ? RS::LIST[:OPACITY] : 0
     update_back_sprite
     rect = text_size(@text)
     self.arrows_visible = false
     self.width = @_width || window_width
     text = convert_escape_characters(@text)
-    self.contents.font.size = RS::LIST["폰트크기"]
+    self.contents.font.size = RS::LIST[:FONT_SIZE]
     draw_text(0,0,contents_width,calc_line_height(text),text.to_s,1)
   end
   #--------------------------------------------------------------------------
@@ -1708,7 +1739,7 @@ class RS::Window_Name < Window_Base
     @text = text
     @_width = window_width
     get_balloon_text_rect(text.dup) if $game_message.background != 1
-    set_font(RS::LIST["폰트명"],RS::LIST["폰트크기"])    
+    set_font(RS::LIST[:FONT_NAME],RS::LIST[:FONT_SIZE])    
     open
   end
   #--------------------------------------------------------------------------
@@ -1760,7 +1791,7 @@ class Game_Message
   alias multi_line_initialize initialize
   def initialize
     multi_line_initialize
-    @line = RS::LIST["라인"]
+    @line = RS::LIST[:LINE]
   end
   #--------------------------------------------------------------------------
   # * 클리어
@@ -1768,10 +1799,10 @@ class Game_Message
   alias msg_speed_clear clear
   def clear
     msg_speed_clear
-    @message_speed = RS::LIST["기본 텍스트 속도"]
+    @message_speed = RS::LIST[:DEFAULT_TEXTSPEED]
     @balloon = -2
     @ox = 0
-    @word_wrap_enabled = RS::LIST["자동개행"]
+    @word_wrap_enabled = RS::LIST[:AUTO_LINEBREAK]
     @used_text_width_ex = false
   end
 end
@@ -1872,7 +1903,7 @@ class Window_Message < Window_Base
   #--------------------------------------------------------------------------
   def process_all_text
     open_and_wait
-    set_font(RS::LIST["폰트명"],RS::LIST["폰트크기"])
+    set_font(RS::LIST[:FONT_NAME],RS::LIST[:FONT_SIZE])
     get_balloon_text_rect($game_message.all_text.dup)
     text = convert_escape_characters($game_message.all_text)
     pos = {}
@@ -1882,7 +1913,7 @@ class Window_Message < Window_Base
     # 다만 메시지 영역을 재설정 해줄 필요성이 있다.
     resize_message_system
     create_contents    
-    set_font(RS::LIST["폰트명"],RS::LIST["폰트크기"])
+    set_font(RS::LIST[:FONT_NAME],RS::LIST[:FONT_SIZE])
     new_page(text, pos)
     process_character(text.slice!(0, 1), text, pos) until text.empty?
   end
@@ -1964,8 +1995,8 @@ class Window_Message < Window_Base
     f.gsub!(/\e색\[(.+?)\]/) { "" }
     f.gsub!(/\e테두리색!\[(.+)\]/) { "" }
     f.gsub!(/\e#([\p{Latin}\d]+)!/) { "" }
-    f.gsub!(RS::CODE["이름"]) { "" }
-    f.gsub!(RS::CODE["말풍선"]) { "" }
+    f.gsub!(RS::CODE[:NAME]) { "" }
+    f.gsub!(RS::CODE[:BALLOON]) { "" }
     f.gsub!(/\e효과음!\[(.+?)\]/i) { "" }
     f.gsub!(/\e속도!\[\d+\]/) { "" }
     f.gsub!(/\e크기!\[\d+\]/) { "" }
@@ -1979,7 +2010,7 @@ class Window_Message < Window_Base
   # * 메시지 윈도우의 X좌표를 구합니다
   #--------------------------------------------------------------------------
   def get_x(n)
-    return n unless RS::LIST["화면영역내표시"]
+    return n unless RS::LIST[:INSIDE_SCREEN]
     case
     when n < 0 then return 0
     when n > Graphics.width - @_width
@@ -1992,7 +2023,7 @@ class Window_Message < Window_Base
   # * 메시지 윈도우의 Y좌표를 구합니다
   #--------------------------------------------------------------------------
   def get_y(n)
-    return n unless RS::LIST["화면영역내표시"]
+    return n unless RS::LIST[:INSIDE_SCREEN]
     case
     when n < 0 then return 0 + @name_window.height - @name_window.x
     when n > Graphics.height - @_height + @_height
@@ -2025,7 +2056,7 @@ class Window_Message < Window_Base
     
     dx = mx - @_width / 2
     dy = my - @_height - tile_height
-    ny = self.y - @name_window.height - RS::LIST["이름윈도우Y"]
+    ny = self.y - @name_window.height - RS::LIST[:NAMEWINDOW_Y]
 
     # 화면 좌측
     if (mx - @_width / 2) < 0
@@ -2044,7 +2075,7 @@ class Window_Message < Window_Base
       dy = my + tile_height / 2
       scale_y = -1
       ty = (@_height * scale_y) + @_height
-      ny = (self.y + @_height) + RS::LIST["이름윈도우Y"]
+      ny = (self.y + @_height) + RS::LIST[:NAMEWINDOW_Y]
     end
 
     # 화면 하단
@@ -2054,8 +2085,8 @@ class Window_Message < Window_Base
     end
 
     # 말풍선 위치 및 크기 설정
-    self.x = dx + RS::LIST["오프셋X"]
-    self.y = dy + RS::LIST["오프셋Y"]
+    self.x = dx + RS::LIST[:MESSAGE_OX]
+    self.y = dy + RS::LIST[:MESSAGE_OY]
     self.width = @_width
     self.height = @_height
 
@@ -2069,15 +2100,15 @@ class Window_Message < Window_Base
     @back_sprite.update    
 
     # pause 커서의 좌표
-    @b_cursor.x = dx + RS::LIST["오프셋X"] + tx
-    @b_cursor.y = dy + RS::LIST["오프셋Y"] + ty
+    @b_cursor.x = dx + RS::LIST[:MESSAGE_OX] + tx
+    @b_cursor.y = dy + RS::LIST[:MESSAGE_OY] + ty
     @b_cursor.mirror = (scale_y == -1) ? true : false
 
     # 이름 윈도우 좌표 수정
     @name_window.y = ny
 
     # 투명도 설정
-    self.opacity = balloon_sprite? ? 0 : RS::LIST["투명도"]
+    self.opacity = balloon_sprite? ? 0 : RS::LIST[:OPACITY]
 
     @balloon_pause = false
     self.arrows_visible = false
@@ -2129,13 +2160,13 @@ class Window_Message < Window_Base
     @position = $game_message.position
 
     # 대화창의 X좌표
-    x = (Graphics.width / 2) - (window_width / 2) + RS::LIST["오프셋X"]
+    x = (Graphics.width / 2) - (window_width / 2) + RS::LIST[:MESSAGE_OX]
     
     # 대화창의 Y좌표
-    y = @position * (Graphics.height - window_height) / 2 + RS::LIST["오프셋Y"]
+    y = @position * (Graphics.height - window_height) / 2 + RS::LIST[:MESSAGE_OY]
 
     # 위치 및 크기 설정
-    self.move(x, y, window_width, fitting_height($game_message.line || RS::LIST["라인"]) )
+    self.move(x, y, window_width, fitting_height($game_message.line || RS::LIST[:LINE]) )
 
     # Dim
     create_back_bitmap
@@ -2143,7 +2174,7 @@ class Window_Message < Window_Base
     @back_sprite.x = 0
     @back_sprite.y = y
     @back_sprite.src_rect.width = window_width
-    @back_sprite.src_rect.height = fitting_height($game_message.line || RS::LIST["라인"])
+    @back_sprite.src_rect.height = fitting_height($game_message.line || RS::LIST[:LINE])
     @back_sprite.opacity = openness
     @back_sprite.update        
 
@@ -2173,8 +2204,8 @@ class Window_Message < Window_Base
   def update_background
     update_balloon_sprite
     @background = $game_message.background
-    self.opacity = @background == 0 ? RS::LIST["투명도"] : 0
-    self.back_opacity = RS::LIST["배경투명도"]
+    self.opacity = @background == 0 ? RS::LIST[:OPACITY] : 0
+    self.back_opacity = RS::LIST[:BACK_OPACITY]
   end
 end
 
@@ -2189,13 +2220,13 @@ class Game_Interpreter
     meta = RS::EventComment.get(event_id, index - 1)
     return if meta.nil?
     if meta["대화창 투명도"]
-      RS::LIST["투명도"] = meta["대화창 투명도"].to_i
+      RS::LIST[:OPACITY] = meta["대화창 투명도"].to_i
     end
     if meta["대화창 윈도우스킨"]
-      RS::LIST["윈도우스킨"] = meta["대화창 윈도우스킨"].strip
+      RS::LIST[:WINDOWSKIN] = meta["대화창 윈도우스킨"].strip
     end
     if meta["이름 윈도우스킨"]
-      RS::LIST["이름윈도우스킨"] = meta["이름 윈도우스킨"].strip
+      RS::LIST[:NAME_WINDOWSKIN] = meta["이름 윈도우스킨"].strip
     end    
   end
   #--------------------------------------------------------------------------
@@ -2315,8 +2346,8 @@ class Window_ChoiceList < Window_Command
   # * 배경 업데이트
   #--------------------------------------------------------------------------  
   def update_background
-    self.opacity = (@background == 1) ? 0 : RS::LIST["투명도"]
-    self.back_opacity = RS::LIST["배경투명도"]      
+    self.opacity = (@background == 1) ? 0 : RS::LIST[:OPACITY]
+    self.back_opacity = RS::LIST[:BACK_OPACITY]      
   end
   #--------------------------------------------------------------------------
   # * update_normal_placement
@@ -2380,7 +2411,7 @@ class Window_Message
   def initialize
     xxxheight_initialize
     $game_temp.set_max_line = method(:set_height)
-    set_height(RS::LIST["라인"])
+    set_height(RS::LIST[:LINE])
   end
   #--------------------------------------------------------------------------
   # * 메시지 윈도우의 높이를 변경합니다
@@ -2390,22 +2421,22 @@ class Window_Message
     $game_message.line = n
     self.height = fitting_height(n)
     create_contents
-    set_font(RS::LIST["폰트명"],RS::LIST["폰트크기"])
+    set_font(RS::LIST[:FONT_NAME],RS::LIST[:FONT_SIZE])
     update_placement
   end
   #--------------------------------------------------------------------------
   # * 윈도우의 배경 화면을 사용자 정의 그래픽으로 설정합니다
   #--------------------------------------------------------------------------
-  if RS::LIST["바탕화면"]
+  if RS::LIST[:BACKGROUND_IMAGE]
     def create_back_bitmap
-      @back_bitmap = Cache.picture(RS::LIST["바탕화면"])
+      @back_bitmap = Cache.picture(RS::LIST[:BACKGROUND_IMAGE])
     end
   end
   #--------------------------------------------------------------------------
   # * 보여질 라인의 갯수
   #--------------------------------------------------------------------------
   def visible_line_number
-    $game_message.line || RS::LIST["라인"]
+    $game_message.line || RS::LIST[:LINE]
   end
   #--------------------------------------------------------------------------
   # * Character Processing
@@ -2430,11 +2461,11 @@ class Window_Message
   #--------------------------------------------------------------------------
   def request_text_sound
     return false if @is_used_text_width_ex
-    return false unless RS::LIST["텍스트 사운드 사용"]
-    id = Graphics.frame_count % RS::LIST["텍스트 사운드"].size
-    name = RS::LIST["텍스트 사운드"][id]
-    volume = RS::LIST["텍스트 사운드 볼륨"][id]
-    pitch = RS::LIST["텍스트 사운드 피치"][id]
+    return false unless RS::LIST[:USE_TEXTSOUND]
+    id = Graphics.frame_count % RS::LIST[:TEXTSOUND_DB].size
+    name = RS::LIST[:TEXTSOUND_DB][id]
+    volume = RS::LIST[:TEXTSOUND_VOL][id]
+    pitch = RS::LIST[:TEXTSOUND_PITCH][id]
     path = "Audio/SE/" + name
     Audio.se_play(path, volume, pitch)
   end  
@@ -2457,7 +2488,7 @@ class Window_Message
     process_word_wrap_character(c, pos)
     
     unless @line_show_fast or @show_fast
-      request_text_sound if (Graphics.frame_count % RS::LIST["텍스트 사운드 주기"]) == 0
+      request_text_sound if (Graphics.frame_count % RS::LIST[:TEXTSOUND_INTERVAL]) == 0
       wait($game_message.message_speed || 0) if valid 
     end
     
@@ -2734,5 +2765,929 @@ class Window_ScrollText < Window_Base
     process_align(@text, pos)
     draw_text_ex(4 + pos[:x], pos[:y], @text)
     self.oy = @scroll_pos = -height
+  end
+end
+
+#==============================================================================
+# ** RS_PauseIconPosition
+#==============================================================================
+# Name        : RS_PauseIconPosition
+# Author      : biud436
+# Version     : 1.0.0
+#==============================================================================
+# ** Version Log
+#==============================================================================
+# 2018.06.26 (v1.0.0) - First Release.
+#==============================================================================
+$imported = {} if $imported.nil?
+$imported["RS_PauseIconPosition"] = true
+
+class Window_Message
+  alias rs_window_initialize initialize
+  alias origin_pause= pause=
+  def initialize
+    rs_window_initialize
+    @animation_count = 0
+    @pub_pause = false
+    @pause_ox, @pause_oy = "self.width / 2", "self.height"
+    self.origin_pause = false
+    refresh_pause_sign
+  end
+  alias rs_window_update update
+  def update
+    rs_window_update
+    @animation_count += 1
+    update_pause_sign
+  end
+  def move_pause_sign(x, y)
+    p = 16
+    ox = self.width / 2
+    oy = self.height
+    x = x || 0
+    y = y || 0
+    @pause_ox = x.to_s + "+ ox - p/2"
+    @pause_oy = y.to_s + "+ oy - p"
+  end
+  def refresh_pause_sign
+    sx = 96
+    sy = 64
+    p = 16
+    ox = self.width / 2
+    oy = self.height
+    @window_pause_sign_sprite = Sprite.new
+    sprite = @window_pause_sign_sprite
+    sprite.bitmap = self.windowskin
+    sprite.x = self.x + eval(@pause_ox)
+    sprite.y = self.y + eval(@pause_oy)
+    sprite.z = self.z + 1
+    sprite.src_rect.set(sx, sy, p, p)
+    sprite.opacity = 0
+  end
+  def update_pause_sign
+    sprite = @window_pause_sign_sprite
+    x = (@animation_count / 16).floor % 2
+    y = (@animation_count / 16 / 2).floor % 2
+    sx = 96
+    sy = 64
+    p = 16
+    sprite.x = self.x + eval(@pause_ox)
+    sprite.y = self.y + eval(@pause_oy)
+    if !@pub_pause
+      sprite.opacity = 0
+    elsif sprite.opacity < 255
+      sprite.opacity = [sprite.opacity + 25, 255].min
+    end
+    sprite.src_rect.set(sx+x*p, sy+y*p, p, p)
+    sprite.visible = self.open?
+  end
+  def pause=(val)
+    @pub_pause = val
+  end
+  def pause
+    @pub_pause
+  end
+  alias rs_window_message_process_normal_character process_normal_character
+  if defined?(RS::BALLOON)
+    def process_normal_character(c, pos, text)
+      rs_window_message_process_normal_character(c, pos, text)
+      mx = standard_padding + pos[:x] + 8
+      my = standard_padding + pos[:y] + pos[:height]
+      move_pause_sign(mx, my)
+    end
+  else
+    def process_normal_character(c, pos)
+      rs_window_message_process_normal_character(c, pos)
+      mx = standard_padding + pos[:x] + 8
+      my = standard_padding + pos[:y] + pos[:height]
+      move_pause_sign(mx, my)
+    end
+  end
+end
+
+#==============================================================================
+# ** Message Effects (RPG Maker VX Ace)
+#==============================================================================
+# Name       : Message Effects
+# Author     : biud436
+#==============================================================================
+# ** Terms of Use
+#==============================================================================
+# Free for commercial and non-commercial use
+#==============================================================================
+$imported = {} if $imported.nil?
+$imported["RS_MessageEffects"] = true
+
+module RS
+  
+  if !$imported["RS_HangulMessageSystem"]
+    LIST = {}
+    CODE = {}
+  end
+  
+  LIST[:TEXT_EFFECT] = :Shock
+  CODE[:TEXT_EFFECT] = /^\<([a-zA-Z]+)\>/
+end
+
+module RS::Messages
+  Effects = {}
+end
+
+#==============================================================================
+# ** TextEffect
+#============================================================================== 
+class TextEffect < Sprite
+  
+  PI_2 = Math::PI * 2
+  DEG_TO_RAD = Math::PI / 180.0
+  RAD_TO_DEG = 180.0 / Math::PI
+  
+  #--------------------------------------------------------------------------
+  # * 생성자
+  #--------------------------------------------------------------------------  
+  def initialize(viewport)
+    super(viewport)
+    @started = false
+    init_members
+  end  
+  #--------------------------------------------------------------------------
+  # * 멤버 초기화
+  #--------------------------------------------------------------------------   
+  def init_members
+    @started = false
+    @power = 0
+  end
+  #--------------------------------------------------------------------------
+  # * 업데이트
+  #--------------------------------------------------------------------------     
+  def update
+    super
+    update_effects
+  end
+  #--------------------------------------------------------------------------
+  # * 이펙트 업데이트
+  #--------------------------------------------------------------------------   
+  def update_effects
+  end
+  #--------------------------------------------------------------------------
+  # * 종료
+  #--------------------------------------------------------------------------   
+  def flush
+    self.x = @origin[:x]
+    self.y = @origin[:y]    
+    self.angle = @origin[:angle]
+    self.ox = @origin[:ox]
+    self.oy = @origin[:oy]
+    self.zoom_x = @origin[:zoom_x]
+    self.zoom_y = @origin[:zoom_y]
+    self.wave_amp = @origin[:wave_amp]
+    self.wave_length = @origin[:wave_length]
+    self.wave_speed = @origin[:wave_speed]
+    self.wave_phase = @origin[:wave_phase]
+    self.opacity = @origin[:opacity]
+    self.color = @origin[:color]
+    self.tone = @origin[:tone]
+    
+    # clear
+    @origin = {}
+    
+    @started = false
+    
+  end
+  #--------------------------------------------------------------------------
+  # * 시작
+  #--------------------------------------------------------------------------   
+  def start(index)
+    @power = 1
+    @index = index
+    @started = true
+    @random = (rand * 60).floor
+    @origin = {
+      :x => self.x,
+      :y => self.y,
+      :angle => self.angle,
+      :ox => self.ox,
+      :oy => self.oy,
+      :zoom_x => self.zoom_x,
+      :zoom_y => self.zoom_y,
+      :wave_amp => self.wave_amp,
+      :wave_length => self.wave_length,
+      :wave_speed => self.wave_speed, 
+      :wave_phase => self.wave_phase,   
+      :opacity => self.opacity,
+      :color => self.color,
+      :tone => self.tone,
+    }    
+  end
+end
+
+#==============================================================================
+# ** PingPong
+#============================================================================== 
+class PingPong < TextEffect
+  def update_effects
+    return if !@started
+    if @power <= 60
+      self.y = @origin[:y] + (PI_2 / @power) * 4.0
+      @power += 1
+    else
+      flush
+    end
+  end
+end
+
+RS::Messages::Effects[:PingPong] = PingPong
+
+#==============================================================================
+# ** Slide
+#============================================================================== 
+class Slide < TextEffect
+  def update_effects
+    return if !@started
+    if @power <= 60
+      self.x = @origin[:x] + (PI_2 / @power) * (@origin[:x] % 4) * 4
+      self.opacity = 4 * @power
+      @power += 1      
+    else
+      flush      
+    end
+  end
+end
+
+RS::Messages::Effects[:Slide] = Slide
+
+#==============================================================================
+# ** HighRotation
+#==============================================================================
+class HighRotation < TextEffect
+  def update_effects
+    return if !@started
+    if @power <= @random
+      dist = @random - @power
+      tm = Time.now.to_i
+      r = DEG_TO_RAD * dist * (@random % 2 == 0 ? -tm : tm)
+      c = Math.cos(r)
+      s = Math.sin(r)
+      tx = @origin[:x] - dist
+      ty = @origin[:y] - dist
+      self.x = tx * c - ty * s
+      self.y = tx * s + ty * c
+      @power += 1 
+    else
+      flush
+    end
+  end
+end
+
+RS::Messages::Effects[:HighRotation] = HighRotation
+
+#==============================================================================
+# ** NormalRotation
+#==============================================================================
+class NormalRotation < TextEffect
+  def update_effects
+    return if !@started
+    if @power <= @random
+      dist = @random - @power
+      tm = Time.now.to_i
+      r = DEG_TO_RAD * dist * (@origin[:x] % 3 == 0 ? -1 : 1)
+      c = Math.cos(r)
+      s = Math.sin(r)
+      tx = @origin[:x] - dist
+      ty = @origin[:y] - dist
+      self.x = tx * c - ty * s
+      self.y = tx * s + ty * c
+      @power += 1 
+    else
+      flush
+    end
+  end
+end
+
+RS::Messages::Effects[:NormalRotation] = NormalRotation
+
+#==============================================================================
+# ** RandomRotation
+#==============================================================================
+class RandomRotation < TextEffect
+  def update_effects
+    return if !@started
+    if @power <= @random
+      dist = @random - @power
+      tm = Time.now.to_i
+      r = DEG_TO_RAD * dist * (@random % 2 == 0 ? -1 : 1)
+      c = Math.cos(r)
+      s = Math.sin(r)
+      tx = @origin[:x] - dist
+      ty = @origin[:y] - dist
+      self.x = tx * c - ty * s
+      self.y = tx * s + ty * c
+      @power += 1 
+    else
+      flush
+    end
+  end
+end
+
+RS::Messages::Effects[:RandomRotation] = RandomRotation
+
+#==============================================================================
+# ** Shock
+#==============================================================================
+class Shock < TextEffect
+  def update_effects
+    return if !@started
+    if @power <= 360 # 6초 동안 흔들립니다
+      self.ox = -3 * rand
+      self.oy = -3 * rand
+      @power += 1 # 영원히 흔들리게 하고 싶다면 이 라인을 삭제
+    else
+      flush
+    end
+  end
+end
+
+RS::Messages::Effects[:Shock] = Shock
+
+#==============================================================================
+# ** ZoomOut
+#==============================================================================
+class ZoomOut < TextEffect
+  def update_effects
+    return if !@started
+    self.zoom_x = (200 - @power) / 100.0
+    self.zoom_y = (200 - @power) / 100.0
+    if self.zoom_x <= 1.0
+      flush
+    end    
+    @power += 10
+  end
+  def start(index)
+    super(index)
+    self.zoom_x = 1.5
+    self.zoom_y = 1.5
+  end
+end
+
+RS::Messages::Effects[:ZoomOut] = ZoomOut
+
+#==============================================================================
+# ** Marquee
+#==============================================================================
+class Marquee < TextEffect
+  def flush
+    super
+    @message_window = nil
+  end
+  def update_effects
+    return if !@started
+    self.ox -= 4
+    if self.ox < 0
+      flush
+    end
+  end
+  def start(index, message_window)
+    super(index)
+    @message_window = message_window
+    self.ox += message_window.width
+  end
+end
+
+RS::Messages::Effects[:Marquee] = Marquee
+
+#==============================================================================
+# ** Wave (빠른 흔들기)
+#==============================================================================
+class Wave < TextEffect
+  def update_effects
+    return if !@started
+    self.wave_speed = 60 * [@origin[:x] % 5, 1].max
+    self.wave_phase = RAD_TO_DEG * @power
+    if @power >= 60
+      flush
+    end
+    @power += 1
+  end
+  def start(index)
+    super(index)
+    self.wave_amp = self.height / 3
+  end
+end
+
+RS::Messages::Effects[:Wave] = Wave
+
+#==============================================================================
+# ** Spread
+#==============================================================================
+class Spread < TextEffect
+  def update_effects
+    return if !@started
+    return if !(Time.now.to_i - @lazy >= 2)
+    case @index
+    when 3
+      self.x = @origin[:x] - @power
+    when 1
+      self.x = @origin[:x] + @power
+    when 0
+      self.y = @origin[:y] - @power
+    when 2
+      self.y = @origin[:y] + @power
+    end
+    if @power >= 60 * 10 # 잠시 후 텍스트가 표시됨.
+      flush
+    end
+    @power += 4
+  end
+  def start(index)
+    super(index)
+    @lazy = Time.now.to_i
+    @index = index % 4
+  end
+end
+
+RS::Messages::Effects[:Spread] = Spread
+
+if $imported["RS_Input"]
+#==============================================================================
+# ** MouseTracking
+#==============================================================================
+  class MouseTracking < TextEffect
+    def distance(x1,y1,x2,y2)
+      Math.sqrt(((x2 - x1) ** 2) + ((y2 - y1) ** 2))
+    end
+    def update_effects
+      return if !@started      
+            
+      move_speed = @dist / 30.0
+      
+      x1 = (@origin[:x] - self.x)
+      x_dist = if x1 < 0
+        move_speed
+      elsif x1 > 0
+        -move_speed
+      else
+        0
+      end
+      
+      y1 = (@origin[:y] - self.y)
+      y_dist = if y1 < 0
+        move_speed
+      elsif y1 > 0
+        -move_speed
+      else
+        0
+      end
+              
+      tx = self.x - x_dist
+      ty = self.y - y_dist
+      
+      self.x = tx
+      self.y = ty
+      
+      dist = distance(@origin[:x], @origin[:y], self.x, self.y).round(1)
+      if dist < 16
+        flush
+      end
+      
+    end
+    def start(index)
+      super(index)
+      self.x = TouchInput.x
+      self.y = TouchInput.y
+      @dist = distance(@origin[:x], @origin[:y], self.x, self.y).floor
+    end
+  end
+  
+  RS::Messages::Effects[:MouseTracking] = MouseTracking
+
+#==============================================================================
+# ** MousePointer
+#==============================================================================  
+  class MousePointer < TextEffect
+    def distance(x1,y1,x2,y2)
+      Math.sqrt(((x2 - x1) ** 2) + ((y2 - y1) ** 2))
+    end
+    def update_effects
+      return if !@started     
+      return if (Time.now.to_i - @lazy) < 1
+            
+      move_speed = @dist / 30.0
+      
+      x1 = (TouchInput.x - self.x)
+      x_dist = if x1 < 0
+        move_speed
+      elsif x1 > 0
+        -move_speed
+      else
+        0
+      end
+      
+      y1 = (TouchInput.y - self.y)
+      y_dist = if y1 < 0
+        move_speed
+      elsif y1 > 0
+        -move_speed
+      else
+        0
+      end
+              
+      tx = self.x - x_dist
+      ty = self.y - y_dist
+      
+      self.x = tx
+      self.y = ty
+      
+      dist = distance(TouchInput.x, TouchInput.y, self.x, self.y).round(1)
+      if dist < 16
+        flush
+      end
+      
+    end
+    def start(index)
+      super(index)
+      @lazy = Time.now.to_i
+      @dist = distance(TouchInput.x, TouchInput.y, self.x, self.y).floor
+    end
+  end
+  
+  RS::Messages::Effects[:MousePointer] = MousePointer  
+  
+#==============================================================================
+# ** MouseOver
+#==============================================================================    
+  
+  class MouseOver < TextEffect
+    def distance(x1,y1,x2,y2)
+      Math.sqrt(((x2 - x1) ** 2) + ((y2 - y1) ** 2))
+    end
+    def update_effects
+      return if !@started     
+      
+      dist = distance(TouchInput.x, TouchInput.y, self.x, self.y).round(1)
+      if dist < self.width
+        self.oy = PI_2 * Math.sin(Graphics.frame_count)
+        self.tone.set(255, 0, 0, 0)
+      else
+        self.oy = 0
+        self.tone.set(0, 0, 0, 0)
+      end
+      
+    end
+    def start(index)
+      super(index)
+      @lazy = Time.now.to_i
+      @dist = distance(TouchInput.x, TouchInput.y, self.x, self.y).floor
+    end
+  end
+
+  RS::Messages::Effects[:MouseOver] = MouseOver    
+
+end
+
+#==============================================================================
+# ** Colorize
+#============================================================================== 
+class Colorize < TextEffect
+  def update_effects
+    return if !@started 
+    
+    proc = ->(rate){
+      self.ox = rate * Math.sin(Graphics.frame_count) * 0.5
+      self.oy = rate * Math.cos(Graphics.frame_count) * 0.5
+    }
+    
+    if Graphics.frame_count - @lazy >= 60
+      self.tone.set(
+        (self.tone.red + 16 * @index) % 255, 
+        ((self.tone.red - self.tone.green) * @index) % 255,
+        (self.tone.blue + 8 * @index) % 255, 
+        0)
+      @lazy = Graphics.frame_count
+    end
+    
+    proc.call(@index + 1)
+    
+  end
+  def start(index)
+    super(index)
+    @index = (index % 3) + 1
+    @lazy = Graphics.frame_count
+  end
+end
+
+RS::Messages::Effects[:Colorize] = Colorize
+
+#==============================================================================
+# ** OpacityWave
+#============================================================================== 
+class OpacityWave < TextEffect
+  def update_effects
+    return if !@started 
+    
+    proc = ->(rate){
+      self.ox = rate * Math.sin(Graphics.frame_count) * 0.25
+      self.oy = rate * Math.cos(Graphics.frame_count) * 0.25
+    }
+    
+    if Graphics.frame_count - @lazy >= 30
+      self.opacity = (self.opacity + 48 * @index) % 255
+      @lazy = Graphics.frame_count
+    end
+    
+    proc.call(@index + 1)
+    
+  end
+  def start(index)
+    super(index)
+    @index = (index % 3) + 1
+    @lazy = Graphics.frame_count
+  end
+end
+
+RS::Messages::Effects[:OpacityWave] = OpacityWave
+
+#==============================================================================
+# ** TongTong
+#============================================================================== 
+class TongTong < TextEffect
+  def update_effects
+    return if !@started 
+    
+    if Graphics.frame_count - @lazy >= 2
+      self.y = @origin[:y] + (PI_2 / @power) * 4.0
+      @lazy = Graphics.frame_count
+      @power = [(@power + 1) % 60, 1].max
+    end
+    
+  end
+  def start(index)
+    super(index)
+    @lazy = Graphics.frame_count
+  end
+end
+
+RS::Messages::Effects[:TongTong] = TongTong
+
+#==============================================================================
+# ** Spoiler
+#==============================================================================    
+  
+if $imported["RS_Input"]
+  
+  class Spoiler < TextEffect
+    
+    @@spoiler = nil
+    
+    def self.create_spoiler_bitmap(bitmap)
+      return @@spoiler if @@spoiler
+      @@spoiler = Bitmap.new(bitmap.width, bitmap.height)
+      @@spoiler.font = bitmap.font
+                  
+      char = '*'
+      size = @@spoiler.text_size(char)      
+      
+      @@spoiler.fill_rect(0, 0, bitmap.width, bitmap.height, Color.new(0, 0, 0, 200))
+      @@spoiler.draw_text(0, 0, size.width, size.height, char, 0)
+      
+    end  
+    
+    def self.dispose_spoiler_bitmap
+      return if not @@spoiler
+      @@spoiler.dispose if @@spoiler.is_a?(Bitmap)
+      @@spoiler = nil
+    end
+    
+    def distance(x1,y1,x2,y2)
+      Math.sqrt(((x2 - x1) ** 2) + ((y2 - y1) ** 2))
+    end
+    def dispose
+      super
+      Spoiler.dispose_spoiler_bitmap
+    end
+    def update_effects
+      return if !@started   
+            
+      dist = distance(TouchInput.x, TouchInput.y, self.x, self.y).round(1)
+      if dist < (self.width / 2)
+        self.bitmap = @origin[:bitmap]
+      else
+        self.bitmap = @@spoiler
+      end
+    
+    end
+    def start(index)
+      super(index)
+      @origin[:bitmap] = self.bitmap      
+      
+      Spoiler.create_spoiler_bitmap(self.bitmap)
+    end
+  end
+
+  RS::Messages::Effects[:Spoiler] = Spoiler    
+
+end
+
+#==============================================================================
+# ** 텍스트 이펙트 팩토리 객체
+#============================================================================== 
+class TextEffectFactory
+  def self.create(type, viewport)
+    return if !RS::Messages::Effects.has_key?(type)
+    effect_class = RS::Messages::Effects[type]
+    return effect_class.new(viewport)
+  end
+end
+
+#==============================================================================
+# ** 텍스트 레이어 초기화
+#============================================================================== 
+class Window_Message < Window_Base
+  alias rm_message_text_effects_initialize initialize
+  def initialize
+    rm_message_text_effects_initialize
+    create_text_layers
+  end
+  
+  alias rm_message_text_effects_dispose dispose
+  def dispose
+    rm_message_text_effects_dispose
+    dispose_text_layers
+  end
+  
+  alias rm_message_text_effects_clear_flags clear_flags
+  def clear_flags
+    rm_message_text_effects_clear_flags
+    clear_text_effects
+  end
+  
+  alias rm_message_text_effects_update update
+  def update
+    rm_message_text_effects_update
+    update_text_effects if $game_message.busy?
+  end  
+end
+
+#==============================================================================
+# ** 텍스트 레이어를 기본 프레임워크와 연동
+#============================================================================== 
+class Window_Message < Window_Base
+  def create_text_layers
+    @text_layer_viewport = Viewport.new
+    @text_layer_viewport.z = SceneManager.scene.instance_variable_get("@viewport").z * 2
+    update_text_layer_viewport
+    @layers = []
+  end
+  def dispose_text_layers
+    @text_layer_viewport.dispose
+    @layers = nil
+  end
+  def clear_text_effects
+    @layers = [] if not @layers
+    @layers.each do |s|
+      s.visible = false
+      s.dispose
+    end
+    @layers = []
+  end
+  def update_text_layer_viewport
+    pad = standard_padding
+    pad2 = standard_padding * 2
+    
+    @text_layer_viewport.rect.set(
+      self.x + pad, 
+      self.y + pad, 
+      self.width - pad2, 
+      self.height - pad2
+    )
+    @text_layer_viewport.ox = self.x + pad
+    @text_layer_viewport.oy = self.y + pad
+  end
+  def update_text_effects
+    @text_layer_viewport.update
+    @layers.each do |sprite|
+      sprite.update
+    end
+  end
+  alias rs_text_effects_close_and_wait close_and_wait
+  def close_and_wait
+    rs_text_effects_close_and_wait
+    clear_text_effects
+  end  
+end
+
+#==============================================================================
+# ** 텍스트 묘화
+#============================================================================== 
+class Window_Message < Window_Base
+  alias rs_message_effects_new_page new_page
+  def new_page(text, pos)
+    rs_message_effects_new_page(text, pos)
+  end  
+  #--------------------------------------------------------------------------
+  # * 텍스트 코드 처리
+  #--------------------------------------------------------------------------
+  alias rs_message_effects_process_escape_character process_escape_character
+  def process_escape_character(code, text, pos)
+    case code
+    when 'E'
+      index = obtain_escape_param(text)
+      if !@is_used_text_width_ex
+        data = RS::Messages::Effects
+        effect = data.keys[index - 1]
+        if data.has_key?(effect)
+          RS::LIST[:TEXT_EFFECT] = effect
+        end
+      end    
+    when 'TE'
+      effect = obtain_text_effects(text)
+      if !@is_used_text_width_ex
+        RS::LIST[:TEXT_EFFECT] = effect
+      end
+    else
+      rs_message_effects_process_escape_character(code, text, pos)
+    end
+  end  
+  #--------------------------------------------------------------------------
+  # * 텍스트 이펙트 추출
+  #--------------------------------------------------------------------------
+  def obtain_text_effects(text)
+    effect_type = text.slice!(RS::CODE[:TEXT_EFFECT])[$1] rescue "PingPong"
+    effect_type.to_sym
+  end    
+  #--------------------------------------------------------------------------
+  # * 텍스트 묘화 처리
+  #--------------------------------------------------------------------------  
+  alias rs_message_effects_process_normal_character process_normal_character
+  def process_normal_character(c, pos, text)
+
+    effect_type = RS::LIST[:TEXT_EFFECT]
+    if not effect_type
+      return rs_message_effects_process_normal_character(c, pos, text)
+    end
+    
+    valid = !@is_used_text_width_ex
+
+    if $imported["RS_HangulMessageSystem"]
+      if $game_message.word_wrap_enabled and valid and $game_message.balloon == -2
+        tw = text_size(c).width
+        if pos[:x] + (tw * 2) > contents_width
+          process_new_line(text, pos)
+        end
+      end    
+    end
+    
+    target_viewport = @text_layer_viewport
+    
+    if [:MouseTracking, :MousePointer].include?(effect_type) && valid
+      target_viewport = self.viewport
+    end
+
+    # 텍스트 레이어 생성
+    sprite = TextEffectFactory.create(effect_type, target_viewport)
+    rect = text_size(c)
+    w = rect.width + 1
+    h = rect.height
+    
+    if !sprite
+      raise "There is no #{effect_type.to_s} type"
+    end
+        
+    sprite.bitmap = Bitmap.new(w * 2, pos[:height])
+    sprite.bitmap.font = self.contents.font
+
+    b = sprite.bitmap
+    sprite.bitmap.draw_text(0, 0, b.width, b.height, c)
+    padding = standard_padding
+    sprite.x = self.x + padding + pos[:x]
+    sprite.y = self.y + padding + pos[:y]
+    sprite.z = self.z + 60
+    
+    case effect_type
+    when :Marquee
+      sprite.start(@layers.size + 1, self)
+    else  
+      sprite.start(@layers.size + 1)
+    end
+    
+    update_text_layer_viewport
+    
+    # 화면에 텍스트 추가
+    @layers.push(sprite) if !@is_used_text_width_ex
+    
+    pos[:x] += w
+                    
+    if $imported["RS_HangulMessageSystem"]
+      unless @line_show_fast or @show_fast
+        request_text_sound if (Graphics.frame_count % RS::LIST[:TEXTSOUND_INTERVAL]) == 0
+        wait($game_message.message_speed || 0) if valid       
+      end
+      if $imported["RS_PauseIconPosition"]
+        mx = standard_padding + pos[:x] + 8
+        my = standard_padding + pos[:y] + pos[:height]
+        move_pause_sign(mx, my)      
+      end
+    else
+      wait_for_one_character
+    end
+    
   end
 end
