@@ -2884,7 +2884,7 @@ module RS
     CODE = {}
   end
   
-  LIST[:TEXT_EFFECT] = :Shock
+  LIST[:TEXT_EFFECT] = :PingPong
   CODE[:TEXT_EFFECT] = /^\<([a-zA-Z]+)\>/
 end
 
