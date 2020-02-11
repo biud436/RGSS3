@@ -366,6 +366,9 @@ module RS
   LIST[:TEXTSOUND_PITCH] = [100, 90]
   LIST[:TEXTSOUND_INTERVAL] = 3  
 
+  # 텍스트 애니메이션 설정
+  LIST[:TEXT_EFFECT] = :PingPong
+
   # 정규 표현식 (잘 아시는 분들만 건드리십시오)
   CODE[:HEX] = /#([a-zA-Z^\d]*)/i
   CODE[:COLOR] = /^\p{hangul}+|c_[a-zA-z]+$/
@@ -381,6 +384,7 @@ module RS
   CODE[:NAME_VALUE] = /\[(.*)\]/
   CODE[:NAME_COLOR_EX1] = /\eC\[(.+)\]/
   CODE[:NAME_COLOR_EX2] = /\e색\[(.+)\]/
+  CODE[:TEXT_EFFECT] = /^\<([a-zA-Z]+)\>/  
 
   extend self
   #--------------------------------------------------------------------------
@@ -2876,17 +2880,6 @@ end
 #==============================================================================
 $imported = {} if $imported.nil?
 $imported["RS_MessageEffects"] = true
-
-module RS
-  
-  if !$imported["RS_HangulMessageSystem"]
-    LIST = {}
-    CODE = {}
-  end
-  
-  LIST[:TEXT_EFFECT] = :PingPong
-  CODE[:TEXT_EFFECT] = /^\<([a-zA-Z]+)\>/
-end
 
 module RS::Messages
   Effects = {}
