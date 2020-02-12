@@ -10,6 +10,7 @@
 # 2020.02.12 (v1.6.1) :
 # - 마우스 클릭으로 대화창이 넘어가지 않는 문제 수정
 # - 텍스트 애니메이션에서 RS_Input 및 허걱님의 전체키 입력 확장 스크립트 지원
+# - 대화 도중 ESC나 마우스 오른쪽 키를 누르면 빠른 텍스트 표시
 # 2020.02.11 (v1.6.0) :
 # - 기본 해쉬 자료 구조에서 키 값을 심볼로 변경
 # - 환경 설정 파일의 파일 이름을 영어로 변경
@@ -3717,12 +3718,17 @@ class Window_Message < Window_Base
     @layers.push(sprite) if !@is_used_text_width_ex
     
     pos[:x] += w
+    
+    update_show_fast
                     
     if $imported["RS_HangulMessageSystem"]
-      unless @line_show_fast or @show_fast
+      if !@line_show_fast or !@show_fast
         request_text_sound if (Graphics.frame_count % RS::LIST[:TEXTSOUND_INTERVAL]) == 0
         wait($game_message.message_speed || 0) if valid       
+      else
+        @layers.each {|c| c.flush if c.is_a?(TextEffect) }       
       end
+      
       if $imported["RS_PauseIconPosition"]
         mx = standard_padding + pos[:x] + 8
         my = standard_padding + pos[:y] + pos[:height]
