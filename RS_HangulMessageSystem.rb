@@ -9,6 +9,7 @@
 #==============================================================================
 # 2020.02.12 (v1.6.1) :
 # - 마우스 클릭으로 대화창이 넘어가지 않는 문제 수정
+# - 텍스트 애니메이션에서 RS_Input 및 허걱님의 전체키 입력 확장 스크립트 지원
 # 2020.02.11 (v1.6.0) :
 # - 기본 해쉬 자료 구조에서 키 값을 심볼로 변경
 # - 환경 설정 파일의 파일 이름을 영어로 변경
@@ -209,8 +210,6 @@
 # 인덱스는 1부터 시작해야 합니다. 
 # 예를 들어, \E[1]은 'PingPong'을 의미하고 \TE<PingPong>와 같습니다.
 #
-# 일부 텍스트 효과는 'RS_Input'이라는 추가 스크립트가 필요합니다.
-#  
 # 1. PingPong : 아래에서 위로 튕기듯 올라오는 효과.
 # 2. Slide : 글자가 미끄러지듯 천천히 등장.
 # 3. HighRotation : 글자가 어딘가에서 날라옵니다.
@@ -221,13 +220,13 @@
 # 8. Marquee : 글자가 전광판처럼 왼쪽에서 오른쪽으로 이동합니다.
 # 9. Wave : 글자가 강하게 흔들립니다.
 # 10. Spread : 글자가 동서남북 4방향으로 이동합니다.
-# 11. MouseTracking (RS_Input 필요) : 마우스 포인터에서 글자가 생성되고, 대화창까지 이동.
-# 12. MousePointer (RS_Input 필요) : 글자가 대화창에서 생성된 후, 현재 마우스 포인터 쪽으로 이동.
-# 13. MouseOver  (RS_Input 필요) : 마우스가 글자 위에 있으면 글자의 색깔이 변합니다.
+# 11. MouseTracking (Input 확장 필요) : 마우스 포인터에서 글자가 생성되고, 대화창까지 이동.
+# 12. MousePointer (Input 확장 필요) : 글자가 대화창에서 생성된 후, 현재 마우스 포인터 쪽으로 이동.
+# 13. MouseOver  (Input 확장 필요) : 마우스가 글자 위에 있으면 글자의 색깔이 변합니다.
 # 14. Colorize : 글자가 마구 흔들리면서 글자의 색깔이 바뀝니다.
 # 15. OpacityWave : 투명도가 파도를 타듯 바뀜.
 # 16. TongTong : 파도를 타듯 위 아래로 공이 통통 튕기는 것처럼 흔들립니다.
-# 17. Spoiler (RS_Input 필요) : 글자를 감추는 효과입니다. 마우스를 가져다대면 글자가 표시됩니다.
+# 17. Spoiler (Input 확장 필요) : 글자를 감추는 효과입니다. 마우스를 가져다대면 글자가 표시됩니다.
 #
 # 텍스트 효과를 OFF 하려면, \E[0]으로 변경하십시오.
 #
@@ -3204,6 +3203,47 @@ end
 RS::Messages::Effects[:Spread] = Spread
 
 if $imported["RS_Input"]
+  $imported["RS_DependencyInput"] = true
+end
+#==============================================================================
+# 허걱님의 전체키 입력 확장 스크립트와 RS_Input과의 호환을 맞추기 위한 코드입니다.
+#==============================================================================
+if defined? Mouse && !$imported["RS_Input"]
+  
+  $imported["RS_DependencyInput"] = true
+  
+  Mouse.const_set(:DefaultIconIndex, 397)
+  
+  module TouchInput
+    extend self
+    def x
+      return Mouse.x if Mouse.respond_to?(:x)
+      return 0
+    end
+    def y
+      return Mouse.y if Mouse.respond_to?(:y)
+      return 0
+    end
+    def self.trigger?(*args, &block)
+      key = nil
+      if args[0].is_a?(Symbol)
+        key = case args[0]
+        when :LEFT
+          Keys::MouseL 
+        when :MIDDLE
+          Keys::MouseM
+        when :RIGHT
+          Keys::MouseR
+        end
+      end
+      
+      Input.trigger?(key)
+      
+    end
+  end
+end
+
+if $imported["RS_DependencyInput"]
 #==============================================================================
 # ** MouseTracking
 #==============================================================================
@@ -3428,7 +3468,7 @@ RS::Messages::Effects[:TongTong] = TongTong
 # ** Spoiler
 #==============================================================================    
   
-if $imported["RS_Input"]
+if $imported["RS_DependencyInput"]
   
   class Spoiler < TextEffect
     
@@ -3698,7 +3738,7 @@ end
 #===============================================================================
 # Window_Message
 #===============================================================================
-if $imported["RS_Input"]
+if $imported["RS_DependencyInput"]
 class Window_Message < Window_Base
   def cancelled?
     Input.trigger?(:B) || TouchInput.trigger?(:RIGHT)
