@@ -1,12 +1,14 @@
 #==============================================================================
-# ** Hangul Message System v1.6.0 (RPG Maker VX Ace)
+# ** Hangul Message System v1.6.1 (RPG Maker VX Ace)
 #==============================================================================
 # Name       : Hangul Message System
 # Author     : biud436
-# Version    : v1.6.0
+# Version    : v1.6.1
 #==============================================================================
 # ** 업데이트 로그
 #==============================================================================
+# 2020.02.12 (v1.6.1) :
+# - 마우스 클릭으로 대화창이 넘어가지 않는 문제 수정
 # 2020.02.11 (v1.6.0) :
 # - 기본 해쉬 자료 구조에서 키 값을 심볼로 변경
 # - 환경 설정 파일의 파일 이름을 영어로 변경
@@ -227,6 +229,8 @@
 # 16. TongTong : 파도를 타듯 위 아래로 공이 통통 튕기는 것처럼 흔들립니다.
 # 17. Spoiler (RS_Input 필요) : 글자를 감추는 효과입니다. 마우스를 가져다대면 글자가 표시됩니다.
 #
+# 텍스트 효과를 OFF 하려면, \E[0]으로 변경하십시오.
+#
 #==============================================================================
 # ** 스크립트 호출
 #==============================================================================
@@ -266,7 +270,7 @@ module RS
   # Fonts 폴더에 해당 폰트 파일에 있어야 합니다.
   # 폰트 파일과 글꼴명은 다를 수 있습니다.
   # 여기에 적는 것은 해당 폰트의 실제 글꼴명입니다.
-  LIST[:FONT_NAME] = Font.default_name
+  LIST[:FONT_NAME] = ["나눔고딕", "굴림"]
   
   # 폰트 크기를 변경합니다. 예:) Font.default_size는 기본 폰트 사이즈입니다.
   LIST[:FONT_SIZE] = Font.default_size
@@ -3585,15 +3589,21 @@ class Window_Message < Window_Base
       index = obtain_escape_param(text)
       if !@is_used_text_width_ex
         data = RS::Messages::Effects
-        effect = data.keys[index - 1]
+        effect = index != 0 ? data.keys[index - 1] : nil
         if data.has_key?(effect)
           RS::LIST[:TEXT_EFFECT] = effect
+        else
+          RS::LIST[:TEXT_EFFECT] = nil
         end
       end    
     when 'TE'
       effect = obtain_text_effects(text)
       if !@is_used_text_width_ex
-        RS::LIST[:TEXT_EFFECT] = effect
+        if RS::Messages::Effects.has_key?(effect)
+          RS::LIST[:TEXT_EFFECT] = effect
+        else
+          RS::LIST[:TEXT_EFFECT] = nil
+        end
       end
     else
       rs_message_effects_process_escape_character(code, text, pos)
@@ -3684,3 +3694,26 @@ class Window_Message < Window_Base
     
   end
 end
+
+#===============================================================================
+# Window_Message
+#===============================================================================
+if $imported["RS_Input"]
+class Window_Message < Window_Base
+  def cancelled?
+    Input.trigger?(:B) || TouchInput.trigger?(:RIGHT)
+  end
+  def triggered?
+    Input.trigger?(:C) || TouchInput.trigger?(:LEFT)
+  end
+  def update_show_fast
+    @show_fast = true if cancelled?
+  end
+  def input_pause
+    self.pause = true
+    wait(10)
+    Fiber.yield until triggered?
+    Input.update
+    self.pause = false
+  end
+end;end
