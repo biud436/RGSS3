@@ -376,7 +376,7 @@ module RS
   # 정규 표현식 (잘 아시는 분들만 건드리십시오)
   CODE[:HEX] = /#([a-zA-Z^\d]*)/i
   CODE[:COLOR] = /^\p{hangul}+|c_[a-zA-z]+$/
-  CODE[:ESCAPE] = /^[\$\.\|\^!><\{\}\\]|^[A-Z가-힣]+[!]*/i
+  CODE[:ESCAPE] = /^[\$\.\|\^!><\{\}\\]|^[A-Z가-힣ㄱ-ㅎ]+[!]*/i
   CODE[:NAME_COLOR] = /\[(\p{hangul}+[\d]*|c_[\p{Latin}]+)\]/
   CODE[:WEB_COLOR] = /([\p{Latin}\d]+)!/
   CODE[:HANGUL_CHAR] = /^(\p{hangul}+)/
@@ -3626,7 +3626,7 @@ class Window_Message < Window_Base
   alias rs_message_effects_process_escape_character process_escape_character
   def process_escape_character(code, text, pos)
     case code
-    when 'E'
+    when 'E', 'ㅎ'
       index = obtain_escape_param(text)
       if !@is_used_text_width_ex
         data = RS::Messages::Effects
