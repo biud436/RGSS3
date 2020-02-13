@@ -95,7 +95,7 @@ if not defined? $NEKO_RUBY
         buf.push(i.to_s)
       end
       
-      buf = buf.join(", ")
+      buf = buf.join(", ") + "\r\n"
       len = buf.size
       buf = buf.unicode!
       WriteConsoleW.call(@@std_handle, buf, len, 0, 0)
