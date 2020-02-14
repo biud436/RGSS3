@@ -1,7 +1,7 @@
 #===============================================================================
 # Name : RS_Input
 # Author : biud436
-# Version : 1.0.8 (2020.01.29)
+# Version : 1.0.9 (2020.02.14)
 # Link : https://biud436.blog.me/220289463681
 # Description : This script provides the extension keycode and easy to use.
 #-------------------------------------------------------------------------------
@@ -24,12 +24,14 @@
 # v1.0.6 (2019.03.25) :
 # - Added the repeat? method into Input class.
 # v1.0.7 (2019.11.13) :
-# - Fixed the issue that can't ride the airship when pressing mouse button.
-# - Added a feature that can hide the destination sprite on the screen.
+# - 마우스 왼쪽 클릭으로 비행선을 탑승할 수 없었던 문제를 수정하였습니다.
+# - 목적지 스프라이트를 화면에서 감출 수 있는 기능을 추가하였습니다.
 # - 비행선 탑승 후, 마우스 자동 이동 시 한 칸만 움직이고 멈추는 현상을 수정하였습니다.
-# - Added a new method called TouchInput.update
+# - TouchInput.update를 추가하였습니다.
 # v1.0.8 (2020.01.29) :
-# - Added the feature that can change an auto movement setting.
+# - 자동 이동 설정을 변경할 수 있습니다.
+# v1.0.9 (2020.02.14) :
+# - DLL 파일에 한글 조합 기능을 추가하였습니다.
 #-------------------------------------------------------------------------------
 # 사용법 / How to use
 #-------------------------------------------------------------------------------
@@ -756,6 +758,12 @@ module Input
     def clear_wheel
       RSResetWheelDelta.call
     end
+    
+    def char
+      str = $input_char || ""
+      /([a-zA-Z가-힣ㄱ-ㅎ\.\?\!\@\#\$\%\^\&\*\(\)\-\=\_\+\/\*0-9\~\`\{\}])/i =~ str
+      return $1.to_s
+    end    
     
   end
   
