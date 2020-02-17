@@ -178,7 +178,7 @@ void rgss_input_init(HWND RGSSPlayer)
 
 	}
 
-	// C++ STL는 다음 함수를 호출하여 지역화 선언을 하지 않으면 한글 사용이 불가능하다.
+	// C++ STL은 다음 함수를 호출하여 지역화 선언을 하지 않으면 한글 사용이 불가능하다.
 	setlocale(LC_ALL, "");
 
 #undef GETPROC
