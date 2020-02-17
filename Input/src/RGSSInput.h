@@ -7,6 +7,11 @@ const int MAX_TEXT_BUFFS = 4096;
 
 #pragma comment(lib,  "imm32.lib")
 
+#ifdef __cplusplus
+extern "C"
+{
+#endif 
+
 typedef struct RGSSKeys {
 	BYTE down[MAX_KEYS];
 	BYTE pressed[MAX_KEYS];
@@ -23,7 +28,29 @@ typedef struct RGSSKeys {
 
 	HIMC hImc;
 	BOOL bComp;
-	wchar_t szChar[3], *szComp;
+	
+	TCHAR *szComp;
+	TCHAR szChar[3];
+
+#if defined(UNICODE) || defined(_UNICODE)
+	std::wstring buf;
+	std::wstring texts;
+	std::wstring immutableTexts;
+#else
+	std::string buf;
+	std::string texts;
+	std::string immutableTexts;
+#endif
+
+	BOOL isRGSS3;
+
+	BOOL isNewLine;
+	BOOL isBackspace;
+	BOOL request_remove;
+
+	size_t counter;
+
+	BOOL is_valid_character(int keycode);
 
 };
 
@@ -40,20 +67,27 @@ void ime_composition_pipe1(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 void ime_composition_pipe2(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 void ime_composition_pipe3(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 
+void on_ime_context(WPARAM wParam);
 
-#ifdef __cplusplus
-extern "C"
-{
-#endif 
+void add_new_char(TCHAR wch);
+void add_new_string(TCHAR* wstr);
+void add_new_string2(char* wstr);
+
+void remove_last_char();
+
+void update_composition_text(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 
 RSDLL int is_key_down(BYTE virtualKey);
 RSDLL int was_key_pressed(BYTE virtualKey);
+RSDLL int is_any_key_down();
 RSDLL long get_mouse_x();
 RSDLL long get_mouse_y();
 RSDLL BOOL get_mouse_lbutton();
 RSDLL BOOL get_mouse_mbutton();
 RSDLL BOOL get_mouse_rbutton();
+RSDLL BOOL is_composing();
 RSDLL void clear();
+RSDLL const char* get_text();
 
 typedef int(*RGSSEvalProto)(const char*);
 typedef int(*RGSSSetStringUTF16Proto)(const char*, const wchar_t*);
@@ -66,14 +100,14 @@ typedef int(*RGSSSetStringProto)(const char*, const char*);
 
 struct RGSSFunctions
 {
-	RGSSEvalProto _pRGSSEval;
+	RGSSEvalProto           _pRGSSEval;
 	RGSSSetStringUTF16Proto _pRGSSSetStringUTF16;
 	RGSSGetStringUTF16Proto _pRGSSGetStringUTF16;
-	RGSSSetStringUTF8Proto _pRGSSSetStringUTF8;
-	RGSSGetStringUTF8Proto _pRGSSGetStringUTF8;
-	RGSSGetIntProto _pRGSSGetInt;
-	RGSSGetBoolProto _pRGSSGetBool;
-	RGSSSetStringProto _pRGSSSetString;
+	RGSSSetStringUTF8Proto  _pRGSSSetStringUTF8;
+	RGSSGetStringUTF8Proto  _pRGSSGetStringUTF8;
+	RGSSGetIntProto         _pRGSSGetInt;
+	RGSSGetBoolProto        _pRGSSGetBool;
+	RGSSSetStringProto      _pRGSSSetString;
 
 	RGSSFunctions() :
 		_pRGSSEval(NULL),

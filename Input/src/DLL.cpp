@@ -1,6 +1,7 @@
 #define _RSDLL
 #include "DLL.h"
 #include "RGSSInput.h"
+#include <memory>
 
 // Note that these variables is unsafe thread.
 HINSTANCE g_hDllHandle = NULL;
@@ -8,6 +9,29 @@ HWND g_hRGSSPlayer = NULL;
 int g_nWheelDelta = 0;
 WNDPROC OldProc;
 LRESULT CALLBACK SuperProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
+
+void RSShowLastErrorMessage()
+{
+	RSShowLastErrorMessage2(L"");
+}
+
+void RSShowLastErrorMessage2(std::wstring extraMessage)
+{
+	DWORD errorCode = GetLastError();
+
+	if (errorCode > 0)
+	{
+		std::wstring errorMessage;
+		errorMessage.resize(1024 + 1);
+
+		FormatMessageW(FORMAT_MESSAGE_FROM_SYSTEM, NULL, errorCode, 0, &errorMessage[0], 1024 + 1, NULL);
+		errorMessage.resize(1024);
+
+		errorMessage += extraMessage;
+
+		MessageBoxW(g_hRGSSPlayer, &errorMessage[0], L"RGSS Player", MB_OK | MB_ICONERROR);
+	}
+}
 
 /************************************************************************/
 /* DllMain                                                              */
@@ -25,7 +49,7 @@ BOOL WINAPI DllMain(HINSTANCE hDllHandle,
 	case DLL_PROCESS_ATTACH:
 	{
 		g_hDllHandle = hDllHandle;
-		g_hRGSSPlayer = FindWindow(L"RGSS Player", NULL);
+		g_hRGSSPlayer = FindWindow(_T("RGSS Player"), NULL);
 		SetFocus(g_hRGSSPlayer);
 		RSInitWithCoreSystem();
 	}
@@ -75,14 +99,20 @@ LRESULT CALLBACK SuperProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 	case WM_MOUSEMOVE:
 		rgss_set_mousemove(lParam);
 		break;
+	case WM_IME_SETCONTEXT:
+		on_ime_context(wParam);
+		break;
 	case WM_CHAR:
 		ime_composition_pipe1(hWnd, uMsg, wParam, lParam);
-		break;
+		return 0;
 	case WM_IME_COMPOSITION:
 		ime_composition_pipe2(hWnd, uMsg, wParam, lParam);
 		break;
 	case WM_IME_CHAR:
 		ime_composition_pipe3(hWnd, uMsg, wParam, lParam);
+		return 0;
+	case WM_GETTEXT:
+		update_composition_text(hWnd, uMsg, wParam, lParam);
 		break;
 	}
 	return CallWindowProc(OldProc, hWnd, uMsg, wParam, lParam);
@@ -92,6 +122,11 @@ RSDLL void RSInitWithCoreSystem()
 {
 	HINSTANCE hInstance = (HINSTANCE)GetWindowLong(g_hRGSSPlayer, GWL_HINSTANCE);
 	OldProc = (WNDPROC)SetWindowLong(g_hRGSSPlayer, GWL_WNDPROC, (LONG)SuperProc);
+
+	if (OldProc == NULL) 
+	{
+		RSShowLastErrorMessage();
+	}
 
 	rgss_input_init(g_hRGSSPlayer);
 }

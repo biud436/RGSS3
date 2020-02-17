@@ -3,6 +3,9 @@
 
 #pragma once
 
+#include <sstream>
+#include <string>
+
 #ifdef __cplusplus
 extern "C"
 {
@@ -27,6 +30,9 @@ extern "C"
 #else
 #define RSDLL __declspec(dllimport)
 #endif
+
+	void RSShowLastErrorMessage();
+	void RSShowLastErrorMessage2(std::wstring extraMessage);
 
 	RSDLL void RSInitWithCoreSystem();
 	RSDLL void RSRemoveCoreSystem();
