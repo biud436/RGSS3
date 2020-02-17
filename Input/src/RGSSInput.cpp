@@ -58,10 +58,10 @@ BOOL RGSSKeys::is_valid_character(int keycode)
 #undef CHECK
 
 	if (ret) {
-		printf("correct keycode : %X\n", keycode);
+		printf("correct keycode : %X\r\n", keycode);
 	}
 	else {
-		printf("incorrect keycode : %X\n", keycode);
+		printf("incorrect keycode : %X\r\n", keycode);
 	}
 
 	return ret;
@@ -260,16 +260,16 @@ void add_new_char(TCHAR wch)
 
 void add_new_string(TCHAR* wstr)
 {
-	int i;
-	int max = lstrlen(wstr);
-
 	if (Keys.isNewLine) {
 		Keys.buf.clear();
 		Keys.immutableTexts.clear();
 		Keys.isNewLine = FALSE;
 	}
 
-	int size = lstrlen(wstr);
+	if (!Keys.is_valid_character((int)wstr)) {
+		return;
+	}
+
 	Keys.buf = wstr;
 
 	// NULL 문자를 제거해야 정상적으로 표시된다.
@@ -292,7 +292,9 @@ void add_new_string3(TCHAR* wstr)
 
 	for (int i = 0; i < lstrlen(wstr); i++) {
 		if (Keys.is_valid_character((int)wstr[i])) {
-			Keys.immutableTexts += wstr[i];
+			if (wstr[i] != 0) {
+				Keys.immutableTexts += wstr[i];
+			}
 		}
 	}
 }
@@ -555,8 +557,16 @@ const wchar_t* ToUTF16(const char* raw)
 std::string ToUTF8(const std::wstring &wstr)
 {
 	int len = WideCharToMultiByte(CP_UTF8, 0, &wstr[0], static_cast<int>(wstr.size()), NULL, 0, NULL, NULL);
-	std::string str(len, 0);
-	WideCharToMultiByte(CP_UTF8, 0, &wstr[0], static_cast<int>(wstr.size()), &str[0], len, NULL, NULL);
+	
+	std::string str = "";
+	str.clear();
+	str.resize(len);
+
+	int result = WideCharToMultiByte(CP_UTF8, 0, &wstr[0], static_cast<int>(wstr.size()), &str[0], len, NULL, NULL);
+
+	if (result != len) {
+		str.clear();
+	}
 	
 	return str;
 }
