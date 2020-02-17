@@ -121,27 +121,24 @@ void rgss_input_init(HWND RGSSPlayer)
 	// Read INI files and gets properties.
 
 	std::wstring sIniDir;
-	std::wstring sRGSSSystemFilePath;
-	std::wstring sGameTitle;
 	sIniDir.resize(MAX_PATH + 1);
-	sRGSSSystemFilePath.resize(MAX_PATH + 1);
-	sGameTitle.resize(MAX_PATH + 1);
 
 	GetCurrentDirectoryW(MAX_PATH, &sIniDir[0]);
-	sIniDir.resize(MAX_PATH - 1);
-
+	sIniDir.resize(lstrlen(&sIniDir[0]));
 	sIniDir += L"\\Game.ini";
 
-	GetPrivateProfileStringW(L"Game", L"Library", L"System/RGSS301.dll", &sRGSSSystemFilePath[0], MAX_PATH, &sIniDir[0]);
+	std::vector<wchar_t> buf(MAX_PATH);
+	GetPrivateProfileStringW(L"Game", L"Library", L"System\\RGSS301.dll", buf.data(), MAX_PATH, &sIniDir[0]);
+	std::wstring sRGSSSystemFilePath(buf.data(), buf.data() + lstrlen(buf.data()));
 
-	GetPrivateProfileStringW(L"Game", L"Title", L"UnTitled", _szGameTitle, MAX_PATH, &sIniDir[0]);
-	sGameTitle.resize(MAX_PATH);
+	GetPrivateProfileStringW(L"Game", L"Title", L"UnTitled", buf.data(), MAX_PATH, &sIniDir[0]);
+	std::wstring sGameTitle(buf.data(), buf.data() + lstrlen(buf.data()));
 
 	_hRGSSSystemDLL = GetModuleHandleW(&sRGSSSystemFilePath[0]);
 
 	if (_hRGSSSystemDLL == NULL) 
 	{
-		RSShowLastErrorMessage();
+		RSShowLastErrorMessage2(L"_hRGSSSystemDLL");
 		return;
 	}
 
@@ -158,7 +155,7 @@ void rgss_input_init(HWND RGSSPlayer)
 	GETPROC(RGSSGetInt);
 	GETPROC(RGSSGetBool);
 	
-	if (sRGSSSystemFilePath.find(L"System/RGSS301.dll") != std::string::npos) {
+	if (sRGSSSystemFilePath == L"System\\RGSS301.dll") {
 		Keys.isRGSS3 = TRUE;
 		GETPROC(RGSSSetStringUTF16);
 		GETPROC(RGSSGetStringUTF16);
@@ -199,7 +196,7 @@ void rgss_input_init(HWND RGSSPlayer)
 
 	}
 
-	// C++ STL은 다음 함수를 호출하여 지역화 선언을 하지 않으면 한글 사용이 불가능하다.
+	// C++ STL은 다음 함수를 호출하여 지역화 선언을 하지 않으면 문자열 셋 변환이 불가능하다.
 	setlocale(LC_ALL, "");
 
 #undef GETPROC
@@ -453,7 +450,7 @@ void update_composition_text(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 		}
 	}
 	else {
-		_modules->_pRGSSSetStringUTF8("$input_char", "");
+		_modules->_pRGSSSetStringUTF8("$input_char", ToUTF8(L""));
 	}
 }
 

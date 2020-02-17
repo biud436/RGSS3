@@ -27,9 +27,9 @@ void RSShowLastErrorMessage2(std::wstring extraMessage)
 		FormatMessageW(FORMAT_MESSAGE_FROM_SYSTEM, NULL, errorCode, 0, &errorMessage[0], 1024 + 1, NULL);
 		errorMessage.resize(1024);
 
-		errorMessage += extraMessage;
+		extraMessage.append(errorMessage);
 
-		MessageBoxW(g_hRGSSPlayer, &errorMessage[0], L"RGSS Player", MB_OK | MB_ICONERROR);
+		MessageBoxW(g_hRGSSPlayer, &extraMessage[0], L"RGSS Player", MB_OK | MB_ICONERROR);
 	}
 }
 
