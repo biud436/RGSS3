@@ -4,6 +4,7 @@
 #include <vector>
 #include <memory>
 
+
 RGSSKeys       Keys;
 
 RGSSFunctions* _modules = NULL;
@@ -14,7 +15,7 @@ wchar_t        _szIniDir[MAX_PATH];
 wchar_t        _szGameTitle[MAX_PATH];
 
 const          wchar_t* ToUTF16(const char* raw);
-const          char* ToUTF8(const wchar_t* raw);
+std::string ToUTF8(const std::wstring &wstr);
 
 BOOL RGSSKeys::is_valid_character(int keycode)
 {
@@ -22,11 +23,6 @@ BOOL RGSSKeys::is_valid_character(int keycode)
 
 #define CHECK(A, B) \
 	(keycode >= A && keycode <= B)
-
-	if (keycode == '\r')
-		Keys.isNewLine = TRUE;
-	else if (keycode == '\b')
-		Keys.isBackspace = TRUE;
 
 	if (CHECK(0x00, 0x07F))  // 영문, 숫자, 기호
 		ret = TRUE;
@@ -50,6 +46,14 @@ BOOL RGSSKeys::is_valid_character(int keycode)
 		ret = TRUE;
 	else
 		ret = FALSE;
+
+	if (keycode == '\r') {
+		Keys.isNewLine = TRUE;
+		ret = FALSE;
+	}
+	else if (keycode == '\b') {
+		Keys.isBackspace = TRUE;
+	}
 
 #undef CHECK
 
@@ -168,7 +172,7 @@ void rgss_input_init(HWND RGSSPlayer)
 	// 유니코드 환경인지 확인한다.
 	if (IsWindowUnicode(RGSSPlayer)) 
 	{
-		int nArgs;
+		int nArgs = 0;
 		BOOL isConsole = FALSE;
 		BOOL isTestMode = FALSE;
 
@@ -446,11 +450,11 @@ void update_composition_text(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 			_modules->_pRGSSSetStringUTF16("$input_char", &retTexts[0]);
 		}
 		else {
-			_modules->_pRGSSSetStringUTF8("$input_char", ToUTF8(&retTexts[0]));
+			_modules->_pRGSSSetStringUTF8("$input_char", ToUTF8(&retTexts[0]).c_str());
 		}
 	}
 	else {
-		_modules->_pRGSSSetStringUTF8("$input_char", ToUTF8(L""));
+		_modules->_pRGSSSetStringUTF8("$input_char", ToUTF8(L"").c_str());
 	}
 }
 
@@ -539,7 +543,6 @@ RSDLL BOOL is_composing()
  */
 const wchar_t* ToUTF16(const char* raw) 
 {
-	
 	int nLength = MultiByteToWideChar(CP_ACP, NULL, raw, -1, NULL, NULL);
 
 	wchar_t* pBuf = new wchar_t[nLength + 1];
@@ -549,31 +552,18 @@ const wchar_t* ToUTF16(const char* raw)
 	return pBuf;
 }
 
-/**
- * WBCS(UTF16) -> UTF8
- */
-const char* ToUTF8(const wchar_t* raw)
+std::string ToUTF8(const std::wstring &wstr)
 {
-	/*MB_ERR_INVALID_CHARS*/
-	int length = WideCharToMultiByte(CP_UTF8, NULL, raw, -1, NULL, 0, NULL, NULL) + 2;
-
-	if (length == 2)
-	{
-		return "";
-	}
-
-	std::string str;
-	str.resize(length + 1);
-
-	int ret = WideCharToMultiByte(CP_UTF8, NULL, raw, -1, &str[0], length + 1, NULL, NULL);
-	str.resize(length);
-
-	return &str[0];
+	int len = WideCharToMultiByte(CP_UTF8, 0, &wstr[0], static_cast<int>(wstr.size()), NULL, 0, NULL, NULL);
+	std::string str(len, 0);
+	WideCharToMultiByte(CP_UTF8, 0, &wstr[0], static_cast<int>(wstr.size()), &str[0], len, NULL, NULL);
+	
+	return str;
 }
 
 RSDLL const char* get_text()
 {
-	const char* pBuf = ToUTF8(&Keys.buf[0]);
+	const char* pBuf = ToUTF8(&Keys.buf[0]).c_str();
 
 	return pBuf;
 }
