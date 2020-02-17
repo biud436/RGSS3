@@ -34,11 +34,9 @@ typedef struct RGSSKeys {
 
 #if defined(UNICODE) || defined(_UNICODE)
 	std::wstring buf;
-	std::wstring texts;
 	std::wstring immutableTexts;
 #else
 	std::string buf;
-	std::string texts;
 	std::string immutableTexts;
 #endif
 
@@ -51,6 +49,7 @@ typedef struct RGSSKeys {
 	size_t counter;
 
 	BOOL is_valid_character(int keycode);
+	BOOL is_hangul_character(int keycode);
 
 };
 
@@ -72,6 +71,7 @@ void on_ime_context(WPARAM wParam);
 void add_new_char(TCHAR wch);
 void add_new_string(TCHAR* wstr);
 void add_new_string2(char* wstr);
+void add_new_string3(TCHAR* wstr);
 
 void remove_last_char();
 

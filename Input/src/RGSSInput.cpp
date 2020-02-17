@@ -46,7 +46,7 @@ BOOL RGSSKeys::is_valid_character(int keycode)
 		ret = TRUE;
 	else if (CHECK(0x4E00, 0x9FBB))
 		ret = TRUE;
-	else if (CHECK(0xAC00, 0xD7A3))
+	else if (CHECK(0xAC00, 0xD7A3)) // 한글
 		ret = TRUE;
 	else
 		ret = FALSE;
@@ -59,6 +59,27 @@ BOOL RGSSKeys::is_valid_character(int keycode)
 	else {
 		printf("incorrect keycode : %X\n", keycode);
 	}
+
+	return ret;
+}
+
+BOOL RGSSKeys::is_hangul_character(int keycode)
+{
+	BOOL ret = FALSE;
+
+#define CHECK(A, B) \
+	(keycode >= A && keycode <= B)
+
+	if (CHECK(0x1100, 0x11FF)) // 한글 초성, 중성, 종성
+		ret = TRUE;
+	else if (CHECK(0x3131, 0x319E)) // 한글 자모음
+		ret = TRUE;
+	else if (CHECK(0xAC00, 0xD7A3)) // 한글
+		ret = TRUE;
+	else
+		ret = FALSE;
+
+#undef CHECK
 
 	return ret;
 }
@@ -260,6 +281,21 @@ void add_new_string2(char* wstr)
 	add_new_string(str);
 }
 
+void add_new_string3(TCHAR* wstr)
+{
+	if (Keys.isNewLine) {
+		Keys.buf.clear();
+		Keys.immutableTexts.clear();
+		Keys.isNewLine = FALSE;
+	}
+
+	for (int i = 0; i < lstrlen(wstr); i++) {
+		if (Keys.is_valid_character((int)wstr[i])) {
+			Keys.immutableTexts += wstr[i];
+		}
+	}
+}
+
 void remove_last_char()
 {
 	size_t len = Keys.buf.length();
@@ -282,22 +318,12 @@ void on_ime_context(WPARAM wParam)
 void ime_composition_pipe1(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
 	int keycode = wParam;
+	TCHAR szChar[2] = { 0, };
 
-	if (IsWindowUnicode(hWnd)) {
-		TCHAR szChar[2];
-		szChar[0] = keycode;
-		szChar[1] = 0;
-		
-		Keys.immutableTexts += szChar;
-	}
-	else {
-		TCHAR szChar[2] = { 0, };
+	szChar[0] = keycode;
+	szChar[1] = 0;
 
-		szChar[0] = keycode;
-		szChar[1] = 0;
-
-		Keys.immutableTexts += szChar;
-	}
+	add_new_string3(szChar);
 
 	// 조합 중인 한글 문자열을 삭제한다.
 	Keys.buf.clear();
@@ -378,7 +404,7 @@ void ime_composition_pipe3(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 		szChar[0] = (TCHAR)wParam;
 		szChar[1] = 0;
 
-		Keys.immutableTexts += szChar;
+		add_new_string3(szChar);
 		Keys.request_remove = TRUE;
 
 	} else {
@@ -486,7 +512,8 @@ RSDLL void clear()
 		Keys.pressed[i] = FALSE;
 	}
 
-	Keys.texts.clear();
+	Keys.buf.clear();
+	Keys.immutableTexts.clear();
 
 }
 
