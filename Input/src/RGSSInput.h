@@ -51,6 +51,8 @@ typedef struct RGSSKeys {
 	BOOL is_valid_character(int keycode);
 	BOOL is_hangul_character(int keycode);
 
+	DWORD last_status;
+
 };
 
 void rgss_input_init(HWND RGSSPlayer);

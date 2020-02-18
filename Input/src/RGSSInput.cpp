@@ -112,6 +112,8 @@ void rgss_input_init(HWND RGSSPlayer)
 
 	Keys.bComp = FALSE;
 
+	Keys.last_status = GCS_RESULTSTR;
+
 	Keys.isNewLine = FALSE;
 	Keys.isBackspace = FALSE;
 	Keys.request_remove = FALSE;
@@ -392,6 +394,8 @@ void ime_composition_pipe2(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 
 	}
 
+	Keys.last_status = lParam;
+
 	delete[] szComp;
 	ImmReleaseContext(hWnd, Keys.hImc);
 }
@@ -537,7 +541,7 @@ RSDLL int is_any_key_down()
 
 RSDLL BOOL is_composing()
 {
-	return Keys.bComp;
+	return Keys.last_status & GCS_COMPSTR;
 }
 
 /**
