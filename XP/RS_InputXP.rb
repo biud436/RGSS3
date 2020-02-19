@@ -1,6 +1,8 @@
-# Name : RS_InputXP 초안
+# Name : RS_InputXP
 # Author : 러닝은빛(biud436)
-# Date : 2020.02.14 (초안)
+# Change Log : 
+# - 2020.02.14 (초안1)
+# - 2020.02.19 (초안2)
 
 $imported = {} if $imported.nil?
 $imported["RS_InputXP"] = true
@@ -77,8 +79,56 @@ module Input
   #--------------------------------------------------------------------------  
   def char
     str = $input_char || ""
-    /([a-zA-Z가-힣ㄱ-ㅎ\.\?\!\@\#\$\%\^\&\*\(\)\-\=\_\+\/\*0-9\~\`\{\}])/i =~ str
     return $1.to_s
   end
   
+end
+
+class Scene_Name2
+  def main
+    start
+    # Transition run
+    Graphics.transition
+    # Main loop
+    loop do
+      # Update game screen
+      Graphics.update
+      # Update input information
+      Input.update
+      # Frame update
+      update
+      # Abort loop if screen is changed
+      if $scene != self
+        break
+      end
+    end
+    # Prepare for transition
+    Graphics.freeze    
+    terminate
+  end
+  def start
+    @name = Sprite.new
+    @name.bitmap = Bitmap.new(240, (48 * 2) + 4)
+  end
+  def update
+    return if !@name
+    @name.bitmap.clear
+    x = "#{Input.mouse_x}, #{Input.mouse_y}, #{Input.mouse_x / 32}, #{Input.mouse_y / 32}"
+    @name.bitmap.draw_text(0, 0, 240, 48, x, 0)
+    x = $input_char
+    @name.bitmap.draw_text(0, 50, 240, 48, x, 0)
+    @name.x = Input.mouse_x
+    @name.y = Input.mouse_y
+    @name.update    
+    
+    if Input.key_down?(13)
+      $scene = Scene_Map.new
+    end
+  end
+  
+  def terminate
+    return if !@name
+    @name.bitmap.dispose
+    @name.dispose
+  end
 end
