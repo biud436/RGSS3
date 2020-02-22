@@ -3,6 +3,7 @@
 # Change Log : 
 # - 2020.02.14 (초안1)
 # - 2020.02.19 (초안2)
+# - 2020.02.22
 
 $imported = {} if $imported.nil?
 $imported["RS_InputXP"] = true
@@ -25,6 +26,7 @@ module Input
   }
   
   Clear = Win32API.new(DLL, "clear", "v", "v")
+  ClearText = Win32API.new(DLL, "clear_text", "i", "v")
     
   extend self
   #--------------------------------------------------------------------------
@@ -74,6 +76,10 @@ module Input
   def clear
     Clear.call
   end
+  
+  def clear_text(level=0)
+    ClearText.call(level)
+  end
   #--------------------------------------------------------------------------
   # * 조합된 텍스트를 반환합니다 (한글 포함)
   #--------------------------------------------------------------------------  
@@ -84,51 +90,118 @@ module Input
   
 end
 
-class Scene_Name2
-  def main
-    start
-    # Transition run
-    Graphics.transition
-    # Main loop
-    loop do
-      # Update game screen
-      Graphics.update
-      # Update input information
-      Input.update
-      # Frame update
-      update
-      # Abort loop if screen is changed
-      if $scene != self
-        break
+module RS
+  class Scene_Base
+    def main
+      start
+      # Transition run
+      Graphics.transition
+      # Main loop
+      loop do
+        # Update game screen
+        Graphics.update
+        # Update input information
+        Input.update
+        # Frame update
+        update
+        # Abort loop if screen is changed
+        if $scene != self
+          break
+        end
       end
+      # Prepare for transition
+      Graphics.freeze    
+      terminate
     end
-    # Prepare for transition
-    Graphics.freeze    
-    terminate
+    def start
+    end
+    def update
+    end
+    def terminate
+    end
+  end
+end
+
+class Scene_HangulName < RS::Scene_Base
+  def initialize(id)
+    @actor_id = id
   end
   def start
-    @name = Sprite.new
-    @name.bitmap = Bitmap.new(240, (48 * 2) + 4)
+    @children = []
+    
+    @actor = $game_actors[@actor_id || 1]
+    
+    @name = ""
+    create_background
+    create_name
+  end
+  def create_name
+    @name_sprite = Sprite.new
+    @name_sprite.bitmap = Bitmap.new(240, (48 * 2) + 4)    
+    @children << @name_sprite
+  end
+  def client_rect
+    hwnd = Win32API.new("User32.dll", "FindWindow", "pp", "l").call("RGSS Player", 0)
+    f = Win32API.new("User32.dll", "GetClientRect", "lP", "i")
+    rect = [0,0,0,0].pack('l4')
+    f.call(hwnd , rect)
+    rect = rect.unpack("l4")
+    h = rect[3] - rect[1]
+    w = rect[2] - rect[0]    
+    
+    return w, h
+    
+  end
+  def create_background
+    @background = Sprite.new
+    bitmap = Bitmap.new(240, 48)
+    @background.bitmap = bitmap
+        
+    w, h = client_rect
+    
+    @background.x = (w / 2) - bitmap.width / 2
+    @background.y = (h / 2) - bitmap.height / 2
+    c = Color.new(100, 100, 100, 200)
+    @background.bitmap.fill_rect(0, 0, bitmap.width, bitmap.height, c)
+    
+    @children << @background
+    
+  end
+  def refresh_name_window
+    return if !@name
+    @name_sprite.bitmap.clear
+    
+    text = $input_char || ""
+    @name = text.gsub(/[^ㄱ-ㅎ가-힣A-Za-z\!\@\#\$\%\^\&\*\(\)\=\+\-\_\?]+/) { "" }
+    
+    @name_sprite.bitmap.draw_text(0, 0, 240, 48, @name, 0)
+    w, h = client_rect
+    @name_sprite.x = w / 2 - 240 / 2
+    @name_sprite.y = h / 2 - 48 / 2  
   end
   def update
-    return if !@name
-    @name.bitmap.clear
-    x = "#{Input.mouse_x}, #{Input.mouse_y}, #{Input.mouse_x / 32}, #{Input.mouse_y / 32}"
-    @name.bitmap.draw_text(0, 0, 240, 48, x, 0)
-    x = $input_char
-    @name.bitmap.draw_text(0, 50, 240, 48, x, 0)
-    @name.x = Input.mouse_x
-    @name.y = Input.mouse_y
-    @name.update    
+    
+    refresh_name_window
+    
+    @children.each {|i| i.update }
+    
+    if Input.key_down?(0x08)
+        Input.clear
+        Input.clear_text(0)
+    end
     
     if Input.key_down?(13)
-      $scene = Scene_Map.new
+      @actor.name = @name
+      $scene = Scene_Map.new 
     end
-  end
   
+  end
   def terminate
     return if !@name
-    @name.bitmap.dispose
-    @name.dispose
+    @actor = nil
+    @children.each do |child|
+      child.bitmap.dispose
+      child.dispose
+    end
   end
 end

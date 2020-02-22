@@ -520,10 +520,17 @@ RSDLL void clear()
 	}
 }
 
-RSDLL void clear_text() 
+RSDLL void clear_text(int level)
 {
-	Keys.buf.clear();
-	Keys.immutableTexts.clear();
+	if (level == 0)
+		Keys.buf.clear();
+	else if (level == 1)
+		Keys.immutableTexts.clear();
+	else
+	{
+		Keys.buf.clear();
+		Keys.immutableTexts.clear();
+	}
 }
 
 RSDLL int is_any_key_down()
