@@ -89,6 +89,7 @@ RSDLL BOOL get_mouse_mbutton();
 RSDLL BOOL get_mouse_rbutton();
 RSDLL BOOL is_composing();
 RSDLL void clear();
+RSDLL void clear_text();
 RSDLL const char* get_text();
 
 typedef int(*RGSSEvalProto)(const char*);

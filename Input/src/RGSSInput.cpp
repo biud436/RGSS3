@@ -518,10 +518,12 @@ RSDLL void clear()
 		Keys.down[i] = FALSE;
 		Keys.pressed[i] = FALSE;
 	}
+}
 
+RSDLL void clear_text() 
+{
 	Keys.buf.clear();
 	Keys.immutableTexts.clear();
-
 }
 
 RSDLL int is_any_key_down()
