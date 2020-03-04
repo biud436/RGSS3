@@ -1,7 +1,7 @@
 #===============================================================================
 # Name : RS_Input
 # Author : biud436
-# Version : 1.0.9 (2020.02.14)
+# Version :  v1.0.10 (2020.03.04)
 # Link : https://biud436.blog.me/220289463681
 # Description : This script provides the extension keycode and easy to use.
 #-------------------------------------------------------------------------------
@@ -32,6 +32,8 @@
 # - 자동 이동 설정을 변경할 수 있습니다.
 # v1.0.9 (2020.02.14) :
 # - DLL 파일에 한글 조합 기능을 추가하였습니다.
+# v1.0.10 (2020.03.04) :
+# - 스킬 목록에서 인덱스 계산이 잘못되는 문제를 수정하였습니다.
 #-------------------------------------------------------------------------------
 # 사용법 / How to use
 #-------------------------------------------------------------------------------
@@ -264,6 +266,7 @@ module Input
   MapVirtualKey = Win32API.new('user32.dll', 'MapVirtualKey', 'll', 'l')
   RSGetWheelDelta = Win32API.new('RS-InputCore.dll', 'RSGetWheelDelta', 'v', 'l')
   RSResetWheelDelta = Win32API.new('RS-InputCore.dll', 'RSResetWheelDelta', 'v', 'v')
+  GetText = Win32API.new('RS-InputCore.dll', 'get_text', 'v', 'p')
   
   MAPVK_VSC_TO_VK_EX = 3
   
@@ -846,8 +849,12 @@ class Window_Selectable < Window_Base
     mx = TouchInput.x
     my = TouchInput.y
     _self = self
-    idx = [[((my - self.y) / (col_max * item_height)), 0].max, item_max - 1].min
-    idx += [[((mx - self.x) / (row_max * item_width)), 0].max, item_max - 1].min
+    
+    sy = [[((my - self.y) / item_height), 0].max, item_max - 1].min
+    sx = [[((mx - self.x) / item_width), 0].max, item_max - 1].min
+    
+    idx = [ [(sy * col_max) + sx, 0].max, item_max - 1].min
+    
     item_max.times do |i| 
       temp_rect = self.item_rect(i)
       check_area?(temp_rect) do
