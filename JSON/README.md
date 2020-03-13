@@ -10,3 +10,20 @@ gem install ocra -v 1.3.6
 ```
 
 설치가 완료되면 ```build.bat``` 파일을 실행하면 ```bin``` 폴더에 실행 파일이 생성됩니다.
+
+# 사용법
+
+JSON 파일의 작성은 다음과 같이 할 수 있습니다.
+
+```ruby
+JSON.to_json({
+    :mode => "안녕하세요", 
+    :name => "러닝은빛"
+    }, "output.json")
+```
+
+JSON 파일을 읽으려면 다음과 같이 하세요. 반환값은 ```Hash```입니다.
+
+```ruby
+JSON.parse("output.json")
+```
