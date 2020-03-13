@@ -1,0 +1,1 @@
+ocra src/ext.rb --output bin/json.exe
