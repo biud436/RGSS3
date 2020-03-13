@@ -17,9 +17,59 @@ JSON 파일의 작성은 다음과 같이 할 수 있습니다.
 
 ```ruby
 JSON.to_json({
-    :mode => "안녕하세요", 
-    :name => "러닝은빛"
-    }, "output.json")
+  :name => "러닝은빛",
+  :date => Time.now.to_s,
+  :input => Input.constants
+}, "settings.json")
+```
+
+이렇게 하면 파일은 다음과 같이 만들어집니다.
+
+```json
+{
+  "name": "러닝은빛",
+  "date": "2020-03-13 14:40:05 +0900",
+  "input": [
+    "LEFT",
+    "UP",
+    "RIGHT",
+    "DOWN",
+    "A",
+    "B",
+    "C",
+    "X",
+    "Y",
+    "Z",
+    "L",
+    "R",
+    "SHIFT",
+    "CTRL",
+    "ALT",
+    "F5",
+    "F6",
+    "F7",
+    "F8",
+    "F9",
+    "FindWindowW",
+    "GetKeyboardState",
+    "GetCursorPos",
+    "ScreenToClient",
+    "GetAsyncKeyState",
+    "GetKeyNameTextW",
+    "MapVirtualKey",
+    "RSGetWheelDelta",
+    "RSResetWheelDelta",
+    "GetText",
+    "MAPVK_VSC_TO_VK_EX",
+    "WINDOW_NAME",
+    "HANDLE",
+    "KEY",
+    "DEFEAULT_SYM",
+    "SPECIFIC_KEY",
+    "STATES",
+    "MOUSE_BUTTON"
+  ]
+}
 ```
 
 JSON 파일을 읽으려면 다음과 같이 하세요. 반환값은 ```Hash```입니다.
