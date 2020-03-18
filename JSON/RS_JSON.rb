@@ -3,14 +3,17 @@
 # Author : biud436
 # Version : v1.0.0
 # Usage : 
-# 
-# json.exe 파일을 실행 파일과 같은 위치에 두세요.
+# Before using this script, You must place the file called 'json.exe' to the root directory.
 #
-# JSON 파일을 작성하려면 다음과 같이 하세요.
+# To write the *.json, Try to do as follows.
+# 
+# ex)
 # JSON.to_json({:mode => "안녕하세요", :name => "러닝은빛"}, "output.json")
 #
-# JSON 파일을 파싱하려면 다음과 같이 하세요.
-# JSON.parse("output.json")
+# To parse a json from the input string, as follows.
+#
+# ex)
+# JSON.parse("output.json") => Hash
 #
 #===============================================================================
 $imported = {} if $imported.nil?
@@ -74,4 +77,3 @@ module JSON
   end
 end
 
-JSON.test_json
