@@ -20,6 +20,14 @@ module JSON
   @@data = {}.to_s
   @@filename = "output.json"
   
+  def self.valid_library?
+    FileTest.exist?("json.exe")
+  end
+  
+  def self.test_json
+    `powershell "$test = @{name='WOW';data=0}; $test | ConvertTo-Json"`
+  end
+  
   def self.pipe
     
     # 백틱을 통해 다른 프로세스를 실행합니다
@@ -65,3 +73,5 @@ module JSON
     return {}
   end
 end
+
+JSON.test_json
