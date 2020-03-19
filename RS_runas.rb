@@ -12,7 +12,7 @@
 # end
 #
 # # 관리자 모드인가?
-# if AminMode.valid?
+# if AdminMode.valid?
 #   # "C:\\Program Files (x86)/myfolder"에 새로운 폴더 생성
 #   Dir.mkdir File.join(ENV["programfiles"], "myfolder")
 # end
