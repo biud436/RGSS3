@@ -7,7 +7,7 @@
 # 예:) 
 #
 # # 관리자 모드가 아니라면 관리자 모드로 게임 재실행
-# if not AminMode.valid?
+# if not AdminMode.valid?
 #   AdminMode.run
 # end
 #
@@ -31,12 +31,10 @@ module AdminMode
   
   extend self
   
-  # AdminMode.valid?
   def valid?
-    return system("net session >nul 2>&1")
+    return system("net session 1>NUL 2>NUL")
   end
   
-  # AdminMode.run
   def run
     system(COMMAND)
   end
