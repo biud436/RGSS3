@@ -1,8 +1,7 @@
-# Name : 관리자 권한 획득
+# Name : 관리자 권한 획득 / Obtaining Administrator Rights
 # Author : biud436
 # Usage :
-#
-# 본 스크립트는 Windows 7 (또는 비스타) 이상에서만 동작합니다.
+# This script allows you to run the game as an administrator mode on Windows 7 or more. 
 #
 # 예:) 
 #
