@@ -119,10 +119,10 @@ module FFMPEG
 
   end
   
-  def screen_record(time=10)
+  def screen_record(filename, time=10)
     title = `powershell (Get-Process -Name "Game").MainWindowTitle`
     Thread.new do 
-      `ffmpeg -f gdigrab -framerate 30 -t #{time} -i desktop -vcodec libx264 Movies/m-#{Time.now.to_i}.mkv`
+      `ffmpeg -f gdigrab -framerate 30 -t #{time} -i desktop -vcodec libx264 Movies/#{filename}.mkv`
     end
   end
 end
