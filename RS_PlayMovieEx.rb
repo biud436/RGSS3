@@ -165,7 +165,8 @@ module FFMPEG
   
   # 화면 녹화
   def screen_record(filename, time=10)
-    File.delete(filename) if FileTest.exist?(filename)
+    target_video_name = "Movies/#{filename}"
+    File.delete(target_video_name) if FileTest.exist?(target_video_name)
     Thread.new do 
       title_name = INI.read_string('Game', 'Title', 'Game.ini')
       `ffmpeg -f gdigrab -framerate 30 -t #{time} -i title=#{title_name} Movies/#{filename}.mkv`
