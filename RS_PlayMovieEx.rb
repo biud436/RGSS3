@@ -1,6 +1,10 @@
 # Name : RS_PlayMovieEx
 # Author : biud436
-# Date : 2020.03.24 (v1.0.1)
+# Date : 2020.03.24
+# Version Log :
+# 2020.03.24 (v1.0.0) : First Release.
+# 2020.03.24 (v1.0.2) :
+# - Added a feature that takes a screen record.
 # Desc :
 # This script allows you to playback a video of specific video format such as mp4
 # 
@@ -14,6 +18,28 @@
 # |
 # | - ffmpeg.exe
 # | - ffplay.exe
+#
+# -----------------------------------------------------------------------------
+# Example
+# -----------------------------------------------------------------------------
+#
+# # ** 동영상에서 음성 파일(OGG 파일)을 추출합니다.
+# # ** FFMPEG.extract("Movies/d.mp4", "Movies/f")
+# FFMPEG.extract(_in, _out)
+# 
+# # ** 특정 포맷의 영상을 OGV 파일로 변환합니다.
+# # ** FFMPEG.to_ogv("d.mp4", "f.ogv")
+# FFMPEG.to_ogv(_in, _out)
+# 
+# # ** 화면을 5초 간 녹화한 후 Movies 폴더에 mkv 포맷으로 저장 (GDI 사용)
+# FFMPEG.screen_record("myrecord", 5)
+# 
+# # ** 화면 녹화 후 자동 리플레이
+# Thread.new do
+#   t = FFMPEG.screen_record("myrecord", 5)
+#   t.join
+#   FFMPEG.play("myrecord.mkv")
+# end
 #
 $imported = {} if $imported.nil?
 $imported["RS_PlayMovieEx"] = true
