@@ -1,6 +1,6 @@
 # Name : RS_PlayMovieEx
 # Author : biud436
-# Date : 2020.03.24 (v1.0.0)
+# Date : 2020.03.24 (v1.0.1)
 # Desc :
 # This script allows you to playback a video of specific video format such as mp4
 # 
@@ -87,7 +87,7 @@ module FFMPEG
     extra = fullscreen? ? "-fs -alwaysontop" : ""
     
     t = Thread.new do
-      `ffplay "Movies/#{filename}" -noborder -x #{vw} -y #{vh} #{extra}`
+      `ffplay "Movies/#{filename}" -noborder -autoexit -x #{vw} -y #{vh} #{extra}`
     end
     
     ffplay_hwnd = `powershell (Get-Process -Name "ffplay").MainWindowHandle`.to_i
