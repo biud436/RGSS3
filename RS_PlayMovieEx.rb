@@ -4,7 +4,8 @@
 # Version Log :
 # 2020.03.24 (v1.0.0) : First Release.
 # 2020.03.24 (v1.0.2) :
-# - Added a feature that takes a screen record.
+# - Added a feature that takes a screen record
+# - Added an image overlay to the video
 # Desc :
 # This script allows you to playback a video of specific video format such as mp4
 # 
@@ -19,6 +20,9 @@
 # | - ffmpeg.exe
 # | - ffplay.exe
 #
+# To use the screen replay feature, 
+# You place overlay-image the to Graphics/Systems/rec.png
+#
 # -----------------------------------------------------------------------------
 # Example
 # -----------------------------------------------------------------------------
@@ -31,15 +35,11 @@
 # # ** FFMPEG.to_ogv("d.mp4", "f.ogv")
 # FFMPEG.to_ogv(_in, _out)
 # 
-# # ** 화면을 5초 간 녹화한 후 Movies 폴더에 mkv 포맷으로 저장 (GDI 사용)
+# # ** 화면을 5초 간 녹화한 후 Movies 폴더에 mkv 포맷으로 저장
 # FFMPEG.screen_record("myrecord", 5)
 # 
-# # ** 화면 녹화 후 자동 리플레이
-# Thread.new do
-#   t = FFMPEG.screen_record("myrecord", 5)
-#   t.join
-#   FFMPEG.play("myrecord.mkv")
-# end
+# # ** 화면을 5초 간 녹화한 후 REC와 오버레이 후 재생
+# FFMPEG.replay("test-record", 5)
 #
 $imported = {} if $imported.nil?
 $imported["RS_PlayMovieEx"] = true
@@ -166,7 +166,7 @@ module FFMPEG
       raise "ffplay가 없습니다"
     end
     
-    return if fullscreen?
+    return t if fullscreen?
     
     rt = [0,0,0,0].pack('l4')
     GetWindowRect.call(ffplay_hwnd, rt)
@@ -186,18 +186,45 @@ module FFMPEG
     h = h
     
     MoveWindow.call(ffplay_hwnd, x, y, w, h, 0)
+    
+    return t
 
   end
   
   # 화면 녹화
   def screen_record(filename, time=10)
-    target_video_name = "Movies/#{filename}"
+    target_video_name = "Movies/#{filename}.mkv"
     File.delete(target_video_name) if FileTest.exist?(target_video_name)
     Thread.new do 
       title_name = INI.read_string('Game', 'Title', 'Game.ini')
       `ffmpeg -f gdigrab -framerate 30 -t #{time} -i title=#{title_name} Movies/#{filename}.mkv`
     end
   end  
+  
+  # 이미지 오버레이
+  def screen_record_overlay_image(filename, time=10)
+    target_video_name = "Movies/#{filename}.mkv"
+    File.delete(target_video_name) if FileTest.exist?(target_video_name)
+    Thread.new do 
+      title_name = INI.read_string('Game', 'Title', 'Game.ini')
+      `ffmpeg -f gdigrab -framerate 30 -t #{time} -i title=#{title_name} Movies/#{filename}.mkv`
+      `ffmpeg -i Movies/#{filename}.mkv -i Graphics/System/rec.png -filter_complex "[0:v][1:v] overlay=(W-w)/2:(H-h)/2:enable='between(t,0,20)'" -pix_fmt yuv420p -c:a copy Movies/#{filename}-rec.mkv`
+    end    
+  end
+  
+  # 리플레이
+  def replay(filename, time=10)  
+    Thread.new do 
+      t = FFMPEG.screen_record_overlay_image(filename, 5)
+      t.join
+      play_thread = FFMPEG.play("#{filename}-rec.mkv")
+      play_thread.join
+      target_video_name = "Movies/#{filename}.mkv"
+      File.delete(target_video_name) if FileTest.exist?(target_video_name)  
+      target_video_name = "Movies/#{filename}-rec.mkv"
+      File.rename(target_video_name, "Movies/#{filename}.mkv") if FileTest.exist?(target_video_name)
+    end                
+  end
 end
 
 module Graphics
