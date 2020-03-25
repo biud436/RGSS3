@@ -263,7 +263,9 @@ module FFMPEG
       `ffmpeg -i Movies/#{filename}.mkv -i Graphics/System/rec.png -filter_complex "[0:v][1:v] overlay=(W-w)/2:(H-h)/2:enable='between(t,0,20)'" -pix_fmt yuv420p -c:a copy Movies/#{filename}-rec.mkv`
       
       # loudnorm 필터는 사운드 노말라이즈를 위한 것인데 인코딩 속도가 느리다.
-      `ffmpeg -y -i Movies/#{filename}-rec.mkv -filter:a loudnorm Movies/#{filename}-rec.mp4`
+      if AUDIO_CAPTURE_OK
+        `ffmpeg -y -i Movies/#{filename}-rec.mkv -filter:a loudnorm Movies/#{filename}-rec.mp4`
+      end
       
     end    
   end
