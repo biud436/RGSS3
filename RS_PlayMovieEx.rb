@@ -110,6 +110,7 @@ module FFMPEG
   AUDIO_CAPTURE = ->(device, time){ %Q(-f dshow -ar 44100 -ac 2 -t #{time} -i audio="#{device}") }
   
   # To start the audio capture automatically, try to set as true
+  # But, if this option is to true, it is very slow encoding.
   AUDIO_CAPTURE_OK = true
     
   # 명령행 인자 사용, 다른 프로세스로 구현, 작동된다면 소스코드 공개의 의무는 없습니다.
