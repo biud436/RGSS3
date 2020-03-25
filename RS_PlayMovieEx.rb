@@ -179,6 +179,12 @@ module FFMPEG
     
   end
   
+  def print_audio_desc(filename)
+    name = "Movies/#{filename}"
+    return if not FileTest.exist?(name)
+    `ffmpeg -i #{name} -af volumedetect -f null -`
+  end
+  
   # OGV가 아닌 다른 영상을 재생합니다
   def play(filename)
     
@@ -260,6 +266,7 @@ module FFMPEG
       `ffmpeg -i Movies/#{filename}.mkv -filter:a loudnorm -i Graphics/System/rec.png -filter_complex "[0:v][1:v] overlay=(W-w)/2:(H-h)/2:enable='between(t,0,20)'" -pix_fmt yuv420p -c:a copy Movies/#{filename}-rec.mkv`
       
       # 노멀라이즈 처리 (화면 녹화와 동시에 처리하면 렉 걸림)
+      # loudnorm 필터는 인코딩 시간이 오래 걸린다.
       `ffmpeg -y -i Movies/#{filename}-rec.mkv -filter:a loudnorm Movies/#{filename}-rec.mp4`
       
     end    
