@@ -27,18 +27,18 @@
 # Example
 # -----------------------------------------------------------------------------
 #
-# # ** 동영상에서 음성 파일(OGG 파일)을 추출합니다.
-# # ** FFMPEG.extract("Movies/d.mp4", "Movies/f")
+# # ** Extract a sound file(*.ogg) from video files
 # FFMPEG.extract(_in, _out)
+# FFMPEG.extract("Movies/in.mp4", "Movies/out")
 # 
-# # ** 특정 포맷의 영상을 OGV 파일로 변환합니다.
-# # ** FFMPEG.to_ogv("d.mp4", "f.ogv")
+# # ** Converts the video file as OGV file format.
 # FFMPEG.to_ogv(_in, _out)
+# FFMPEG.to_ogv("in.mp4", "out.ogv")
 # 
-# # ** 화면을 5초 간 녹화한 후 Movies 폴더에 mkv 포맷으로 저장
+# # ** This can replay the video after recording a screen using ffmpeg.
 # FFMPEG.screen_record("myrecord", 5)
 # 
-# # ** 화면을 5초 간 녹화한 후 REC와 오버레이 후 재생
+# # ** This method allows you to overlay an image to a certain video after recording a game screen.
 # FFMPEG.replay("test-record", 5)
 #
 $imported = {} if $imported.nil?
