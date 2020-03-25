@@ -7,7 +7,8 @@
 # - Added a feature that takes a screen record
 # - Added an image overlay to the video
 # 2020.03.25 (v1.0.3) :
-# - Added the audio capture
+# - Added the audio capture.
+# - Added normalize option to replay video.
 # Desc :
 # This script allows you to playback a video of specific video format such as mp4
 # 
@@ -108,8 +109,8 @@ module FFMPEG
   OPTION2 = "-c:v libx264 -r 30 -preset ultrafast -tune zerolatency -crf 25 -pix_fmt yuv420p"
   AUDIO_CAPTURE = ->(device, time){ %Q(-f dshow -ar 44100 -ac 2 -t #{time} -i audio="#{device}") }
   
-  # 오디오 캡쳐를 하려면 true
-  AUDIO_CAPTURE_OK = false
+  # To start the audio capture automatically, try to set as true
+  AUDIO_CAPTURE_OK = true
     
   # 명령행 인자 사용, 다른 프로세스로 구현, 작동된다면 소스코드 공개의 의무는 없습니다.
   # https://olis.or.kr/consulting/projectHistoryDetail.do?bbsId=2&bbsNum=17521
@@ -231,7 +232,12 @@ module FFMPEG
     File.delete(target_video_name) if FileTest.exist?(target_video_name)
     Thread.new do 
       title_name = INI.read_string('Game', 'Title', 'Game.ini')
-      `ffmpeg -f gdigrab -framerate 30 #{OPTION1} -t #{time} -i title=#{title_name} #{OPTION2} Movies/#{filename}.mkv`
+      audio_devices = windows_devices.values
+      audio = ""
+      if audio_devices.size > 0 && AUDIO_CAPTURE_OK
+        audio = AUDIO_CAPTURE.call(audio_devices.first, time)
+      end      
+      `ffmpeg -y #{audio} -f gdigrab -framerate 30 #{OPTION1} -t #{time} -i title=#{title_name} #{OPTION2} -filter:a loudnorm Movies/#{filename}.mkv`
     end
   end  
   
@@ -246,7 +252,7 @@ module FFMPEG
       if audio_devices.size > 0 && AUDIO_CAPTURE_OK
         audio = AUDIO_CAPTURE.call(audio_devices.first, time)
       end
-      `ffmpeg #{audio} -f gdigrab -framerate 30 #{OPTION1} -t #{time} -i title=#{title_name} #{OPTION2} Movies/#{filename}.mkv`
+      `ffmpeg -y #{audio} -f gdigrab -framerate 30 #{OPTION1} -t #{time} -i title=#{title_name} #{OPTION2} -filter:a loudnorm Movies/#{filename}.mkv`
       `ffmpeg -i Movies/#{filename}.mkv -i Graphics/System/rec.png -filter_complex "[0:v][1:v] overlay=(W-w)/2:(H-h)/2:enable='between(t,0,20)'" -pix_fmt yuv420p -c:a copy Movies/#{filename}-rec.mkv`
     end    
   end
@@ -264,6 +270,16 @@ module FFMPEG
       File.rename(target_video_name, "Movies/#{filename}.mkv") if FileTest.exist?(target_video_name)
     end                
   end
+  
+  puts %Q(
+=============================
+  Audio
+=============================
+  )
+  FFMPEG.windows_devices.each do |k, v|
+    p "#{k} -> #{v}"
+  end
+  
 end
 
 module Graphics
