@@ -6,6 +6,8 @@
 # 2020.03.24 (v1.0.2) :
 # - Added a feature that takes a screen record
 # - Added an image overlay to the video
+# 2020.03.25 (v1.0.3) :
+# - Added the audio capture
 # Desc :
 # This script allows you to playback a video of specific video format such as mp4
 # 
@@ -104,7 +106,11 @@ module FFMPEG
 
   OPTION1 = "-show_region 1"
   OPTION2 = "-c:v libx264 -r 30 -preset ultrafast -tune zerolatency -crf 25 -pix_fmt yuv420p"
+  AUDIO_CAPTURE = ->(device, time){ %Q(-f dshow -ar 44100 -ac 2 -t #{time} -i audio="#{device}") }
   
+  # 오디오 캡쳐를 하려면 true
+  AUDIO_CAPTURE_OK = false
+    
   # 명령행 인자 사용, 다른 프로세스로 구현, 작동된다면 소스코드 공개의 의무는 없습니다.
   # https://olis.or.kr/consulting/projectHistoryDetail.do?bbsId=2&bbsNum=17521
   
@@ -145,6 +151,31 @@ module FFMPEG
     r = rt.unpack('l4')
     
     return Rect.new(r[0], r[1], r[2] - r[0], r[3] - r[1])
+  end
+  
+  # 사용 가능한 오디오 디바이스 출력
+  def windows_devices
+    devices = {}
+    ignore_devices = ["WebCam", "XSplitBroadcaster"]
+    f = IO.popen(["ffmpeg", "-list_devices", "true", "-f", "dshow", "-i", "dummy", :err=>[:child, :out]])
+    lines = f.readlines    
+    flag = false
+    lines.each do |line|
+      if line =~ /.*\"(.*)\"/
+        device = $1
+        if device[0] != "@" && ignore_devices.select {|i| device[i] }.size == 0
+          flag = device
+          next
+        end
+        if flag
+          devices[flag] = device
+          flag = false
+        end
+      end
+    end
+    
+    devices
+    
   end
   
   # OGV가 아닌 다른 영상을 재생합니다
@@ -210,7 +241,12 @@ module FFMPEG
     File.delete(target_video_name) if FileTest.exist?(target_video_name)
     Thread.new do 
       title_name = INI.read_string('Game', 'Title', 'Game.ini')
-      `ffmpeg -f gdigrab -framerate 30 #{OPTION1} -t #{time} -i title=#{title_name} #{OPTION2} Movies/#{filename}.mkv`
+      audio_devices = windows_devices.values
+      audio = ""
+      if audio_devices.size > 0 && AUDIO_CAPTURE_OK
+        audio = AUDIO_CAPTURE.call(audio_devices.first, time)
+      end
+      `ffmpeg #{audio} -f gdigrab -framerate 30 #{OPTION1} -t #{time} -i title=#{title_name} #{OPTION2} Movies/#{filename}.mkv`
       `ffmpeg -i Movies/#{filename}.mkv -i Graphics/System/rec.png -filter_complex "[0:v][1:v] overlay=(W-w)/2:(H-h)/2:enable='between(t,0,20)'" -pix_fmt yuv420p -c:a copy Movies/#{filename}-rec.mkv`
     end    
   end
