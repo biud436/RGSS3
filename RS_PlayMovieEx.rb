@@ -285,12 +285,10 @@ module FFMPEG
       play_thread = FFMPEG.play("#{filename}-rec.mp4")
       play_thread.join
       
-      target_video_name = "Movies/#{filename}.mkv"
-      File.delete(target_video_name) if FileTest.exist?(target_video_name)  
-      target_video_name = "Movies/#{filename}-rec.mkv"
-      File.rename(target_video_name, "Movies/#{filename}.mkv") if FileTest.exist?(target_video_name)
-      
-      File.delete(target_video_name) if FileTest.exist?(target_video_name)
+      src = "Movies/#{filename}.mkv"
+      File.delete(src) if FileTest.exist?(src)
+      src = "Movies/#{filename}-rec.mkv"
+      File.delete(src) if FileTest.exist?(src)
       
       last.replay if valid_replay
       
