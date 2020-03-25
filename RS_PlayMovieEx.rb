@@ -259,14 +259,10 @@ module FFMPEG
         audio = AUDIO_CAPTURE.call(audio_devices.first, time)
       end
       
-      # 화면 녹화
       `ffmpeg -y #{audio} -f gdigrab -framerate 30 #{OPTION1} -t #{time} -i title=#{title_name} #{OPTION2} Movies/#{filename}.mkv`
+      `ffmpeg -i Movies/#{filename}.mkv -i Graphics/System/rec.png -filter_complex "[0:v][1:v] overlay=(W-w)/2:(H-h)/2:enable='between(t,0,20)'" -pix_fmt yuv420p -c:a copy Movies/#{filename}-rec.mkv`
       
-      # 이미지 오버레이 처리
-      `ffmpeg -i Movies/#{filename}.mkv -filter:a loudnorm -i Graphics/System/rec.png -filter_complex "[0:v][1:v] overlay=(W-w)/2:(H-h)/2:enable='between(t,0,20)'" -pix_fmt yuv420p -c:a copy Movies/#{filename}-rec.mkv`
-      
-      # 노멀라이즈 처리 (화면 녹화와 동시에 처리하면 렉 걸림)
-      # loudnorm 필터는 인코딩 시간이 오래 걸린다.
+      # loudnorm 필터는 사운드 노말라이즈를 위한 것인데 인코딩 속도가 느리다.
       `ffmpeg -y -i Movies/#{filename}-rec.mkv -filter:a loudnorm Movies/#{filename}-rec.mp4`
       
     end    
@@ -277,6 +273,14 @@ module FFMPEG
     Thread.new do 
       t = FFMPEG.screen_record_overlay_image(filename, 5)
       t.join
+      
+      last = RPG::BGM.last
+      valid_replay = false
+      
+      if not last.name.nil?
+        Audio.bgm_fade(200) 
+        valid_replay = true
+      end
     
       play_thread = FFMPEG.play("#{filename}-rec.mp4")
       play_thread.join
@@ -287,6 +291,9 @@ module FFMPEG
       File.rename(target_video_name, "Movies/#{filename}.mkv") if FileTest.exist?(target_video_name)
       
       File.delete(target_video_name) if FileTest.exist?(target_video_name)
+      
+      last.replay if valid_replay
+      
     end                
   end
   
