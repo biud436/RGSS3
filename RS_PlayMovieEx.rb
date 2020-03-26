@@ -9,6 +9,8 @@
 # 2020.03.25 (v1.0.3) :
 # - Added the audio capture.
 # - Added normalize option to replay video.
+# 2020.03.26 (v1.0.4) :
+# - Fixed logic for detecting the Stereo Mix.
 # Desc :
 # This script allows you to playback a video of specific video format such as mp4
 # 
@@ -90,6 +92,30 @@ if not defined?(Unicode)
   end
 end
 
+module Unicode
+  CP_ACP = 0
+  
+  def ansi_to_utf8
+    buf = "\0" * (self.size * 2 + 1)
+    ubuf = "\0" * (self.size * 2 + 1)
+    
+    MultiByteToWideChar.call(CP_ACP, 0, self, -1, buf, buf.size)
+    WideCharToMultiByte.call(UTF_8, 0, buf, -1, ubuf, ubuf.size, 0, 0)
+    
+    ubuf
+  end
+  
+  def utf8_to_ansi
+    ubuf = "\0" * (self.size * 2 + 1)    
+    buf = "\0" * (self.size * 2 + 1)    
+    
+    MultiByteToWideChar.call(UTF_8, 0, self, -1, ubuf, ubuf.size)
+    WideCharToMultiByte.call(CP_ACP, 0, ubuf, -1, buf, buf.size, 0, 0)
+    
+    buf
+  end
+end
+
 module FFMPEG
   
   HWND = `powershell (Get-Process -Name "Game").MainWindowHandle`.to_i
@@ -99,11 +125,27 @@ module FFMPEG
   MoveWindow = Win32API.new('user32.dll', 'MoveWindow', 'liiiii', 'i')
   GetSystemMetrics = Win32API.new('user32.dll', 'GetSystemMetrics', 'i', 'i')
   
+  # Returns the number of waveform-audio input devices present in the system.
+  WaveInGetNumDevs = Win32API.new('Winmm.dll', 'waveInGetNumDevs', 'v', 'l')
+  
+  # 입력 장치의 이름을 획득합니다.
+  WaveInGetDevCaps  = Win32API.new('Winmm.dll', 'waveInGetDevCaps', 'lPl', 'l')
+  
+  # 코드 페이지를 반환합니다.
+  GetOEMCP = Win32API.new("Kernel32.dll", "GetOEMCP", "v", "l")
+  
   SM_CXEDGE = 45
   SM_CYEDGE = 46
   SM_CXSCREEN = 0
   SM_CYSCREEN = 1
   SM_CYCAPTION = 4
+  
+  @@options = {
+    :VIRTUAL_AUDIO_CAPTURER => false,
+    :SCREEN_CAPTURE_RECORDER => false,
+    :DSHOW => false,
+    :GDIGRAB => true,
+  }
 
   OPTION1 = "-show_region 1"
   OPTION2 = "-c:v libx264 -r 30 -preset ultrafast -tune zerolatency -crf 25 -pix_fmt yuv420p"
@@ -111,7 +153,13 @@ module FFMPEG
   
   # To start the audio capture automatically, try to set as true
   # But, if this option is to true, it is very slow encoding.
-  AUDIO_CAPTURE_OK = true
+  # and now currently, the audio capturer is unstable, 
+  # because ffmpeg's gdigrab doesn't provide the sound capture.
+  @@audio_capture_ok = false
+  
+  # Get the locale
+  # My system is used the character sets in CP949.
+  @@locale = GetOEMCP.call
     
   # 명령행 인자 사용, 다른 프로세스로 구현, 작동된다면 소스코드 공개의 의무는 없습니다.
   # https://olis.or.kr/consulting/projectHistoryDetail.do?bbsId=2&bbsNum=17521
@@ -133,6 +181,7 @@ module FFMPEG
     end
   end
   
+  # Checks whether the window is fullscreen.
   def fullscreen?
     ct = client_size
     return true if ct.width == screen_width && ct.height == screen_height
@@ -155,7 +204,8 @@ module FFMPEG
     return Rect.new(r[0], r[1], r[2] - r[0], r[3] - r[1])
   end
   
-  # 사용 가능한 오디오 디바이스 출력
+  # Retrieves available audio and video devices on your system. 
+  # Adds a new device to a list if they are found valid devices.
   def windows_devices
     devices = {}
     ignore_devices = ["WebCam", "XSplitBroadcaster"]
@@ -180,6 +230,120 @@ module FFMPEG
     
   end
   
+  def retrive_streomix
+    match = stereo_mix_exist?
+    return nil if not match
+
+    windows_devices.each do |k, v|
+      return v if k.include?(match)
+    end
+    
+    return nil
+  end
+    
+  # Retrieves available audio devices on your system, without FFMPEG
+  # Returns WAVEINCAPS struct like C-Style as Hash.
+  def audio_devices
+
+    devices = WaveInGetNumDevs.call
+        
+    sound_devices = []
+    
+    for i in (0...devices)
+      
+      caps = [0,0,0].pack("ssl") + ("\0" * 32) + [0, 0, 0].pack("lss")
+      WaveInGetDevCaps.call(i, caps, caps.size)
+
+      v = caps.slice!(0, 8).unpack("ssl") # wMid, wPid, vDriverVersion
+      name = caps.slice!(0, 32) # szPname
+      s = caps.slice!(0, 8).unpack("lss") # dwFormats, wChannels, wReserved1
+      
+      sound_devices.push({
+        :wMid => v[0],
+        :wPid => v[1],
+        :vDriverVersion => v[2],
+        :szPname => name.ansi_to_utf8.delete!("\0"), # CP949에서 UTF8로 변경
+        :dwFormats => s[0],
+        :wChannels => s[1],
+        :wReserved1 => s[2]
+      })
+      
+    end
+        
+    sound_devices
+    
+  end
+  
+  # Retrieves available Stereo Mix in your sound devices.
+  # if not, you must install virtual sound capture card such as XSplit, 
+  # CamStudio, OBS Studio.
+  def stereo_mix_exist?
+    
+    str = "Stereo Mix"
+    
+    str = case @@locale
+    when 950 # Chinese (Traditional Chinese)
+      "立體聲混音"
+    when 949 # 한국어, ks_c_5601-1987
+      "스테레오 믹스"
+    when 936 # Chinese (Simplified Chinese)
+      "立体声混音"      
+    when 932 # Japan, shift_jis
+      "ステレオ ミキサー"
+    when 850 # German 
+      "Stereomix"
+    when 866 # Russian
+      "Стерео микшер"
+    when 850 # Brazilian portuguese
+      "Mixagem estéreo"      
+    when 860 # Portuguese
+      "Mistura estéreo"
+    when 437 # United States
+    else
+      "Stereo Mix"
+    end    
+    
+    audio_devices.each do |device|
+      return str if device[:szPname].include?(str)
+    end
+    
+    return nil
+    
+  end
+  
+  def check_virtual_driver
+    
+    %Q(
+    @@options = {
+      :VIRTUAL_AUDIO_CAPTURER => false,
+      :SCREEN_CAPTURE_RECORDER => false,
+      :DSHOW => false,
+      :GDIGRAB => true,
+    }
+          
+    data = windows_devices
+        
+    if data["screen-capture-recorder"]
+      @@options[:SCREEN_CAPTURE_RECORDER] = true
+      @@options[:GDIGRAB] = false
+      
+      if data["virtual-audio-capturer"]
+        @@options[:VIRTUAL_AUDIO_CAPTURER] = true
+        @@options[:DSHOW] = true
+      end      
+    end
+    
+    @@options
+    )
+    
+    @@options[:DSHOW] = false
+    @@options[:VIRTUAL_AUDIO_CAPTURER] = false
+    @@options[:SCREEN_CAPTURE_RECORDER] = false
+    @@options[:GDIGRAB] = true
+    
+  end
+  
+  # Print a volume information of the specific audio file.
   def print_audio_desc(filename)
     name = "Movies/#{filename}"
     return if not FileTest.exist?(name)
@@ -237,14 +401,24 @@ module FFMPEG
   def screen_record(filename, time=10)
     target_video_name = "Movies/#{filename}.mkv"
     File.delete(target_video_name) if FileTest.exist?(target_video_name)
+    
     Thread.new do 
       title_name = INI.read_string('Game', 'Title', 'Game.ini')
-      audio_devices = windows_devices.values
+      audio_devices = retrive_streomix
       audio = ""
-      if audio_devices.size > 0 && AUDIO_CAPTURE_OK
-        audio = AUDIO_CAPTURE.call(audio_devices.first, time)
-      end      
-      `ffmpeg -y #{audio} -f gdigrab -framerate 30 #{OPTION1} -t #{time} -i title=#{title_name} #{OPTION2} Movies/#{filename}.mkv`
+      
+      if @@options[:GDIGRAB]
+        if audio_devices && @@audio_capture_ok
+          audio = AUDIO_CAPTURE.call(audio_devices, time)
+        end      
+        `ffmpeg -y #{audio} -f gdigrab -framerate 30 #{OPTION1} -t #{time} -i title=#{title_name} #{OPTION2} Movies/#{filename}.mkv`
+      elsif @@options[:DSHOW]
+#~         audio = ""
+#~         if @@audio_capture_ok
+#~           audio = AUDIO_CAPTURE.call("virtual-audio-capturer", time)
+#~         end
+#~         `ffmpeg -y #{audio} -f gdigrab -framerate 30 #{OPTION1} -t #{time} -i title=#{title_name} #{OPTION2} Movies/#{filename}.mkv`
+      end
     end
   end  
   
@@ -254,18 +428,28 @@ module FFMPEG
     File.delete(target_video_name) if FileTest.exist?(target_video_name)
     Thread.new do 
       title_name = INI.read_string('Game', 'Title', 'Game.ini')
-      audio_devices = windows_devices.values
+      audio_devices = retrive_streomix
       audio = ""
-      if audio_devices.size > 0 && AUDIO_CAPTURE_OK
-        audio = AUDIO_CAPTURE.call(audio_devices.first, time)
-      end
       
-      `ffmpeg -y #{audio} -f gdigrab -framerate 30 #{OPTION1} -t #{time} -i title=#{title_name} #{OPTION2} Movies/#{filename}.mkv`
-      `ffmpeg -i Movies/#{filename}.mkv -i Graphics/System/rec.png -filter_complex "[0:v][1:v] overlay=(W-w)/2:(H-h)/2:enable='between(t,0,20)'" -pix_fmt yuv420p -c:a copy Movies/#{filename}-rec.mkv`
-      
-      # loudnorm 필터는 사운드 노말라이즈를 위한 것인데 인코딩 속도가 느리다.
-      if AUDIO_CAPTURE_OK
-        `ffmpeg -y -i Movies/#{filename}-rec.mkv -filter:a loudnorm Movies/#{filename}-rec.mp4`
+      if @@options[:GDIGRAB]
+        if audio_devices && @@audio_capture_ok
+          audio = AUDIO_CAPTURE.call(audio_devices, time)
+        end
+        
+        `ffmpeg -y #{audio} -f gdigrab -framerate 30 #{OPTION1} -t #{time} -i title=#{title_name} #{OPTION2} Movies/#{filename}.mkv`
+        `ffmpeg -i Movies/#{filename}.mkv -i Graphics/System/rec.png -filter_complex "[0:v][1:v] overlay=(W-w)/2:(H-h)/2:enable='between(t,0,20)'" -pix_fmt yuv420p -c:a copy Movies/#{filename}-rec.mkv`
+        
+        # loudnorm 필터는 사운드 노말라이즈를 위한 것인데 인코딩 속도가 느리다.
+        if @@audio_capture_ok
+          `ffmpeg -y -i Movies/#{filename}-rec.mkv -filter:a loudnorm Movies/#{filename}-rec.mp4`
+        end
+      elsif @@options[:DSHOW]
+#~         audio = ""
+#~         if @@audio_capture_ok
+#~           audio = AUDIO_CAPTURE.call("virtual-audio-capturer", time)
+#~         end
+#~         `ffmpeg -y #{audio} -f gdigrab -framerate 30 #{OPTION1} -t #{time} -i title=#{title_name} #{OPTION2} Movies/#{filename}.mkv`
+#~         `ffmpeg -i Movies/#{filename}.mkv -i Graphics/System/rec.png -filter_complex "[0:v][1:v] overlay=(W-w)/2:(H-h)/2:enable='between(t,0,20)'" -pix_fmt yuv420p -c:a copy Movies/#{filename}-rec.mkv`
       end
       
     end    
@@ -305,6 +489,16 @@ module FFMPEG
   )
   FFMPEG.windows_devices.each do |k, v|
     p "#{k} -> #{v}"
+  end
+  
+  p FFMPEG.check_virtual_driver
+  
+  if FFMPEG.stereo_mix_exist?
+    p "Stereo Mix is detected!"
+    @@audio_capture_ok = true
+  else
+    p "Stereo Mix does not detect!"
+    @@audio_capture_ok = false
   end
   
 end
