@@ -151,8 +151,8 @@ module FFMPEG
   OPTION2 = "-c:v libx264 -r 30 -preset ultrafast -tune zerolatency -crf 25 -pix_fmt yuv420p"
   AUDIO_CAPTURE = ->(device, time){ %Q(-f dshow -ar 44100 -ac 2 -t #{time} -i audio="#{device}") }
   
-  # To start the audio capture automatically, try to set as true
-  # But, if this option is to true, it is very slow encoding.
+  # Do not try to set this manually!
+  # The audio capture option is detected automatically. 
   # and now currently, the audio capturer is unstable, 
   # because ffmpeg's gdigrab doesn't provide the sound capture.
   @@audio_capture_ok = false
