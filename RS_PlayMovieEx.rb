@@ -485,11 +485,6 @@ module FFMPEG
         end      
         `#{Downloader::HOST_NAME}/ffmpeg -y #{audio} -f gdigrab -framerate 30 #{OPTION1} -t #{time} -i title=#{title_name} #{OPTION2} Movies/#{filename}.mkv`
       elsif @@options[:DSHOW]
-#~         audio = ""
-#~         if @@audio_capture_ok
-#~           audio = AUDIO_CAPTURE.call("virtual-audio-capturer", time)
-#~         end
-#~         `ffmpeg -y #{audio} -f gdigrab -framerate 30 #{OPTION1} -t #{time} -i title=#{title_name} #{OPTION2} Movies/#{filename}.mkv`
       end
     end
   end  
@@ -516,12 +511,6 @@ module FFMPEG
           `#{Downloader::HOST_NAME}/ffmpeg -y -i Movies/#{filename}-rec.mkv -filter:a loudnorm Movies/#{filename}-rec.mp4`
         end
       elsif @@options[:DSHOW]
-#~         audio = ""
-#~         if @@audio_capture_ok
-#~           audio = AUDIO_CAPTURE.call("virtual-audio-capturer", time)
-#~         end
-#~         `ffmpeg -y #{audio} -f gdigrab -framerate 30 #{OPTION1} -t #{time} -i title=#{title_name} #{OPTION2} Movies/#{filename}.mkv`
-#~         `ffmpeg -i Movies/#{filename}.mkv -i Graphics/System/rec.png -filter_complex "[0:v][1:v] overlay=(W-w)/2:(H-h)/2:enable='between(t,0,20)'" -pix_fmt yuv420p -c:a copy Movies/#{filename}-rec.mkv`
       end
       
     end    
