@@ -11,6 +11,8 @@
 # - Added normalize option to replay video.
 # 2020.03.26 (v1.0.4) :
 # - Fixed logic for detecting the Stereo Mix.
+# 2020.03.28 (v1.0.5) :
+# - Added a new feature that can download the ffmpeg during the game.
 # Desc :
 # This script allows you to playback a video of specific video format such as mp4
 # 
@@ -161,15 +163,85 @@ module FFMPEG
   # My system is used the character sets in CP949.
   @@locale = GetOEMCP.call
     
-  # 명령행 인자 사용, 다른 프로세스로 구현, 작동된다면 소스코드 공개의 의무는 없습니다.
-  # https://olis.or.kr/consulting/projectHistoryDetail.do?bbsId=2&bbsNum=17521
+  # Downloader module can download the ffmpeg during the game.
+  module Downloader
+
+    extend self  
+    
+    HOST = "https://ffmpeg.zeranoe.com/builds/win64/static/ffmpeg-4.2.2-win64-static.zip"
+    HOST_NAME = "ffmpeg-4.2.2-win64-static/bin"
+    TARGET_ZIP_FILE = "ffmpeg-4.2.2-win64-static.zip"
+    MSG = "FFMPEG 파일을 다운로드 받으시겠습니까?"
+    
+    MessageBox = Win32API.new('User32.dll', 'MessageBoxW', 'lppl', 'i')
+    IDYES = 6
+    IDNO = 7
+    
+    @@version = `powershell "$PSVersionTable.PSVersion.Major"`.to_i rescue 0
+
+    # 파워쉘 버전 획득
+    def version
+      @@version
+    end
+    
+    # FFMPEG 다운로드가 필요한가?
+    def new_download?
+      message = MSG.unicode!
+      wnd_name = `powershell (Get-Process -Name "Game").MainWindowTitle`.chomp
+      ret = MessageBox.call(FFMPEG::HWND, message, wnd_name.unicode!, 4 | 0x00000040)
+      ret
+    end
+    
+    # FFMPEG가 설치되어있는 지 여부 확인
+    def exist?
+      return false if !FileTest.exist?("#{Downloader::HOST_NAME}/ffmpeg.exe")
+      return false if !FileTest.exist?("#{Downloader::HOST_NAME}/ffplay.exe")      
+      return true
+    end    
+    
+    # 압축 해제
+    def decompress
+      # Windows 10 이상
+      if version >= 5
+        `powershell -command "Expand-Archive -Path '#{TARGET_ZIP_FILE}' -DestinationPath '.'"`
+      end      
+    end
+      
+    # 다운로드 시작
+    def pending_download
+
+      return if exist?
+              
+      if new_download? == IDYES
+        if version >= 3
+          `powershell -command "wget '#{HOST}' -OutFile '#{TARGET_ZIP_FILE}'"`
+        end
+        
+        if FileTest.exist?(TARGET_ZIP_FILE)
+          decompress
+          
+          File.delete(TARGET_ZIP_FILE)
+          
+          # 관리자 권한이 있는가?
+          if system("net session 1>NUL 2>NUL")
+            File.symlink("#{HOST_NAME}/ffmpeg.exe", "ffmpeg.exe")
+            File.symlink("#{HOST_NAME}/ffplay.exe", "ffplay.exe")
+          end         
+          
+        end
+        
+      end
+      
+    end
+  
+  end
   
   extend self
   
   # 동영상에서 음성 파일(OGG)을 추출합니다
   def extract(_in, _out)
     t = Thread.new do 
-      `ffmpeg -i "#{_in}" -vn -acodec libvorbis -y "#{_out}.ogg"`
+      `#{Downloader::HOST_NAME}/ffmpeg -i "#{_in}" -vn -acodec libvorbis -y "#{_out}.ogg"`
     end
   end
   
@@ -177,7 +249,7 @@ module FFMPEG
   # FFMPEG.to_ogv("d.mp4", "f.ogv")
   def to_ogv(_in, _out)
     t = Thread.new do
-      `ffmpeg -i "Movies/#{_in}" -s 544x416 -c:v libtheora -q:v 7 -c:a libvorbis -q:a 4 "Movies/#{_out}"`
+      `#{Downloader::HOST_NAME}/ffmpeg -i "Movies/#{_in}" -s 544x416 -c:v libtheora -q:v 7 -c:a libvorbis -q:a 4 "Movies/#{_out}"`
     end
   end
   
@@ -209,7 +281,7 @@ module FFMPEG
   def windows_devices
     devices = {}
     ignore_devices = ["WebCam", "XSplitBroadcaster"]
-    f = IO.popen(["ffmpeg", "-list_devices", "true", "-f", "dshow", "-i", "dummy", :err=>[:child, :out]])
+    f = IO.popen(["#{Downloader::HOST_NAME}/ffmpeg", "-list_devices", "true", "-f", "dshow", "-i", "dummy", :err=>[:child, :out]])
     lines = f.readlines    
     flag = false
     lines.each do |line|
@@ -347,7 +419,7 @@ module FFMPEG
   def print_audio_desc(filename)
     name = "Movies/#{filename}"
     return if not FileTest.exist?(name)
-    `ffmpeg -i #{name} -af volumedetect -f null -`
+    `#{Downloader::HOST_NAME}/ffmpeg -i #{name} -af volumedetect -f null -`
   end
   
   # OGV가 아닌 다른 영상을 재생합니다
@@ -363,7 +435,7 @@ module FFMPEG
     extra = fullscreen? ? "-fs -alwaysontop" : ""
     
     t = Thread.new do
-      `ffplay "Movies/#{filename}" -noborder -autoexit -x #{vw} -y #{vh} #{extra}`
+      `#{Downloader::HOST_NAME}/ffplay "Movies/#{filename}" -noborder -autoexit -x #{vw} -y #{vh} #{extra}`
     end
     
     ffplay_hwnd = `powershell (Get-Process -Name "ffplay").MainWindowHandle`.to_i
@@ -411,7 +483,7 @@ module FFMPEG
         if audio_devices && @@audio_capture_ok
           audio = AUDIO_CAPTURE.call(audio_devices, time)
         end      
-        `ffmpeg -y #{audio} -f gdigrab -framerate 30 #{OPTION1} -t #{time} -i title=#{title_name} #{OPTION2} Movies/#{filename}.mkv`
+        `#{Downloader::HOST_NAME}/ffmpeg -y #{audio} -f gdigrab -framerate 30 #{OPTION1} -t #{time} -i title=#{title_name} #{OPTION2} Movies/#{filename}.mkv`
       elsif @@options[:DSHOW]
 #~         audio = ""
 #~         if @@audio_capture_ok
@@ -436,12 +508,12 @@ module FFMPEG
           audio = AUDIO_CAPTURE.call(audio_devices, time)
         end
         
-        `ffmpeg -y #{audio} -f gdigrab -framerate 30 #{OPTION1} -t #{time} -i title=#{title_name} #{OPTION2} Movies/#{filename}.mkv`
-        `ffmpeg -i Movies/#{filename}.mkv -i Graphics/System/rec.png -filter_complex "[0:v][1:v] overlay=(W-w)/2:(H-h)/2:enable='between(t,0,20)'" -pix_fmt yuv420p -c:a copy Movies/#{filename}-rec.mkv`
+        `#{Downloader::HOST_NAME}/ffmpeg -y #{audio} -f gdigrab -framerate 30 #{OPTION1} -t #{time} -i title=#{title_name} #{OPTION2} Movies/#{filename}.mkv`
+        `#{Downloader::HOST_NAME}/ffmpeg -i Movies/#{filename}.mkv -i Graphics/System/rec.png -filter_complex "[0:v][1:v] overlay=(W-w)/2:(H-h)/2:enable='between(t,0,20)'" -pix_fmt yuv420p -c:a copy Movies/#{filename}-rec.mkv`
         
         # loudnorm 필터는 사운드 노말라이즈를 위한 것인데 인코딩 속도가 느리다.
         if @@audio_capture_ok
-          `ffmpeg -y -i Movies/#{filename}-rec.mkv -filter:a loudnorm Movies/#{filename}-rec.mp4`
+          `#{Downloader::HOST_NAME}/ffmpeg -y -i Movies/#{filename}-rec.mkv -filter:a loudnorm Movies/#{filename}-rec.mp4`
         end
       elsif @@options[:DSHOW]
 #~         audio = ""
@@ -481,24 +553,30 @@ module FFMPEG
       
     end                
   end
+    
+  if FFMPEG::Downloader.exist?
   
-  puts %Q(
-=============================
-  Audio
-=============================
-  )
-  FFMPEG.windows_devices.each do |k, v|
-    p "#{k} -> #{v}"
-  end
-  
-  p FFMPEG.check_virtual_driver
-  
-  if FFMPEG.stereo_mix_exist?
-    p "Stereo Mix is detected!"
-    @@audio_capture_ok = true
+    puts %Q(
+  =============================
+    Audio
+  =============================
+    )
+    FFMPEG.windows_devices.each do |k, v|
+      p "#{k} -> #{v}"
+    end
+    
+    p FFMPEG.check_virtual_driver
+    
+    if FFMPEG.stereo_mix_exist?
+      p "Stereo Mix is detected!"
+      @@audio_capture_ok = true
+    else
+      p "Stereo Mix does not detect!"
+      @@audio_capture_ok = false
+    end
+    
   else
-    p "Stereo Mix does not detect!"
-    @@audio_capture_ok = false
+    FFMPEG::Downloader.pending_download
   end
   
 end
