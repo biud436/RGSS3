@@ -17,19 +17,34 @@
 # Desc :
 # This script allows you to playback a video of specific video format such as mp4
 # 
-# Before starting this script, you must download the ffmpeg executable files,
-# it is available at https://ffmpeg.zeranoe.com/builds/
-# You grab the latest build from 'Windows 64-bit' - 'Static'-'Download Build'
+# On Windows 10, Downloads ffmpeg automatically!
+#
+# However, it will not download automatically on other Windows.
+#
+# So before starting this script, you must download the ffmpeg executable files.
+# 
+# it is available at 
+# https://ffmpeg.zeranoe.com/builds/win64/static/ffmpeg-4.2.2-win64-static.zip
 #  
-# Next, place all files in the root directory where it is the same as Game.exe
+# Next, You must place all files in the directory called "ffmpeg-4.2.2-win64-static/bin/"
+# 
+# The folder tree structure is as follows:
 # 
 # | Game.exe
 # |
-# | - ffmpeg.exe
-# | - ffplay.exe
+# | ffmpeg-4.2.2-win64-static
+#   | 
+#   | bin
+#     | ffmpeg.exe
+#     | ffplay.exe
+#     | ffprobe.exe
+#   | doc
+#   | presets
+#   | LICENSE.txt
+#   | README.txt
 #
-# To use the screen replay feature, 
-# You place overlay-image the to Graphics/Systems/rec.png
+# This script has a screen recording function. 
+# To use the screen replay feature, You place overlay-image at Graphics/Systems/rec.png
 #
 # -----------------------------------------------------------------------------
 # Example
