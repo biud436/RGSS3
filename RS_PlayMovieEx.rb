@@ -11,8 +11,9 @@
 # - Added normalize option to replay video.
 # 2020.03.26 (v1.0.4) :
 # - Fixed logic for detecting the Stereo Mix.
-# 2020.03.28 (v1.0.5) :
+# 2020.03.28 (v1.0.6) :
 # - Added a new feature that can download the ffmpeg during the game.
+# - Fixed the bug that place the window position incorrectly when playing the movie using FFPLAY.
 # Desc :
 # This script allows you to playback a video of specific video format such as mp4
 # 
@@ -431,39 +432,32 @@ module FFMPEG
     
     vw = Graphics.width + x_padding
     vh = Graphics.height + y_padding
-    
+
     extra = fullscreen? ? "-fs -alwaysontop" : ""
     
+    rt = [0,0,0,0].pack('l4')
+    GetWindowRect.call(HWND, rt)    
+    r = rt.unpack('l4')
+    
+    x = r[0] + (fullscreen? ? 0 : x_padding)
+    y = r[1] + (fullscreen? ? 0 : (caption + y_padding))
+    
+    rt = [0,0,0,0].pack('l4')
+    GetClientRect.call(HWND, rt)
+    r = rt.unpack('l4')
+    
+    vw = (r[2] - r[0]) + x_padding
+    vh = r[3] - r[1]
+    
     t = Thread.new do
-      `#{Downloader::HOST_NAME}/ffplay "Movies/#{filename}" -noborder -autoexit -x #{vw} -y #{vh} #{extra}`
+      `#{Downloader::HOST_NAME}/ffplay "Movies/#{filename}" -noborder -autoexit -left #{x} -top #{y} -x #{vw} -y #{vh} #{extra}`
     end
     
     ffplay_hwnd = `powershell (Get-Process -Name "ffplay").MainWindowHandle`.to_i
     
     if !ffplay_hwnd
-      raise "ffplay가 없습니다"
+      raise "Cannot find FFPLAY"
     end
-    
-    return t if fullscreen?
-    
-    rt = [0,0,0,0].pack('l4')
-    GetWindowRect.call(ffplay_hwnd, rt)
-    r = rt.unpack('l4')
-        
-    x = r[0]
-    y = r[1]
-    w = r[2] - x
-    h = r[3] - y
-    
-    GetWindowRect.call(HWND, rt)
-    r = rt.unpack('l4')
-        
-    x = r[0] + x_padding
-    y = r[1] + caption + y_padding
-    w = w
-    h = h
-    
-    MoveWindow.call(ffplay_hwnd, x, y, w, h, 0)
     
     return t
 
