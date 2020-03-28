@@ -17,6 +17,7 @@
 # Desc :
 # This script allows you to playback a video of specific video format such as mp4
 # 
+# This script requires an FFMPEG tool.
 # On Windows 10, Downloads ffmpeg automatically!
 #
 # However, it will not download automatically on other Windows.
