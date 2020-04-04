@@ -7,6 +7,10 @@
 # Version : 
 # 2020.04.01 (v1.0.4) :
 # - 이제 게임 윈도우가 콘솔 윈도우보다 더 위에 표시됩니다.
+# 2020.04.04 (v1.0.5) :
+# - Console.activate 함수 추가
+# - 메인 윈도우에 포커스 설정
+# - SetForegroundWindow 추가 (메인 창 활성화 API)
 # Usage :
 # p "안녕하세요?", "러닝은빛입니다"
 # p 50, 46, 87
@@ -82,30 +86,36 @@ if not defined? $NEKO_RUBY
     SetWindowPos = Win32API.new("User32", "SetWindowPos", "lliiiil", "s")
     GetWindowRect = Win32API.new('User32', 'GetWindowRect', 'lp', 's')
     FindWindowW = Win32API.new('user32', 'FindWindowW', 'pp', 'l')
-    
+    SetForegroundWindow   = Win32API.new("user32", "SetForegroundWindow", "l", "s")
+      
     AllocConsole.call if $DEBUG or $BTEST
     @@std_handle = GetStdHandle.call(-11)
     @@game_title = INI.read_string("Game", "Title", "Game.ini")
     
-    SetConsoleTitle.call((@@game_title + "-Console").unicode!)
-    
+    # Consts
     HWND_BOTTOM = 1
-    HWND_NOTOPMOST = -2
-    HWND = GetConsoleWindow.call
-    rt = [0,0,0,0].pack("l4")
-    GetWindowRect.call(HWND, rt)
-    rt.unpack("l4")
-    
-    GAME_HWND = FindWindowW.call("RGSS Player".unicode!, @@game_title.unicode!)
-    
-    SetWindowPos.call(HWND, HWND_NOTOPMOST, 
-      rt[0],
-      rt[1],
-      0,
-      0, 
-      0x0001 | 0x0002| 0x0040)
+    HWND_NOTOPMOST = -2    
       
-    SetWindowPos.call(GAME_HWND, 0, 0, 0, 0, 0, 0x0001 | 0x0002| 0x0040)
+    def self.activate
+      
+      SetConsoleTitle.call((@@game_title + " - Console").unicode!)
+      
+      @console_hwnd = GetConsoleWindow.call
+      rt = [0,0,0,0].pack("l4")
+      GetWindowRect.call(@console_hwnd, rt)
+      rt.unpack("l4")
+      
+      @@player_hwnd = FindWindowW.call("RGSS Player".unicode!, @@game_title.unicode!)
+            
+      SetWindowPos.call(@console_hwnd, HWND_NOTOPMOST, 
+        rt[0], rt[1], 0, 0, 
+        0x0001 | 0x0002| 0x0040)
+        
+      SetWindowPos.call(@@player_hwnd, 0, 0, 0, 0, 0, 0x0001 | 0x0002| 0x0040)      
+      
+      SetForegroundWindow.call(@@player_hwnd)
+      
+    end
     
     def self.log(args)
       buf = args.to_s.join(" ") + "\r\n"
@@ -125,6 +135,9 @@ if not defined? $NEKO_RUBY
       buf = buf.unicode!
       WriteConsoleW.call(@@std_handle, buf, len, 0, 0)
     end  
+    
+    Console.activate
+    
   end
   
   module Kernel
