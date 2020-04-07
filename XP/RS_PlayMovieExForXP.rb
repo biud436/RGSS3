@@ -203,9 +203,9 @@ module Process
   INVALID_HANDLE_VALUE = 0xFFFFFFFF
   
   # 표준 출력 리다이렉션
-  @@std_redirection = true
+  @@std_redirection = false
   # 표준 오류 리다이렉션
-  @@err_redirection = true
+  @@err_redirection = false
 
   STD_REDIR_OUT_FILENAME = "std_redir_out.txt"
   STD_REDIR_ERR_FILENAME = "std_redir_err.txt"
@@ -768,6 +768,10 @@ module FFMPEG
   end  
   
   # 이미지 오버레이
+  def sr(filename, time=10)
+    screen_record_overlay_image(filename, time)
+  end
+  
   def screen_record_overlay_image(filename, time=10)
     target_video_name = "Movies/#{filename}.mkv"
     File.delete(target_video_name) if FileTest.exist?(target_video_name)
@@ -821,7 +825,7 @@ module FFMPEG
         
       end  
     rescue StandardError => e
-      raise e
+      Process.catch_error
     end
   end
     
