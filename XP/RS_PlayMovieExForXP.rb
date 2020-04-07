@@ -290,7 +290,7 @@ module Process
       ret = FormatMessageW.call( flags, 0, error_code, LCID_ENGLISH, buf, 1024, 0 )
     end
     
-    MessageBoxW.call(HWND, buf, "경고".unicode!, 16)
+    MessageBoxW.call(HWND, buf, GAME_TITLE.unicode!, 16)
     Kernel.exit
   
   end
