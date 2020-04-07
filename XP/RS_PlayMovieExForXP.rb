@@ -17,6 +17,7 @@
 # 오랫동안 점유를 하는 파워쉘과 URLDownloadToFileW 등은 사용 불가능합니다.
 # 그래픽이 계속 갱신되는 상태에서 실시간으로 버퍼로 받아야 합니다.
 # 즉, Graphics.update는 멈추면 안됩니다.
+# => DLL로 처리하는 것이 최선
 #
 $imported = {} if $imported.nil?
 $imported["RS_PlayMovieExForXP"] = true
