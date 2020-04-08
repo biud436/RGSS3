@@ -3,7 +3,8 @@ require 'ostruct'
 require 'json'
 
 # Author biud436
-# ruby get_font_name.rb --font="C:\Users\U\Documents\RPGXP\Project8\Fonts\font.ttf"
+# ruby get_font_name.rb --font="C:\Users\U\Documents\RPGXP\Project8\Fonts\08SeoulNamsanB.ttf"
+# ruby get_font_name.rb --font="C:\Users\U\Documents\RPGXP\Project8\Fonts\NanumGothic.ttf"
 
 class App
   attr_accessor :options, :fonts
@@ -72,9 +73,14 @@ class App
     f.pos = name_table.offset
 
     name_header = OpenStruct.new
-    p name_header.format_selector = f.read(2).unpack("n").first
-    p name_header.name_record_count = f.read(2).unpack("n").first
-    p name_header.storage_offset = f.read(2).unpack("n").first
+    name_header.format_selector = f.read(2).unpack("n").first
+    name_header.name_record_count = f.read(2).unpack("n").first
+    name_header.storage_offset = f.read(2).unpack("n").first
+
+    if name_header.format_selector == 1
+      p "langTagCount detect"
+      p "langTagRecord[langTagCount] detect"
+    end
 
     name_record_table = []
 
@@ -89,15 +95,23 @@ class App
       name_record.name = ""
 
       # ! Font Family 취득
-      if name_record.name_id == 1
+      if name_record.name_id == 4
         temp_file_pos = f.pos
         f.pos = name_table.offset + name_record.string_offset + name_header.storage_offset
-        name_record.name = f.read(name_record.string_length).delete("\x00").encode("UTF-16LE", :invalid => :replace, :undef => :replace, :replace => "")
+        
+        name_record.hex_offset = f.pos.to_s(16)
+        
+        len = name_record.string_length
+
+        name_record.name = f.read(len).delete("\0").encode("UTF-16BE", "EUC-KR", :invalid => :replace, :undef => :replace, :replace => "")
         name_record_table.push(name_record)
         f.pos = temp_file_pos
       end
 
-      name_record_table.select! {|i| i[:platform_id] == 3}
+      # language_id: 1033 => United States	
+      # language_id: 1042 => 대한민국
+
+      # name_record_table.select! {|i| i[:platform_id] == 3}
 
       json_f = File.open("result.json", "w+")
       name_record_table.map! do |i|
@@ -124,4 +138,4 @@ end
 
 $app = App.new
 $app.parse
-puts $app.fonts[0][:name]
+puts $app.fonts.select{|i| i[:language_id] == 23}
