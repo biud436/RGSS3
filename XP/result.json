@@ -1,0 +1,20 @@
+[
+  {
+    "platform_id": 3,
+    "encoding_id": 1,
+    "language_id": 1033,
+    "name_id": 1,
+    "string_length": 36,
+    "string_offset": 380,
+    "name": "Nanum DaSiSiJagHae"
+  },
+  {
+    "platform_id": 3,
+    "encoding_id": 1,
+    "language_id": 1042,
+    "name_id": 1,
+    "string_length": 24,
+    "string_offset": 550,
+    "name": "\u0014(  t"
+  }
+]
