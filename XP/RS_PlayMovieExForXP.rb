@@ -17,7 +17,6 @@
 # 오랫동안 점유를 하는 파워쉘과 URLDownloadToFileW 등은 사용 불가능합니다.
 # 그래픽이 계속 갱신되는 상태에서 실시간으로 버퍼로 받아야 합니다.
 # 즉, Graphics.update는 멈추면 안됩니다.
-# => DLL로 처리하는 것이 최선
 #
 $imported = {} if $imported.nil?
 $imported["RS_PlayMovieExForXP"] = true
@@ -211,6 +210,16 @@ module Process
   STD_REDIR_OUT_FILENAME = "std_redir_out.txt"
   STD_REDIR_ERR_FILENAME = "std_redir_err.txt"
   
+  @@wait_mode = true
+  
+  def self.no_wait
+    @@wait_mode = false
+  end
+  
+  def self.set_wait_mode
+    @@wait_mode = true
+  end
+  
   def self.create_startup_info(stdout, stderr)
     x, y, w, h = [0, 0, 0, 0]
     startf_usesize = 0x00000002
@@ -346,7 +355,9 @@ module Process
 
     pi = pi.unpack("LLLL")
     
-    ret = WaitForSingleObject.call(pi[0], INFINITE)
+    if @@wait_mode
+      ret = WaitForSingleObject.call(pi[0], INFINITE)
+    end
     
     close_handle(pi)
     CloseHandle.call(file_handle) if @@std_redirection
@@ -481,7 +492,9 @@ module FFMPEG
       # Windows 10 이상
       if version >= 5
         `powershell -command "$progressPreference = 'silentlyContinue'; Expand-Archive -Path '#{TARGET_ZIP_FILE}' -DestinationPath '.'"`
-      end      
+      else
+        `rundll32.exe zipfldr.dll,RouteTheCall #{TARGET_ZIP_FILE}`
+      end
     end
       
     # 다운로드 시작
@@ -489,32 +502,34 @@ module FFMPEG
       
       return if exist?
       
-      # RPG Maker XP에선 $progressPreference = 'silentlyContinue'를 추가가 필요하다.
-      if new_download? == IDYES
+      pid = Thread.new do
+      
+        Process.no_wait
         
-        # # NOTE : 다운로드 속도가 매우 느리다.
-        # # 업데이트가 긴 시간동안 이뤄지지 않으면 Script is hanging 오류가 발생한다.
-        # if version >= 3
-        #   `powershell -command "$progressPreference = 'silentlyContinue'; wget '#{HOST}' -OutFile '#{TARGET_ZIP_FILE}'"`
-        # else
-        #   # 다운로드 속도가 빠르다.
-        #   # 중간 중간에 Graphics.update를 갱신해줘야 하지만, 호출할 방법이 없다.
-        #   # 업데이트가 긴 시간동안 이뤄지지 않으면 Script is hanging 오류가 발생한다.
-        #   # 다운로드 진행률 처리는 루비로는 처리할 수 없다.
-        #   Thread.new do 
-        #     ret = Win32API.new("Urlmon", "URLDownloadToFileW", "ppplp", "l").call(0, HOST.unicode!, TARGET_ZIP_FILE.unicode!, 0, 0)
-        #   end
-        # end
-        
-        # 인터넷 창을 띄우고 수동으로 다운로드 처리한다.
-        system("start #{HOST}")
-
-        if FileTest.exist?(TARGET_ZIP_FILE)
-          decompress
+        # RPG Maker XP에선 $progressPreference = 'silentlyContinue'를 추가가 필요하다.
+        if new_download? == IDYES
           
-          File.delete(TARGET_ZIP_FILE)
+          # NOTE : 다운로드 속도가 매우 느리다.
+          # 업데이트가 긴 시간동안 이뤄지지 않으면 Script is hanging 오류가 발생한다.
+          if version >= 3
+            `powershell -command "$progressPreference = 'silentlyContinue'; wget '#{HOST}' -OutFile '#{TARGET_ZIP_FILE}'"`
+          else
+            # 다운로드 속도가 빠르다.
+            # 중간 중간에 Graphics.update를 갱신해줘야 하지만, 호출할 방법이 없다.
+            # 업데이트가 긴 시간동안 이뤄지지 않으면 Script is hanging 오류가 발생한다.
+            # 다운로드 진행률 처리는 루비로는 처리할 수 없다.
+            ret = Win32API.new("Urlmon", "URLDownloadToFileW", "ppplp", "l").call(0, HOST.unicode!, TARGET_ZIP_FILE.unicode!, 0, 0)
+            # `bitsadmin.exe /transfer dd #{HOST} #{File.join(Dir.pwd, TARGET_ZIP_FILE).gsub("/", "\\")}`
+          end
+          
+          if FileTest.exist?(TARGET_ZIP_FILE)
+            decompress
+            File.delete(TARGET_ZIP_FILE)
+          end
           
         end
+        
+        Process.set_wait_mode
         
       end
       
@@ -734,8 +749,10 @@ module FFMPEG
     vw = (r[2] - r[0]) + x_padding
     vh = r[3] - r[1]
     
+    `#{Downloader::HOST_NAME}/ffplay.exe "Movies/#{filename}" -noborder -autoexit -left #{x} -top #{y} -x #{vw} -y #{vh} #{extra}`
+    
     t = Thread.new do
-      `#{Downloader::HOST_NAME}/ffplay "Movies/#{filename}" -noborder -autoexit -left #{x} -top #{y} -x #{vw} -y #{vh} #{extra}`
+      `#{Downloader::HOST_NAME}/ffplay.exe "Movies/#{filename}" -noborder -autoexit -left #{x} -top #{y} -x #{vw} -y #{vh} #{extra}`
     end
     
     ffplay_hwnd = `powershell (Get-Process -Name "ffplay").MainWindowHandle`.to_i
@@ -832,24 +849,31 @@ module FFMPEG
     
   if FFMPEG::Downloader.exist?
   
-    puts %Q(
-  =============================
-    Audio
-  =============================
-    )
-    FFMPEG.windows_devices.each do |k, v|
-      p "#{k} -> #{v}"
-    end
-    
-    p FFMPEG.check_virtual_driver
-    
-    if FFMPEG.stereo_mix_exist?
-      p "Stereo Mix is detected!"
-      @@audio_capture_ok = true
-    else
-      p "Stereo Mix does not detect!"
-      @@audio_capture_ok = false
-    end
+      puts %Q(
+    =============================
+      Audio
+    =============================
+      )
+      FFMPEG.windows_devices.each do |k, v|
+        p "#{k} -> #{v}"
+      end
+      
+      p FFMPEG.check_virtual_driver
+      
+      if FFMPEG.stereo_mix_exist?
+        p "Stereo Mix is detected!"
+        @@audio_capture_ok = true
+      else
+        p "Stereo Mix does not detect!"
+        @@audio_capture_ok = false
+        
+        wnd_name = GAME_TITLE
+        ret = Downloader::MessageBox.call(FFMPEG::HWND, "스테레오 믹스로 설정되어있지 않습니다. 스테레오 믹스 설정(소리 - 녹음) 창을 여시겠습니까?".unicode!, wnd_name.unicode!, 4 | 0x00000040)
+        if ret == Downloader::IDYES
+          # 스테레오 믹스창 열기
+          `Rundll32.exe shell32.dll,Control_RunDLL Mmsys.cpl,,1`
+        end
+      end
     
   else
     FFMPEG::Downloader.pending_download
