@@ -75,8 +75,16 @@ module Zip
   URLDownloadToFileW = Win32API.new("Urlmon", "URLDownloadToFileW", "ppplp", "l")
 
   DLL_URL = "https://github.com/biud436/RGSS3/raw/master/unzip/bin/un_zip.dll".unicode!
-  DLL_FILE = File.join(Dir.pwd, "un_zip.dll").gsub("/", "\\").unicode!
-  URLDownloadToFileW.call(0, DLL_URL, DLL_FILE, 0, 0) if !File::exist?(DLL_FILE)
+  DLL_FILE = File.join(Dir.pwd, "un_zip.dll").gsub("/", "\\")
+  URLDownloadToFileW.call(0, DLL_URL, DLL_FILE.unicode!, 0, 0) if !File::exist?(DLL_FILE)
+          
+  ExtractZip = Win32API.new("un_zip.dll", "extractZip", "p", "l")
+
+  def self.extract(filename)
+      filename = File.join(Dir.pwd, filename)
+      return if not File::exist?(filename)
+      ExtractZip.call(filename)    
+  end
           
   ExtractZip = Win32API.new("un_zip.dll", "extractZip", "p", "l")
 
