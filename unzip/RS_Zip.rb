@@ -1,9 +1,6 @@
 # Author : biud436
 # Desc :
-# This script allows you to decompress certain zip file in the RGSS1, RGSS2, RGSS3
-#
-# Try this :
-# Zip.extract("Initial2D.zip")
+# Zip.extract("example.zip")
 #
 module Unicode
   [:MultiByteToWideChar, :WideCharToMultiByte, :UTF_8, :CP_ACP].each do 
