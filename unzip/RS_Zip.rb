@@ -383,7 +383,7 @@ module Zip
 
   DLL_URL = "https://github.com/biud436/RGSS3/raw/master/unzip/bin/un_zip.dll".unicode!
   DLL_FILE = File.join(Dir.pwd, "un_zip.dll").gsub("/", "\\").unicode!
-  URLDownloadToFileW.call(0, DLL_URL, DLL_FILE, 0, 0)
+  URLDownloadToFileW.call(0, DLL_URL, DLL_FILE, 0, 0) if !File::exist?(DLL_FILE)
           
   ExtractZip = Win32API.new("un_zip.dll", "extractZip", "p", "l")
 
