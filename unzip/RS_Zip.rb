@@ -1,6 +1,22 @@
+# Name : RS_Zip.rb
 # Author : biud436
 # Desc :
+# This script allows you to decompress a specific zip file (base on Deflate, BZip2) in all RGSS system.
+# 
+# Open the script editor and insert this script in somewhere between Materials and Main section. 
+# if you do that, it will be downloaded a needed DLL file from my Github automatically.
+#
+# But the progress message will print out in Korean.
+# if you don't need to use it, you should compile DLL file directly using Rust in below link.
+#
+# https://minhaskamal.github.io/DownGit/#/home?url=https://github.com/biud436/RGSS3/tree/master/unzip
+#
+# ## Usage
+# In the script command, You make that calls a method called "extract(filename)" of Zip module.
+# 
 # Zip.extract("example.zip")
+#
+# Notice that this script is impossible to decode the non-ascii filename.
 #
 module Unicode
   [:MultiByteToWideChar, :WideCharToMultiByte, :UTF_8, :CP_ACP].each do 
