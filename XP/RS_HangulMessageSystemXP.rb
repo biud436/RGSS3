@@ -2186,7 +2186,7 @@ class Window_Message < Window_Selectable
     src_bitmap = @face_contents
     src_rect = RS::LIST["FACE_RECT"]
     # 그릴 위치 설정
-    sx = RS::LIST["FACE_POSITION"] == 0 ? 0 : (contents_width - src_rect.width)
+    sx = RS::LIST["FACE_POSITION"] == 0 ? 0 : (self.contents.width - src_rect.width)
     sy = 0
     dest_rect = Rect.new(sx, sy, src_rect.width, src_rect.height)
     self.contents.stretch_blt(dest_rect, src_bitmap, src_rect, 255) 
@@ -2691,6 +2691,10 @@ class Window_Message
     if $game_temp.choice_max > 0
       @_width += new_line_x
       @_height = [@_height, fitting_height(4)].max
+    elsif @face_contents_name
+      face_rect = RS::LIST["FACE_RECT"]
+      @_width += (@face_contents_name ? face_rect.width : 0)
+      @_height += (@face_contents_name ? face_rect.height : 0)
     end
     
     restore
@@ -2813,8 +2817,9 @@ class Window_Message
       self.contents = Bitmap.new(@_width - 32 , @_height - 32)
       @cursor_width = @_width - 32
       update_cursor_rect
+      create_face_contents(nil)
     end
-
+    
     # 이름 윈도우 좌표 수정
     @name_window.y = ny
 
