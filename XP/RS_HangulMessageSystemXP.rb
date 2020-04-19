@@ -376,7 +376,11 @@ module RS
   # 얼굴
   LIST["FACE_NEW_LINE_X"] = 112
   LIST["FACE_RECT"] = Rect.new(0, 0, 112, 112)
-  LIST["FACE_POSITION"] = 0
+
+  # 얼굴 위치
+  # 0 이면 왼쪽
+  # 1 이면 오른쪽
+  LIST["FACE_POSITION"] = 0 
   
   # 폰트 옵션
   LIST["배경색 그리기"] = false
