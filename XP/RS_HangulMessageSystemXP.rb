@@ -1,5 +1,5 @@
 #==============================================================================
-#  ** 한글 메시지 시스템 v1.0.17
+#  ** 한글 메시지 시스템 v1.0.18
 #==============================================================================
 #  ** 사용법
 #==============================================================================
@@ -50,6 +50,9 @@
 #  \H[텍스트크기]          : 텍스트 크기를 변경합니다.
 #  <B>텍스트</B>           : 텍스트를 굵게 표시합니다.
 #  <I>텍스트</I>           : 텍스트를 기울임꼴로 표시합니다.
+#
+#  \얼굴[번호]            : Graphics/Faces/face_xxx.png 파일을 얼굴 이미지에 설정합니다.
+#  \F[번호]               : Graphics/Faces/face_xxx.png 파일을 얼굴 이미지에 설정합니다.
 #
 #  \이름<러닝은빛>        : 이름 윈도우를 메시지 윈도우의 왼쪽에 정렬하여 표시합니다.
 #  \이름<러닝은빛:left>    : 이름 윈도우를 메시지 윈도우의 왼쪽에 정렬하여 표시합니다.
@@ -145,8 +148,8 @@
 # - 타일셋 그래픽이 설정된 캐릭터에 말풍선 모드를 적용하면 오류가 났던 문제 수정.
 # 2019.09.07 (v1.0.14) :
 # - 이름 윈도우 사용 중에 F12 버튼을 누르면, 오류가 발생하는 문제 수정.
-# 2019.11.14 (v1.0.16) :
-# - 얼굴 이미지 띄우는 기능, 별도의 애드온으로 분리
+# 2020.04.19 (v1.0.18) :
+# - 얼굴 이미지 표시 기능 추가
 #==============================================================================
 # ** 사용 조건
 #==============================================================================
@@ -311,7 +314,7 @@ module RS
   CODE = {}
   
   # 폰트 리스트 예:) ["나눔고딕, "굴림"]
-  # Fonts 폴더에 해당 폰트 파일에 있어야 합니다.
+  # 폰트가 시스템에 설치되어있어야 합니다.
   # 폰트 파일과 글꼴명은 다를 수 있습니다.
   # 여기에 적는 것은 해당 폰트의 실제 글꼴명입니다.
   LIST["폰트명"] = Font.default_name
@@ -322,7 +325,7 @@ module RS
   # 자동 개행 설정
   # true이면 창의 폭을 넘겼을 때 자동으로 개행합니다.
   # 사용 시 정렬 기능이 제대로 동작하지 않을 수 있으니 주의 바랍니다.
-  LIST["자동개행"] = true
+  LIST["자동개행"] = false
   
   # 기본 라인 갯수
   LIST["라인"] = 4
@@ -369,6 +372,11 @@ module RS
   LIST["텍스트 사운드 볼륨"] = [70, 70]
   LIST["텍스트 사운드 피치"] = [100, 100]
   LIST["텍스트 사운드 주기"] = 3
+
+  # 얼굴
+  LIST["FACE_NEW_LINE_X"] = 112
+  LIST["FACE_RECT"] = Rect.new(0, 0, 112, 112)
+  LIST["FACE_POSITION"] = 0
   
   # 폰트 옵션
   LIST["배경색 그리기"] = false
@@ -383,10 +391,10 @@ module RS
   # 정규 표현식 (잘 아시는 분들만 건드리십시오)
   CODE["16진수"] = /#([a-zA-Z^\d]*)/i
   CODE["색상추출"] = /^[가-힣]+|c_[a-zA-z]+$/
-  CODE["명령어"] = /^[\$#\.\|\^!><\{\}\\]|^[A-Z가-힣]+[!]*/i
+  CODE["명령어"] = /^[\$#\.\|\^!><\{\}\\]|^[A-Z가-힣ㄱ-ㅎ]+[!]*/i
   CODE["이름색상코드"] = /\[([가-힣]+[\d]*|c_[a-zA-Z]+)\]/
   CODE["웹색상"] = /([a-zA-Z\d]+)!/
-  CODE["추출"] = /^([가-힣]+)/
+  CODE["추출"] = /^([가-힣ㄱ-ㅎ]+)/
   CODE["큰페이스칩"] = /^큰\_+/
   CODE["효과음"] = /^\[(.+?)\]/i
   CODE["처리!"] = /^([가-힣]+)!/
@@ -474,7 +482,37 @@ end
 # ** RS.import_color(string)
 #==============================================================================
 module RS
+  
   extend self
+  #--------------------------------------------------------------------------
+  # 폰트를 설치합니다
+  #--------------------------------------------------------------------------  
+  def add_font
+    return false if $NEKO_RUBY
+    return false if ENV["WINDIR"].nil?    
+    
+    Dir[File.join("Fonts", "*.ttf")].each do |font_name|
+      font_name = File.basename(font_name)
+      font_dir = File.join("Fonts")
+      
+      if FileTest.exist?(font_dir) && FileTest.directory?(font_dir)
+        
+        font_path = File.join(font_dir, font_name).gsub(/\//, "\\")
+        
+        ret = Win32API.new('Gdi32.dll', 'AddFontResourceExW', 'pLP', 'I').call(font_path.unicode!, 0x10, 0)
+        if ret == 0
+          Process.catch_error
+          # raise "#{font_name} 폰트 할당에 실패하였습니다"
+        else   
+          Win32API.new('User32.dll' ,'SendMessage', 'llll', 'l').call(0xffff, 0x001D, 0, 0)
+          # Win32API.new('User32.dll' ,'SendNotifyMessageW', 'llll', 'l').call(0xffff, 0x001D, 0, 0)
+          p "#{font_name} 폰트를 사용할 수 있습니다."
+        end
+        
+      end      
+    end
+    
+  end
   #--------------------------------------------------------------------------
   # 색상을 불러옵니다
   #--------------------------------------------------------------------------
@@ -488,6 +526,9 @@ module RS
       default_color
     end
   end  
+  
+  add_font
+  
 end
 
 #==============================================================================
@@ -658,7 +699,9 @@ end
 #==============================================================================
 module RPG::Cache
   def self.face(filename)
-    self.load_bitmap("Graphics/Faces/", filename)
+    target = "Graphics/Faces/"
+    Dir.mkdir(target) if not File::exist?(target)
+    self.load_bitmap(target, filename)
   end  
 end
 
@@ -1243,7 +1286,8 @@ class Window_Message < Window_Selectable
     @opening = false
     @closing = false
     @is_used_text_width_ex = false  
-        
+    @face_contents = nil
+    @face_contents_name = nil
     clear_flags
   end
   #--------------------------------------------------------------------------
@@ -1421,6 +1465,7 @@ class Window_Message < Window_Selectable
   def convert_escape_characters(text)
     text = text || $game_temp.message_text
     text = text.to_s.clone
+    @face_contents_name = nil
     text.gsub!(/\\/)            { "\e" }
     text.gsub!(/\e\e/)          { "\\" }    
     text.gsub!(/(?:\eV|\e변수)\[(\d+)\]/i) { $game_variables[$1.to_i] }
@@ -1428,20 +1473,24 @@ class Window_Message < Window_Selectable
     text.gsub!(/(?:\eN|\e주인공)\[(\d+)\]/i) { actor_name($1.to_i) }
     text.gsub!(/(?:\eP|\e파티원)\[(\d+)\]/i) { party_member_name($1.to_i) }
     text.gsub!(/(?:\eG|\e골드)/i) { $data_system.words.gold }
-    text.gsub!(/(?:\e아이템)\[(\d+)\]/i) { $data_items[$1.to_i].name || "" }
-    text.gsub!(/(?:\e스킬)\[(\d+)\]/i) { $data_skills[$1.to_i].name || "" }
-    text.gsub!(/(?:\e무기구)\[(\d+)\]/i) { $data_weapons[$1.to_i].name || "" }
-    text.gsub!(/(?:\e방어구)\[(\d+)\]/i) { $data_armors[$1.to_i].name || "" }
-    text.gsub!(/(?:\e적)\[(\d+)\]/i) { $data_enemies[$1.to_i].name || "" }
-    text.gsub!(/(?:\e직업)\[(\d+)\]/i) { $data_classes[$1.to_i].name || "" }
-    text.gsub!(/(?:\e상태)\[(\d+)\]/i) { $data_states[$1.to_i].name || "" }
+    text.gsub!(/(?:\e아이템)\[(\d+)\]|\e[Dd][Ii]\[(\d+)\]/i) { $data_items[$1.to_i].name || "" }
+    text.gsub!(/(?:\e스킬)\[(\d+)\]|\e[Dd][S]\[(\d+)\]/) { $data_skills[$1.to_i].name || "" }
+    text.gsub!(/(?:\e무기구)\[(\d+)\]|\e[Dd][Ww]\[(\d+)\]/i) { $data_weapons[$1.to_i].name || "" }
+    text.gsub!(/(?:\e방어구)\[(\d+)\]|\e[Dd][Aa]\[(\d+)\]/i) { $data_armors[$1.to_i].name || "" }
+    text.gsub!(/(?:\e적)\[(\d+)\]|\e[Dd][Ii]\[(\d+)\]/i) { $data_enemies[$1.to_i].name || "" }
+    text.gsub!(/(?:\e직업)\[(\d+)\]|\e[Dd][Cc]\[(\d+)\]/i) { $data_classes[$1.to_i].name || "" }
+    text.gsub!(/(?:\e상태)\[(\d+)\]|\e[Dd][s]\[(\d+)\]/) { $data_states[$1.to_i].name || "" }
+    text.gsub!(/\e[Ff]\[(\d+)\]|\e(?:얼굴)\[(\d+)\]/i) {
+      @face_contents_name = sprintf("face_%03d", $1.to_i)
+      ""
+    }
     text.gsub!(/<(?:B)>/i) { "\eSB!" }
     text.gsub!(/<(?:\/B)>/i) { "\eEB!" }
     text.gsub!(/<(?:I)>/i) { "\eSI!" }
     text.gsub!(/<(?:\/I)>/i) { "\eEI!" }
     
     # 선택지가 있는 경우, 크기 변환을 할 수 없다.
-    text.gsub!(/\e크기!\[\d+\]/) { "" } if $game_temp.choice_max > 0
+    text.gsub!(/(?:\e크기!)\[\d+\]/) { "" } if $game_temp.choice_max > 0
     
     text.gsub!(RS::CODE["이름"]) do 
       @name_window.open($1.to_s)
@@ -1986,6 +2035,13 @@ class Window_Message < Window_Selectable
         process_new_line(text, pos)
       end
     end
+
+    if @face_contents_name && RS::LIST["FACE_POSITION"] == 1
+      tw = self.contents.text_size(c).width
+      if pos[:x] + (tw * 2) > (contents_width - RS::LIST["FACE_RECT"].width)
+        process_new_line(text, pos)
+      end
+    end
     
     draw_normal_character(c, pos)
             
@@ -2009,6 +2065,16 @@ class Window_Message < Window_Selectable
     super
   end
   #--------------------------------------------------------------------------
+  # * dispose_face_contents
+  #--------------------------------------------------------------------------  
+  def dispose_face_contents
+    if @face_contents && @face_contents.is_a?(Bitmap)
+      @face_contents.dispose
+      @face_contents = nil
+      @face_contents_name = nil
+    end    
+  end
+  #--------------------------------------------------------------------------
   # * [오리지날] Terminate Message
   #--------------------------------------------------------------------------
   def terminate_message
@@ -2030,6 +2096,8 @@ class Window_Message < Window_Selectable
     if $game_temp.message_proc != nil
       $game_temp.message_proc.call
     end
+
+    dispose_face_contents
     
     # Clear variables related to text, choices, and number input
     $game_temp.message_text = nil
@@ -2079,20 +2147,47 @@ class Window_Message < Window_Selectable
     @text = do_ruby_text_align(@text)
     
     @text_state = {}
-    @text_state[:x] = 0
+    @text_state[:x] = new_line_x
     @text_state[:y] = 0
     @text_state[:text] = @text
     
     reset_window
     set_height(RS::LIST["라인"])        
     resize_message_system
-    create_contents   
+    create_contents
     set_font(RS::LIST["폰트명"],RS::LIST["폰트크기"])
     new_page(@text_state)
     process_align(@text_state, @text)        
 
     open    
     self.visible = true
+  end
+  #--------------------------------------------------------------------------
+  # * create_face_contents
+  #--------------------------------------------------------------------------    
+  def create_face_contents(pos)
+    return if not @face_contents_name
+    if @face_contents
+      @face_contents.dispose
+      @face_contents = nil
+    end
+    # 선택지가 있으면 얼굴 이미지 표시 중지
+    if $game_temp.choice_start == 0
+      @face_contents_name = nil
+      return
+    end
+    @face_contents = RPG::Cache.face(@face_contents_name)
+    return if !@face_contents
+    return if !@face_contents.is_a?(Bitmap)
+    src_bitmap = @face_contents
+    src_rect = RS::LIST["FACE_RECT"]
+    # 그릴 위치 설정
+    sx = RS::LIST["FACE_POSITION"] == 0 ? 0 : (contents_width - src_rect.width)
+    sy = 0
+    dest_rect = Rect.new(sx, sy, src_rect.width, src_rect.height)
+    self.contents.stretch_blt(dest_rect, src_bitmap, src_rect, 255) 
+    @face_contents.dispose
+    @face_contents = nil
   end
   #--------------------------------------------------------------------------
   # * 새로운 페이지 표시
@@ -2109,12 +2204,14 @@ class Window_Message < Window_Selectable
     if $game_temp.choice_start == 0
       text_state[:x] = 8
     else
-      text_state[:x] = 0
+      text_state[:x] = new_line_x
     end
     
     text_state[:y] = 0
-    text_state[:left] = 0
+    text_state[:left] = text_state[:x]
     text_state[:height] = calc_line_height(text_state[:text])
+
+    create_face_contents(text_state)
     
   end
   #--------------------------------------------------------------------------
@@ -2541,7 +2638,7 @@ class Window_Message
   # *  라인 시작 위치
   #--------------------------------------------------------------------------    
   def new_line_x
-    0
+    @face_contents_name ? (RS::LIST["FACE_POSITION"] == 0 ? RS::LIST["FACE_NEW_LINE_X"] : 0) : 0
   end
   #--------------------------------------------------------------------------
   # * 말풍선 영역 계산
