@@ -28,26 +28,27 @@ if $imported["RS_HangulMessageSystem"]
   
   class Game_Event < Game_Character
     def load_text(index, list = [])
-      # @map_id = map_id
-      # @event = event
-      # @id = @event.id     
       
+      # 맵 데이터 로드
       map_data_file_name = sprintf("Data/Map%03d.rxdata", @map_id)
       map = load_data(map_data_file_name)
       id = @id
       
       events = map.events[id]
       
+      # 이벤트 목록이 없을 때, 오류 처리
       if not events
         raise "이벤트 목록이 없습니다"
       end
       
       page_index = @event.pages.index(@page)
       
+      # 페이지가 없을 때, 오류 처리
       if not page_index
         raise "페이지 인덱스가 없습니다."
       end
       
+      # 이벤트 목록이 없을 때, 오류 처리
       if not events.pages[page_index].list
         raise "이벤트 목록이 없습니다"
       end
@@ -59,25 +60,35 @@ if $imported["RS_HangulMessageSystem"]
       list.each_with_index do |command, i|
         events.pages[page_index].list.insert(index + i, command)
       end
-
-      # 맵 데이터에 반영
+            
       save_data(map, map_data_file_name)
       
     end
   end  
-  
+
   class Interpreter
     def import(filename)
       return false if $game_temp.message_text != nil
       return false if not File::exist?(filename)
       
+      # 파일을 오픈한다.
       f = File.open(filename, 'r')
-      line_count = 0
-      lines = f.readlines
-      skip = false
-      @message_waiting = true
-      $game_temp.message_proc = Proc.new { @message_waiting = false }
       
+      line_count = 0
+      
+      # 파일을 읽는다.
+      lines = f.readlines
+      
+      # 파일을 닫는다.
+      f.close
+
+      skip = false
+      
+      # 메시지 대기
+      @message_waiting = true
+      # 대기를 해제하는 콜백
+      $game_temp.message_proc = Proc.new { @message_waiting = false }
+      # 메소드 포인터
       m = $game_temp.method(:add_text)
       
       list = []
@@ -96,34 +107,44 @@ if $imported["RS_HangulMessageSystem"]
           end
         end
           
-        if skip # 비어있는 라인 스킵
-          next 
-        else              
-          if e =~ /(?:#)(.*)$/i && line_count < 4
-            m.call("\\f")          
-            e.gsub!("# ", "")
-            line_count = 0
-            skip = false
-          end
-          case line_count
-          when 0..2
-            m.call(e)
-            list.push( RPG::EventCommand.new(line_count == 0 ? 101 : 401, 0, [e + "\\n"]))
-            line_count += 1
-          when 3
-            m.call(e + "\\f")
-            list.push( RPG::EventCommand.new(401, 0, [e + "\\f"]))
-            line_count = 0
-          end
+        # 비어있는 라인 스킵
+        next if skip
+        
+        current_list = @list[@index]
+        
+        # 이벤트 깊이 탐색
+        current_indent = 0
+        if @list[@index]
+          current_indent = @list[@index].indent rescue 0
         end
+        
+        # 라인의 시작이 "#"인지 확인
+        if e =~ /(?:#)(.*)$/i && line_count < 4
+          m.call("\\f") # 새 페이지 작성      
+          e.gsub!("# ", "")
+          line_count = 0
+          skip = false
+        end
+        
+        case line_count
+        when 0..2
+          m.call(e)
+          list.push( RPG::EventCommand.new(line_count == 0 ? 101 : 401, current_indent, [e + "\\n"]))
+          line_count += 1
+        when 3
+          m.call(e + "\\f")
+          list.push( RPG::EventCommand.new(401, current_indent, [e + "\\f"]))
+          line_count = 0
+        end        
+        
       end
       
+      # 커먼 이벤트가 아니라면 재작성한다.
       if @event_id != 0
         $game_map.events[@event_id].load_text(@index, list)
       end
       
-    end
-    
+    end    
   end
       
 end
