@@ -25,6 +25,47 @@ imported = {} if imported.nil?
 imported["RS_ImportMessage"] = true
 
 if $imported["RS_HangulMessageSystem"]
+  
+  class Game_Event < Game_Character
+    def load_text(index, list = [])
+      # @map_id = map_id
+      # @event = event
+      # @id = @event.id     
+      
+      map_data_file_name = sprintf("Data/Map%03d.rxdata", @map_id)
+      map = load_data(map_data_file_name)
+      id = @id
+      
+      events = map.events[id]
+      
+      if not events
+        raise "이벤트 목록이 없습니다"
+      end
+      
+      page_index = @event.pages.index(@page)
+      
+      if not page_index
+        raise "페이지 인덱스가 없습니다."
+      end
+      
+      if not events.pages[page_index].list
+        raise "이벤트 목록이 없습니다"
+      end
+      
+      # 특정 이벤트 목록 삭제
+      events.pages[page_index].list.slice!(index, 1)
+      
+      # 특정 인덱스에 이벤트 목록 추가
+      list.each_with_index do |command, i|
+        events.pages[page_index].list.insert(index + i, command)
+      end
+
+      # 맵 데이터에 반영
+      save_data(map, map_data_file_name)
+      
+    end
+  end  
+  
   class Interpreter
     def import(filename)
       return false if $game_temp.message_text != nil
@@ -38,6 +79,8 @@ if $imported["RS_HangulMessageSystem"]
       $game_temp.message_proc = Proc.new { @message_waiting = false }
       
       m = $game_temp.method(:add_text)
+      
+      list = []
           
       lines.each_with_index do |e, idx|
         e.gsub!(/[\r\n]+/i, "") # 라인 개행 문자 제거
@@ -65,15 +108,22 @@ if $imported["RS_HangulMessageSystem"]
           case line_count
           when 0..2
             m.call(e)
+            list.push( RPG::EventCommand.new(line_count == 0 ? 101 : 401, 0, [e + "\\n"]))
             line_count += 1
           when 3
             m.call(e + "\\f")
+            list.push( RPG::EventCommand.new(401, 0, [e + "\\f"]))
             line_count = 0
           end
         end
-        
       end
       
+      if @event_id != 0
+        $game_map.events[@event_id].load_text(@index, list)
+      end
       
     end
-  end;end
+    
+  end
+      
+end
