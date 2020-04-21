@@ -27,7 +27,9 @@ imported["RS_ImportMessage"] = true
 if $imported["RS_HangulMessageSystem"]
   class Interpreter
     def extract(filename)
-      return false if $game_temp.message_text != nil    
+      return false if $game_temp.message_text != nil
+      return false if not File::exist?(filename)
+      
       f = File.open(filename, "r")
       line_count = 0
       lines = f.readlines
@@ -37,35 +39,39 @@ if $imported["RS_HangulMessageSystem"]
       
       m = $game_temp.method(:add_text)
           
-      for i in lines 
+      lines.each_with_index do |e, idx|
+        
         if line_count == 0
-          if i.slice(0, 2) == "# "
-            i.gsub!("# ", "")
+          if e =~ /(?:#)(.*)$/i
+            e.gsub!("# ", "")
             skip = false
           else
             skip = true
           end
         end
+                
         if skip
           next
-        else
-          if i.slice(0, 2) == "# " && line_count < 4
+        else                  
+          if e =~ /(?:#)(.*)$/i && line_count < 4
             m.call("\\f")          
-            i.gsub!("# ", "")
+            e.gsub!("# ", "")
             line_count = 0
             skip = false
           end
-          i.gsub!(/[\r\n]+/i, "")
+          e.gsub!(/[\r\n]+/i, "")
           case line_count
           when 0..2
-            m.call(i)
+            m.call(e)
             line_count += 1
           when 3
-            m.call(i + "\\f")
+            m.call(e + "\\f")
             line_count = 0
           end
         end
+        
       end
+      
       
     end
   end;end
