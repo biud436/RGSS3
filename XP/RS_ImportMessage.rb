@@ -30,7 +30,7 @@ if $imported["RS_HangulMessageSystem"]
       return false if $game_temp.message_text != nil
       return false if not File::exist?(filename)
       
-      f = File.open(filename, "r")
+      f = File.open(filename, 'r')
       line_count = 0
       lines = f.readlines
       skip = false
@@ -40,7 +40,10 @@ if $imported["RS_HangulMessageSystem"]
       m = $game_temp.method(:add_text)
           
       lines.each_with_index do |e, idx|
+        e.gsub!(/[\r\n]+/i, "") # 라인 개행 문자 제거
+        e.gsub!("\xEF\xBB\xBF", "") # UTF-8 Byte Order Mark(BOM) 제거
         
+        # 첫번째 라인 스캔
         if line_count == 0
           if e =~ /(?:#)(.*)$/i
             e.gsub!("# ", "")
@@ -49,17 +52,16 @@ if $imported["RS_HangulMessageSystem"]
             skip = true
           end
         end
-                
-        if skip
-          next
-        else                  
+          
+        if skip # 비어있는 라인 스킵
+          next 
+        else              
           if e =~ /(?:#)(.*)$/i && line_count < 4
             m.call("\\f")          
             e.gsub!("# ", "")
             line_count = 0
             skip = false
           end
-          e.gsub!(/[\r\n]+/i, "")
           case line_count
           when 0..2
             m.call(e)
