@@ -26,7 +26,7 @@ imported["RS_ImportMessage"] = true
 
 if $imported["RS_HangulMessageSystem"]
   class Interpreter
-    def extract(filename)
+    def import(filename)
       return false if $game_temp.message_text != nil
       return false if not File::exist?(filename)
       
