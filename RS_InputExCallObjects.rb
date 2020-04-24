@@ -55,6 +55,10 @@ module RS::Input
     # 마우스 커서의 크기
     CURSOR_SIZE = 24
     
+    # 스프라이트 마우스 아웃 이벤트를 한 번만 발생시키려면 true, 
+    # 마우스가 바깥에 있어도 계속 발생시키려면 false
+    OUT_EVENT_EMIT_ONCE = false
+    
     # 기본 클래스
     BASE_CLASS = Sprite
     
@@ -99,7 +103,11 @@ class RS::Input::Pictures::BASE_CLASS
       @mouse_clicked = TouchInput.trigger?(:LEFT)
       on_mouse_over
     else
-      if @prev_mouse_over
+      if RS::Input::Pictures::OUT_EVENT_EMIT_ONCE
+        if @prev_mouse_over
+          on_mouse_out          
+        end
+      else
         on_mouse_out
       end
     end
