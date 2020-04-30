@@ -1,7 +1,7 @@
 #===============================================================================
 # Name : RS_Input
 # Author : biud436
-# Version : v1.0.11 (2020.04.30)
+# Version : v1.0.10 (2020.03.04)
 # Link : https://biud436.blog.me/220289463681
 # Description : This script provides the extension keycode and easy to use.
 #-------------------------------------------------------------------------------
@@ -34,8 +34,6 @@
 # - DLL 파일에 한글 조합 기능을 추가하였습니다.
 # v1.0.10 (2020.03.04) :
 # - 스킬 목록에서 인덱스 계산이 잘못되는 문제를 수정하였습니다.
-# v1.0.11 (2020.04.30) :
-# - 마우스의 아이콘의 인덱스를 바꿀 수 있습니다.
 #-------------------------------------------------------------------------------
 # 사용법 / How to use
 #-------------------------------------------------------------------------------
@@ -66,13 +64,6 @@
 # You can see that, the symbol starts with the colon(:)
 #
 # p"backspace" if Input.press?(:VK_BACK)
-#
-# if you need to change the mouse icon, 
-# You will gonna insert a new note tag in the event editor, as follows.
-#
-# <MOUSE_OVER : X>
-#
-# The 'X' is an index value into the icon set.
 #
 #-------------------------------------------------------------------------------
 # API / Funcions : 
@@ -1791,6 +1782,7 @@ class Scene_File
   end
 end
 
+%Q(
 #===============================================================================
 # Game_Event
 #===============================================================================
@@ -1885,8 +1877,9 @@ class Game_Event
             
             event_ids = $game_map.events_xy(cx, cy)
             
-            # 해당 마우스 영역에 다른 이벤트가 없으면
-            if !event_ids.any?
+            if event_ids.any?
+              event_ids.first.read_event_comments
+            else
               SceneManager.scene.change_cusor(-1)
             end
             @own_icon = false
@@ -1898,3 +1891,4 @@ class Game_Event
   end
   
 end
+)
