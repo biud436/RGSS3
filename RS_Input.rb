@@ -1017,12 +1017,6 @@ module TouchInput::Cursor
   end
   
   def change_cusor(index)
-    return if @cursor_index == index
-    if index == -1 && @stream_icon_index.size > 0
-      index = @stream_icon_index.pop
-    else
-      @stream_icon_index.push(index)
-    end
     internal_change_cursor(index)
   end
 end
