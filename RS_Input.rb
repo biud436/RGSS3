@@ -1795,6 +1795,9 @@ end
 # Game_Event
 #===============================================================================
 class Game_Event
+  
+  attr_reader :id
+  
   #--------------------------------------------------------------------------
   # * init_public_members
   #--------------------------------------------------------------------------    
@@ -1811,6 +1814,26 @@ class Game_Event
     rs_mouse_icon_event_update
     read_event_comments
   end
+  #--------------------------------------------------------------------------
+  # * 마우스 X 좌표에서 맵 X 좌표로
+  #--------------------------------------------------------------------------
+  def canvas_x(x)
+    if $game_map.loop_horizontal? && x < $game_map.display_x - ($game_map.width - $game_map.screen_tile_x) / 2
+      x + ($game_map.display_x - $game_map.width)
+    else
+      x + ($game_map.display_x)
+    end
+  end
+  #--------------------------------------------------------------------------
+  # * 마우스 Y 좌표에서 맵 Y 좌표로
+  #--------------------------------------------------------------------------
+  def canvas_y(y)
+    if $game_map.loop_vertical? && y < $game_map.display_y - ($game_map.height - $game_map.screen_tile_y) / 2
+      y + ($game_map.display_y - $game_map.height)
+    else
+      y + $game_map.display_y
+    end
+  end  
   #--------------------------------------------------------------------------
   # * 주석을 읽습니다
   #--------------------------------------------------------------------------   
@@ -1856,7 +1879,16 @@ class Game_Event
             @own_icon = true
             SceneManager.scene.change_cusor(icon_index)
           elsif @own_icon && !condition
-            SceneManager.scene.change_cusor(-1)
+            
+            cx = canvas_x(mx / 32).floor
+            cy = canvas_y(my / 32).floor
+            
+            event_ids = $game_map.events_xy(cx, cy)
+            
+            # 해당 마우스 영역에 다른 이벤트가 없으면
+            if !event_ids.any?
+              SceneManager.scene.change_cusor(-1)
+            end
             @own_icon = false
           end
         end
