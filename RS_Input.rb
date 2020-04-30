@@ -1,7 +1,7 @@
 #===============================================================================
 # Name : RS_Input
 # Author : biud436
-# Version :  v1.0.10 (2020.03.04)
+# Version : v1.0.11 (2020.04.30)
 # Link : https://biud436.blog.me/220289463681
 # Description : This script provides the extension keycode and easy to use.
 #-------------------------------------------------------------------------------
@@ -34,6 +34,8 @@
 # - DLL 파일에 한글 조합 기능을 추가하였습니다.
 # v1.0.10 (2020.03.04) :
 # - 스킬 목록에서 인덱스 계산이 잘못되는 문제를 수정하였습니다.
+# v1.0.11 (2020.04.30) :
+# - 마우스의 아이콘의 인덱스를 바꿀 수 있습니다.
 #-------------------------------------------------------------------------------
 # 사용법 / How to use
 #-------------------------------------------------------------------------------
@@ -64,6 +66,13 @@
 # You can see that, the symbol starts with the colon(:)
 #
 # p"backspace" if Input.press?(:VK_BACK)
+#
+# if you need to change the mouse icon, 
+# You will gonna insert a new note tag in the event editor, as follows.
+#
+# <MOUSE_OVER : X>
+#
+# The 'X' is an index value into the icon set.
 #
 #-------------------------------------------------------------------------------
 # API / Funcions : 
@@ -949,21 +958,61 @@ end
 #===============================================================================
 module TouchInput::Cursor
   def create_cursor(index)
+    
     @cursor = Sprite.new
     @cursor.x, @cursor.y = TouchInput.get_pos
-    @cursor.bitmap = Bitmap.new(24,24)
+    @cursor.bitmap = Bitmap.new(24, 24)
     @contents = @cursor.bitmap
-    @draw_icon = lambda {|icon_index,x,y,enabled = true|
-    bitmap = Cache.system("Iconset")
-    rect = Rect.new(icon_index % 16 * 24, icon_index / 16 * 24, 24, 24)
-    @contents.blt(x, y, bitmap, rect, enabled ? 255 : 128)}
-    @draw_icon.(index,0,0,true)
+    
+    draw_icon(index, 0, 0, true)
+    
+    @cursor_index = index
     @cursor.z = 500
     @cursor.ox = 0
     @cursor.oy = 0
-    @update_cursor = lambda {|pos| return false if @cursor.nil?
-    @cursor.x, @cursor.y = pos }
-    @dispose_cursor = lambda {@contents.dispose; @cursor.dispose}
+    
+    @update_cursor = Proc.new do |pos| 
+      return false if @cursor.nil?
+      @cursor.x, @cursor.y = pos 
+    end
+    
+    @dispose_cursor = Proc.new do
+      @contents.dispose 
+      @cursor.dispose
+    end
+    
+  end
+  
+  def draw_icon(icon_index, x, y, enabled = true)
+    bitmap = Cache.system("Iconset")
+    
+    rect = Rect.new icon_index % 16 * 24, 
+      icon_index / 16 * 24, 
+      24, 
+      24
+    
+    @cursor.bitmap.blt(x, y, bitmap, rect, enabled ? 255 : 128)
+  end
+  
+  def change_cusor(index)
+    # 아이콘 인덱스가 같은가
+    return if @cursor_index == index
+    # 아이콘이 리셋되어야 하는가
+    if index == -1
+      index = RS::Input::Config[:CURSOR_ICON]
+    end
+    # 아이콘 스프라이트가 없다면
+    if not @cursor
+      return create_cursor(index)
+    end
+    # 비트맵이 없다면
+    if @cursor.bitmap
+      @cursor.bitmap = Bitmap.new(24,24)
+    end
+    # 비트맵을 초기화 한다
+    @cursor.bitmap.clear
+    @cursor_index = index
+    draw_icon(index, 0, 0, true)
   end
 end
 
@@ -1735,4 +1784,80 @@ class Scene_File
     end    
     
   end
+end
+
+#===============================================================================
+# Game_Event
+#===============================================================================
+class Game_Event
+  #--------------------------------------------------------------------------
+  # * init_public_members
+  #--------------------------------------------------------------------------    
+  alias rs_mouse_icon_event_init_public_members init_public_members
+  def init_public_members
+    rs_mouse_icon_event_init_public_members
+    @own_icon = false
+  end
+  #--------------------------------------------------------------------------
+  # * update
+  #--------------------------------------------------------------------------   
+  alias rs_mouse_icon_event_update update
+  def update
+    rs_mouse_icon_event_update
+    read_event_comments
+  end
+  #--------------------------------------------------------------------------
+  # * 주석을 읽습니다
+  #--------------------------------------------------------------------------   
+  def read_event_comments
+    return if not @list
+    if @erased
+      @own_icon = false
+      return
+    end
+    grab_list = @list.select {|i| [108, 408].include?(i.code) }
+    grab_list.each do |i|
+      lines = i.parameters.first
+      lines.split(/[\r\n]+/i).each do |line|
+        if line =~ /^\<(?:MOUSE_OVER)[ ]*\:[ ]*(\d+)\>/i
+          
+          icon_index = $1.to_i rescue -1
+          
+          # 마우스 좌표를 그리드 좌표로 변경합니다
+          mx = TouchInput.x - (TouchInput.x % 32)
+          my = TouchInput.y - (TouchInput.y % 32)
+          
+          # 마우스 좌표를 스크린 좌표와 유사하게 설정합니다
+          # 픽셀 무브 먼트 스크립트와 호환되지 않습니다
+          mx = mx + 16
+          my = my + 32 - shift_y - jump_height
+          sy = screen_y.floor
+          sx = screen_x.floor
+          
+          # 캐시된 캐릭터가 있는지 확인합니다
+          bitmap = Cache.character(@character_name)
+          sign = @character_name[/^[\!\$]./]
+          if sign && sign.include?('$')
+            @cw = bitmap.width / 3
+            @ch = bitmap.height / 4
+          else
+            @cw = bitmap.width / 12
+            @ch = bitmap.height / 8
+          end
+          
+          condition = mx >= sx && mx < (sx + @cw) && my >= sy && my < (sy + @ch)          
+          
+          if !@own_icon && condition
+            @own_icon = true
+            SceneManager.scene.change_cusor(icon_index)
+          elsif @own_icon && !condition
+            SceneManager.scene.change_cusor(-1)
+            @own_icon = false
+          end
+        end
+      end
+    end
+    
+  end
+  
 end
