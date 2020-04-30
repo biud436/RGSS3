@@ -1,7 +1,7 @@
 #===============================================================================
 # Name : RS_Input
 # Author : biud436
-# Version : v1.0.10 (2020.03.04)
+# Version : v1.0.11 (2020.05.01)
 # Link : https://biud436.blog.me/220289463681
 # Description : This script provides the extension keycode and easy to use.
 #-------------------------------------------------------------------------------
@@ -34,6 +34,8 @@
 # - DLL 파일에 한글 조합 기능을 추가하였습니다.
 # v1.0.10 (2020.03.04) :
 # - 스킬 목록에서 인덱스 계산이 잘못되는 문제를 수정하였습니다.
+# v1.0.11 (2020.05.01) :
+# - 마우스의 아이콘의 인덱스를 바꿀 수 있습니다.
 #-------------------------------------------------------------------------------
 # 사용법 / How to use
 #-------------------------------------------------------------------------------
@@ -64,6 +66,13 @@
 # You can see that, the symbol starts with the colon(:)
 #
 # p"backspace" if Input.press?(:VK_BACK)
+#
+# if you need to change the mouse icon, 
+# You will gonna insert a new note tag in the event editor, as follows.
+#
+# <MOUSE_OVER : X>
+#
+# The 'X' is an index value into the icon set.
 #
 #-------------------------------------------------------------------------------
 # API / Funcions : 
@@ -546,11 +555,13 @@ module Input
       update_mouse
     end
     
+    # 가상키 획득
     def get_virutal_key(keyname)
       vk_key = SPECIFIC_KEY[keyname]
       vk_key
     end
     
+    # 키코드 획득
     def get_keycode(keyname)
       keycode = 0
       if keyname.is_a?(String)
@@ -570,6 +581,7 @@ module Input
       return keycode
     end
     
+    # 트리거인가?
     alias rs_input_trigger? trigger?
     def trigger?(*args, &block)
       keycode = get_keycode(args[0])
@@ -734,7 +746,7 @@ module Input
       
       @@wheel = RSGetWheelDelta.call
       clear_wheel
-      
+            
     end
     
     def update_mouse_point
@@ -745,7 +757,7 @@ module Input
       @@mouse.point.x = lpt[0]
       @@mouse.point.y = lpt[1]      
     end
-    
+          
     def mouse_x
       @@mouse.point.x rescue 0
     end
@@ -1007,7 +1019,7 @@ module TouchInput::Cursor
     draw_icon(index, 0, 0, true)    
   end
   
-  def change_cusor(index)
+  def change_cursor(index)
     internal_change_cursor(index)
   end
 end
@@ -1637,7 +1649,7 @@ end
 #===============================================================================
 # Scene_Map
 #===============================================================================
-class Scene_Map
+class Scene_Map < Scene_Base
   #--------------------------------------------------------------------------
   # * 시작
   #--------------------------------------------------------------------------  
@@ -1654,6 +1666,20 @@ class Scene_Map
     rs_open_menu_update
     update_when_starting_with_menu_scene
     update_destination
+    
+    mx = TouchInput.x
+    my = TouchInput.y
+    cx = $game_map.canvas_to_map_x(mx)
+    cy = $game_map.canvas_to_map_y(my)
+    
+    ids = $game_map.events_xy(cx, cy)
+    
+    if ids.any?
+      SceneManager.scene.change_cursor(ids.first.read_event_comments)
+    else
+      SceneManager.scene.change_cursor(-1)
+    end
+    
   end
   #--------------------------------------------------------------------------
   # * 메뉴 호출 여부
@@ -1782,7 +1808,6 @@ class Scene_File
   end
 end
 
-%Q(
 #===============================================================================
 # Game_Event
 #===============================================================================
@@ -1796,44 +1821,14 @@ class Game_Event
   alias rs_mouse_icon_event_init_public_members init_public_members
   def init_public_members
     rs_mouse_icon_event_init_public_members
-    @own_icon = false
   end
-  #--------------------------------------------------------------------------
-  # * update
-  #--------------------------------------------------------------------------   
-  alias rs_mouse_icon_event_update update
-  def update
-    rs_mouse_icon_event_update
-    read_event_comments
-  end
-  #--------------------------------------------------------------------------
-  # * 마우스 X 좌표에서 맵 X 좌표로
-  #--------------------------------------------------------------------------
-  def canvas_x(x)
-    if $game_map.loop_horizontal? && x < $game_map.display_x - ($game_map.width - $game_map.screen_tile_x) / 2
-      x + ($game_map.display_x - $game_map.width)
-    else
-      x + ($game_map.display_x)
-    end
-  end
-  #--------------------------------------------------------------------------
-  # * 마우스 Y 좌표에서 맵 Y 좌표로
-  #--------------------------------------------------------------------------
-  def canvas_y(y)
-    if $game_map.loop_vertical? && y < $game_map.display_y - ($game_map.height - $game_map.screen_tile_y) / 2
-      y + ($game_map.display_y - $game_map.height)
-    else
-      y + $game_map.display_y
-    end
-  end  
   #--------------------------------------------------------------------------
   # * 주석을 읽습니다
   #--------------------------------------------------------------------------   
   def read_event_comments
-    return if not @list
+    return -1 if not @list
     if @erased
-      @own_icon = false
-      return
+      return -1 
     end
     grab_list = @list.select {|i| [108, 408].include?(i.code) }
     grab_list.each do |i|
@@ -1867,28 +1862,15 @@ class Game_Event
           
           condition = mx >= sx && mx < (sx + @cw) && my >= sy && my < (sy + @ch)          
           
-          if !@own_icon && condition
-            @own_icon = true
-            SceneManager.scene.change_cusor(icon_index)
-          elsif @own_icon && !condition
-            
-            cx = canvas_x(mx / 32).floor
-            cy = canvas_y(my / 32).floor
-            
-            event_ids = $game_map.events_xy(cx, cy)
-            
-            if event_ids.any?
-              event_ids.first.read_event_comments
-            else
-              SceneManager.scene.change_cusor(-1)
-            end
-            @own_icon = false
+          if condition
+            return icon_index
           end
         end
-      end
+      end  
     end
+    
+    return -1
     
   end
   
 end
-)
