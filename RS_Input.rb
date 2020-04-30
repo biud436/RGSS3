@@ -967,6 +967,7 @@ module TouchInput::Cursor
     draw_icon(index, 0, 0, true)
     
     @cursor_index = index
+    @stream_icon_index = []
     @cursor.z = 500
     @cursor.ox = 0
     @cursor.oy = 0
@@ -994,7 +995,7 @@ module TouchInput::Cursor
     @cursor.bitmap.blt(x, y, bitmap, rect, enabled ? 255 : 128)
   end
   
-  def change_cusor(index)
+  def internal_change_cursor(index)
     # 아이콘 인덱스가 같은가
     return if @cursor_index == index
     # 아이콘이 리셋되어야 하는가
@@ -1012,7 +1013,17 @@ module TouchInput::Cursor
     # 비트맵을 초기화 한다
     @cursor.bitmap.clear
     @cursor_index = index
-    draw_icon(index, 0, 0, true)
+    draw_icon(index, 0, 0, true)    
+  end
+  
+  def change_cusor(index)
+    return if @cursor_index == index
+    if index == -1 && @stream_icon_index.size > 0
+      index = @stream_icon_index.pop
+    else
+      @stream_icon_index.push(index)
+    end
+    internal_change_cursor(index)
   end
 end
 
