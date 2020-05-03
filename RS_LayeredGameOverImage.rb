@@ -3,7 +3,7 @@ module SceneManager
   def self.snapshot_for_background
     @background_bitmap.dispose if @background_bitmap
     @background_bitmap = Graphics.snap_to_bitmap
-    @background_bitmap.blur
+    @background_bitmap.blur if @stack.size > 0 && @stack[-1].class != Scene_Gameover
   end
 end
 class Sprite_GameOver < Sprite
