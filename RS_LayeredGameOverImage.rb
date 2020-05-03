@@ -1,4 +1,5 @@
 # Author : biud436
+# Date : 2020.05.03 (v1.0.0)
 module SceneManager
   def self.snapshot_for_background
     @background_bitmap.dispose if @background_bitmap
