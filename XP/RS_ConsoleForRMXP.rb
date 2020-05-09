@@ -133,7 +133,7 @@ if not defined? $NEKO_RUBY
       end
       
       lf = "\r\n"
-      lf = "" if buf.size == 1
+      lf = "\r" if buf.size == 1
       
       buf = buf.join(", ") + lf
       len = buf.size
