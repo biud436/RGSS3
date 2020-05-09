@@ -11,6 +11,8 @@
 # - Console.activate 함수 추가
 # - 메인 윈도우에 포커스 설정
 # - SetForegroundWindow 추가 (메인 창 활성화 API)
+# 2020.05.09 (v1.0.6) :
+# - 이제 한 줄 출력 시엔 개행 문자를 추가하지 않음.
 # Usage :
 # p "안녕하세요?", "러닝은빛입니다"
 # p 50, 46, 87
@@ -130,7 +132,10 @@ if not defined? $NEKO_RUBY
         buf.push(i.to_s + "\r\n") 
       end
       
-      buf = buf.join(", ") + "\r\n"
+      lf = "\r\n"
+      lf = "" if buf.size == 1
+      
+      buf = buf.join(", ") + lf
       len = buf.size
       buf = buf.unicode!
       WriteConsoleW.call(@@std_handle, buf, len, 0, 0)
