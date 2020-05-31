@@ -116,7 +116,7 @@ class App
       f << plain
       f.close
 
-      config[name] = nil
+      config.delete(name)
 
     end
 
