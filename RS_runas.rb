@@ -1,3 +1,9 @@
+#================================================================
+# The MIT License
+# Copyright (c) 2020 biud436
+# ---------------------------------------------------------------
+# Free for commercial and non commercial use.
+#================================================================
 # Name : 관리자 권한 획득 / Obtaining Administrator Rights
 # Author : biud436
 # Usage :

@@ -1,3 +1,9 @@
+#================================================================
+# The MIT License
+# Copyright (c) 2020 biud436
+# ---------------------------------------------------------------
+# Free for commercial and non commercial use.
+#================================================================
 class ScrollBase < Sprite
   attr_accessor :min, :max, :action
   

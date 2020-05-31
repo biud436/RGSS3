@@ -1,3 +1,9 @@
+#================================================================
+# The MIT License
+# Copyright (c) 2020 biud436
+# ---------------------------------------------------------------
+# Free for commercial and non commercial use.
+#================================================================
 #==============================================================================#
 # Name : RS_CustomTitleVX
 # Description : This script allows you to change a title command window.

@@ -1,3 +1,9 @@
+#================================================================
+# The MIT License
+# Copyright (c) 2020 biud436
+# ---------------------------------------------------------------
+# Free for commercial and non commercial use.
+#================================================================
 #==============================================================================
 # ** WindowManager
 # Desc    : This script allows you to adjust the transparency for main program.

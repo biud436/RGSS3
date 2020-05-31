@@ -1,3 +1,9 @@
+#================================================================
+# The MIT License
+# Copyright (c) 2020 biud436
+# ---------------------------------------------------------------
+# Free for commercial and non commercial use.
+#================================================================
 require 'optparse'
 require 'ostruct'
 require 'json'
