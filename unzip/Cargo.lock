@@ -89,6 +89,7 @@ dependencies = [
 name = "un_zip"
 version = "0.1.0"
 dependencies = [
+ "winapi 0.3.8 (registry+https://github.com/rust-lang/crates.io-index)",
  "zip 0.5.5 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 

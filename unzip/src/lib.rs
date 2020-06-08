@@ -3,6 +3,32 @@ use std::fs;
 use std::ffi::CStr;
 use std::os::raw::c_char;
 
+#[cfg(windows)] extern crate winapi;
+use std::io::Error;
+
+/**
+ * @link https://github.com/retep998/winapi-rs
+ */
+#[cfg(windows)]
+fn print_message(msg: &str) -> Result<i32, Error> {
+    use std::ffi::OsStr;
+    use std::iter::once;
+    use std::os::windows::ffi::OsStrExt;
+    use std::ptr::null_mut;
+    use winapi::um::winuser::{MB_OK, MessageBoxW};
+    let wide: Vec<u16> = OsStr::new(msg).encode_wide().chain(once(0)).collect();
+    let ret = unsafe {
+        MessageBoxW(null_mut(), wide.as_ptr(), wide.as_ptr(), MB_OK)
+    };
+    if ret == 0 { Err(Error::last_os_error()) }
+    else { Ok(ret) }
+}
+#[cfg(not(windows))]
+fn print_message(msg: &str) -> Result<(), Error> {
+    println!("{}", msg);
+    Ok(())
+}
+
 #[no_mangle]
 pub extern "C" fn extractZip(ptr: *const c_char) -> i32 {
     let cstr = unsafe { CStr::from_ptr(ptr) };
@@ -48,9 +74,9 @@ pub extern "C" fn extractZip(ptr: *const c_char) -> i32 {
                     io::copy(&mut file, &mut outfile).unwrap();
                 }
             }
-        }
-        Err(_) => {
-          // handle the error
+        },
+        Err(_e) => {
+          print_message("압축 해제 도중에 오류가 발생하였습니다").unwrap();
         }
     }    
     
