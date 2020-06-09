@@ -104,7 +104,7 @@ module Sprite_Name
     return if @name_sprite.nil?
     return if @character.nil?
     return if not @character.is_a?(Game_Event)
-    
+  
     if @character.erased? and !self.bitmap
       @name_sprite.visible = false
     else      
@@ -141,15 +141,18 @@ module Sprite_Name
     proc = Proc.new do
       bitmap = Cache.character(@character.character_name)
       sign = name[/^[\!\$]./]
+      ch = 0
       if sign && sign.include?('$')
         ch = bitmap.height / 4
       else
         ch = bitmap.height / 8
       end
+      ch
     end
 
     # ch는 캐릭터 폭의 약자
-    ch = @tile_id > 0 ? 32 : proc.call
+    tile_height = (Graphics.height / 13).round
+    ch = @character.tile_id > 0 ? 32 : proc.call
 
     @name_sprite.x = @character.screen_x - BW / 2
     @name_sprite.y = @character.screen_y - (ch + lh)
