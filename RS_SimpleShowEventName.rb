@@ -108,8 +108,10 @@ module Sprite_Name
     if @character.erased? and !self.bitmap
       @name_sprite.visible = false
     else      
-      @name_sprite.visible = !@character.find_proper_page.nil?      
-      @name_sprite.visible = @character_name.size > 0 and self.bitmap
+      @name_sprite.visible = !@character.find_proper_page.nil? 
+      if !@character.tile?
+        @name_sprite.visible = @character_name.size > 0 and (self.bitmap != nil)
+      end
     end
     
     @name_sprite.update
@@ -153,7 +155,6 @@ module Sprite_Name
     # ch는 캐릭터 폭의 약자
     tile_height = (Graphics.height / 13).round
     ch = @tile_id > 0 ? 32 : proc.call
-
     @name_sprite.x = @character.screen_x - BW / 2
     @name_sprite.y = @character.screen_y - (ch + lh)
   end
