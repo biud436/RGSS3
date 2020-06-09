@@ -34,6 +34,8 @@ $imported["RS_SimpleShowEventName"] = true
 # - Added the functionality that get the character width and height values from the parent.
 # 2019.08.26 (v1.0.3) :
 # - Fixed the issue that is not working when the tile graphics had set.
+# 2020.06.09 (v1.0.4) :
+# - Fixed the bug that can't get the event name.
 
 module EV_NAME_CONFIG
   BW = 32 * 6
@@ -47,7 +49,29 @@ module EV_NAME_CONFIG
   MY_FONT.shadow = true
 end
 
-class Game_Event
+class Game_Character < Game_CharacterBase
+  def name; "" end
+  def erased?; false end
+  def read_name_comment; "" end
+end
+  
+class Game_Player < Game_Character
+  def name
+    $game_party.leader.name rescue ""
+  end
+  def erased?
+    transparent
+  end
+  def read_name_comment
+    %Q(<NAME_COLOR : 255 0 0 255>
+    <NEW_NAME : 테스트>")
+  end
+end
+
+class Game_Event < Game_Character
+  def name
+    @event.name rescue ""
+  end
   def erased?
     @erased
   end
