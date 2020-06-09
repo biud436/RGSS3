@@ -152,7 +152,7 @@ module Sprite_Name
 
     # ch는 캐릭터 폭의 약자
     tile_height = (Graphics.height / 13).round
-    ch = @character.tile_id > 0 ? 32 : proc.call
+    ch = @tile_id > 0 ? 32 : proc.call
 
     @name_sprite.x = @character.screen_x - BW / 2
     @name_sprite.y = @character.screen_y - (ch + lh)
