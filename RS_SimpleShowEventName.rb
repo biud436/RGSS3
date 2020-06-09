@@ -44,9 +44,11 @@ module EV_NAME_CONFIG
   Z_ADD = 100
   MIN_OPACITY = 64
   MAX_OPACITY = 255
+  
+  # 폰트명과 폰트 크기
   MY_FONT = Font.new("나눔고딕", 16)
-  MY_FONT.outline = true
-  MY_FONT.shadow = true
+  MY_FONT.outline = true # 텍스트 테두리
+  MY_FONT.shadow = true # 텍스트 그림자
 end
 
 class Game_Character < Game_CharacterBase
@@ -55,19 +57,6 @@ class Game_Character < Game_CharacterBase
   def read_name_comment; "" end
 end
   
-class Game_Player < Game_Character
-  def name
-    $game_party.leader.name rescue ""
-  end
-  def erased?
-    transparent
-  end
-  def read_name_comment
-    %Q(<NAME_COLOR : 255 0 0 255>
-    <NEW_NAME : 테스트>")
-  end
-end
-
 class Game_Event < Game_Character
   def name
     @event.name rescue ""
