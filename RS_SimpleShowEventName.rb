@@ -138,7 +138,19 @@ module Sprite_Name
     
     @name_sprite.bitmap.draw_text(dx, dy, tw, lh, name, 1)
     
-    ch = @tile_id > 0 ? 32 : @ch
+    proc = Proc.new do
+      bitmap = Cache.character(@character.character_name)
+      sign = name[/^[\!\$]./]
+      if sign && sign.include?('$')
+        ch = bitmap.height / 4
+      else
+        ch = bitmap.height / 8
+      end
+    end
+
+    # ch는 캐릭터 폭의 약자
+    ch = @tile_id > 0 ? 32 : proc.call
+
     @name_sprite.x = @character.screen_x - BW / 2
     @name_sprite.y = @character.screen_y - (ch + lh)
   end
