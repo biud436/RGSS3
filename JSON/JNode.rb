@@ -187,6 +187,7 @@ class JDocument
     else
       @last_node = @nodes[@last_node_idx]
 
+      # 자식 노드의 레벨이 높은 지 판단하고 마지막 노드를 변경한다
       if @current_pairs.level > @last_node.level
         if @last_node.nodes[0]
           @last_node = @last_node.nodes[0]
