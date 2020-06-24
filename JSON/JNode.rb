@@ -35,7 +35,7 @@ class JWhiteSpace < JToken
 end
 
 class JNode
-  attr_accessor :parent, :key, :value, :level
+  attr_accessor :parent, :key, :value, :level, :nodes
 
   def initialize(key = "", value = "", level = 0)
     @key = key
@@ -46,9 +46,7 @@ class JNode
   end
 
   def add(child)
-    @value = child
-    @value.parent = self
-
+    @nodes.push(child)
     return @value
   end
 
@@ -153,17 +151,11 @@ class JDocument
     @last_node_idx = 0
     @stacks = []
     @level = 0
+    @change_level = false
   end
   def level_up
-
-    case @level
-    when 0
-      add(Tokenizer.make_lbrace)
-    else
-      add(Tokenizer.make_lbrace)
-    end
-
     @level += 1
+    @change_level = true
     
     @stacks.push(@current_pairs)
   end
@@ -177,30 +169,65 @@ class JDocument
   def empty_pairs(level)
     @current_pairs = JNode.new(nil, nil, level)
   end
+  def set_key(node)
+    @current_pairs.key = node.raw
+    @current_pairs.level = @level
+  end
+  def set_value(node)
+    @current_pairs.value = node.raw
+    add_pair
+  end
+  def add_pair
+    level = @level
+    case level
+    when 1
+      @nodes.push(@current_pairs)
+      @last_node_idx = @nodes.index(@current_pairs)
+      empty_pairs(@level)
+    else
+      @last_node = @nodes[@last_node_idx]
+
+      if @current_pairs.level > @last_node.level
+        if @last_node.nodes[0]
+          @last_node = @last_node.nodes[0]
+        end
+      end 
+
+      if @last_node.is_a?(JNode)
+        if @last_node.level == @current_pairs.level
+        else
+          @last_node.add(@current_pairs)
+        end
+      else
+        raise "마지막 노드가 없습니다"
+      end
+      @last_node = @current_pairs
+      empty_pairs(@level - 1)
+    end        
+  end
   def add(node)
     if !node.is_a?(JToken)
       raise "JDocument에는 JToken만 추가할 수 있습니다."
     end
-    if !@current_pairs.key
-      @current_pairs.key = node.raw
-    elsif @current_pairs.key && !@current_pairs.value
-      @current_pairs.value = node.raw
 
-      # 노드에 추가합니다.
-      case @current_pairs.level
-      when 0
-        @nodes.push(@current_pairs)
-        @last_node_idx = @nodes.index(@current_pairs)
-        empty_pairs(@current_pairs.level)
-      else
-        if @last_node.is_a?(JNode)
-          @last_node.add(@current_pairs)
-        else
-          raise "마지막 노드가 없습니다"
-        end
-        empty_pairs(@current_pairs.level - 1)
+    if @change_level
+      if @current_pairs.key
+        temp_level = @level
+        @level = temp_level - 1
+        @current_pairs.value = "@"
+        add_pair
+        @level = temp_level
       end
+      @change_level = false
     end
+
+    if !@current_pairs.key
+      set_key(node)
+    elsif @current_pairs.key && !@current_pairs.value
+      set_value(node)
+    end
+  
+    return @current_pairs
   end
   def nodes
     @nodes
@@ -227,7 +254,7 @@ module Tokenizer::Converter
   # Make a JToken
   def try_parse(tokens, raw)
     letters = raw.split("")
-    index = 0
+    index = -1
     text = ""
 
     next_index = Proc.new do 
@@ -326,14 +353,11 @@ tokens = Tokenizer::Converter.start(raw.dup)
 document = Tokenizer::Converter.try_parse(tokens, raw)
 
 def print_nodes(nodes)
-  if nodes.is_a?(JNode)
-    nodes = [nodes]
-  end
   for i in nodes
     item = i
-    if i.value.is_a?(JNode)
+    if !i.nodes.empty?
       p "KEY : #{i.key} / LEVEL : #{i.level}"
-      print_nodes(i.value)
+      print_nodes(i.nodes)
     else
       p "KEY : #{i.key} / VALUE : #{i.value} / LEVEL : #{i.level}"
     end
