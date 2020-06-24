@@ -187,7 +187,7 @@ class JDocument
     else
       @last_node = @nodes[@last_node_idx]
 
-      # 자식 노드의 레벨이 높은 지 판단하고 마지막 노드를 변경한다
+      # 자식 노드의 레벨이 높은 지 판단하고 마지막 노드를 변경한다.
       if @current_pairs.level > @last_node.level
         if @last_node.nodes[0]
           @last_node = @last_node.nodes[0]
@@ -299,19 +299,24 @@ module Tokenizer::Converter
       when :LBRACE
         document.level_up
         p "{"
+      when :NUMBER
+        p "숫자 감지"
+        # 숫자 파싱 (문자열과 같은 로직)
       when :RBRACE
         document.level_down
         p "}"
-      when :LBRACKET
+      when :LBRACKET 
         p "["
         ch = letters[next_index.call]
         while ch != "]"
           if ch == nil
             break
           end
+          # 배열 파싱에 대한 내용을 채운다. (숫자나 문자열이 올 수 있으며 JSON이 올 수도 있다)
+          # 재귀적으로 구현해야 함 (현재 구조에서 재귀 함수가 불가능 하므로 따로 분리해야 함)
         end
-        if ch == "]"
-
+        if ch == "]" 
+          
         else
           raise "배열 리터럴이 잘못되었습니다"
         end
