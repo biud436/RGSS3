@@ -252,91 +252,101 @@ module Tokenizer::Converter
     return tokens
   end
 
+  def internal_parse(document, tokens, letters, next_index, get_index)
+    text = ""
+
+    # 공백을 스킵한다
+    while tokens[get_index.call] == :WHITESPACE
+      ch = letters[next_index.call]
+    end
+
+    # 문자열이라면
+    case tokens[get_index.call]
+    when :DBL_Q
+      ch = letters[next_index.call]
+      while ch != "\""
+        if ch == nil
+          break
+        end
+        text += ch
+        ch = letters[next_index.call]
+      end
+      if ch == "\""
+        ch = letters[next_index.call]
+      else
+        raise "문자열 리터럴이 잘못되었습니다"
+      end
+      document.add(Tokenizer.make_string(text))
+      text = ""
+
+    when :LBRACE
+      document.level_up
+      p "{"
+    when :NUMBER
+      ch = letters[get_index.call]
+      text += ch
+      tkn = tokens[next_index.call]
+      while tkn == :NUMBER
+        if tokens[get_index.call] == nil
+          break
+        end    
+        text += letters[get_index.call]
+        tkn = tokens[next_index.call]
+      end
+      document.add(Tokenizer.make_number(text))
+      text = ""
+    when :RBRACE
+      document.level_down
+      p "}"
+    when :LBRACKET 
+      p "["
+      ch = letters[next_index.call]
+      while ch != "]"
+        if ch == nil
+          break
+        end
+        # 배열 파싱에 대한 내용을 채운다. (숫자나 문자열이 올 수 있으며 JSON이 올 수도 있다)
+        # 재귀적으로 구현해야 함 (현재 구조에서 재귀 함수가 불가능 하므로 따로 분리해야 함)
+      end
+      if ch == "]" 
+        
+      else
+        raise "배열 리터럴이 잘못되었습니다"
+      end
+    when :COLON
+      p ":"
+    when :COMMA
+      p ","
+    end
+
+  end
+
   # Make a JToken
   def try_parse(tokens, raw)
     letters = raw.split("")
     index = -1
     text = ""
 
+    # 인덱스를 1 늘리는 함수
     next_index = Proc.new do 
       index += 1
       index
     end
 
-    compose_type = :KEY
-    main_node = JNode.new
-    last_node = nil
-    nodes = []
+    # 인덱스를 구하는 함수
+    get_index = Proc.new do 
+      index
+    end
+
+    # JSON 문서를 만드는 문서 객체
     document = JDocument.new
 
     # 마지막 글자를 만날 때 까지 읽는다
     while (ch = letters[next_index.call]) != nil
-      
-      # 공백을 스킵한다
-      while tokens[index] == :WHITESPACE
-        ch = letters[next_index.call]
-      end
-
-      # 문자열이라면
-      case tokens[index]
-      when :DBL_Q
-        ch = letters[next_index.call]
-        while ch != "\""
-          if ch == nil
-            break
-          end
-          text += ch
-          ch = letters[next_index.call]
-        end
-        if ch == "\""
-          ch = letters[next_index.call]
-        else
-          raise "문자열 리터럴이 잘못되었습니다"
-        end
-        document.add(Tokenizer.make_string(text))
-        text = ""
-
-      when :LBRACE
-        document.level_up
-        p "{"
-      when :NUMBER
-        ch = letters[index]
-        text += ch
-        tkn = tokens[next_index.call]
-        while tkn == :NUMBER
-          if tokens[index] == nil
-            break
-          end    
-          text += letters[index]
-          tkn = tokens[next_index.call]
-        end
-        document.add(Tokenizer.make_number(text))
-        text = ""
-      when :RBRACE
-        document.level_down
-        p "}"
-      when :LBRACKET 
-        p "["
-        ch = letters[next_index.call]
-        while ch != "]"
-          if ch == nil
-            break
-          end
-          # 배열 파싱에 대한 내용을 채운다. (숫자나 문자열이 올 수 있으며 JSON이 올 수도 있다)
-          # 재귀적으로 구현해야 함 (현재 구조에서 재귀 함수가 불가능 하므로 따로 분리해야 함)
-        end
-        if ch == "]" 
-          
-        else
-          raise "배열 리터럴이 잘못되었습니다"
-        end
-      when :COLON
-        p ":"
-      when :COMMA
-        p ","
-      end
+      internal_parse(document, tokens, letters, next_index, get_index)
     end
 
+    # 문서 객체 반환
     document
 
   end
