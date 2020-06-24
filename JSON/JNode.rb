@@ -127,6 +127,9 @@ module Tokenizer
   def make_array(value)
     JArray.new(value)
   end
+  def make_number(value)
+    JToken.new(:NUMBER, value)
+  end
   def make_whitespace(type)
     validation = {
       :SPACE => JWhiteSpace.new(:WHITESPACE, " "),
@@ -300,8 +303,18 @@ module Tokenizer::Converter
         document.level_up
         p "{"
       when :NUMBER
-        p "숫자 감지"
-        # 숫자 파싱 (문자열과 같은 로직)
+        ch = letters[index]
+        text += ch
+        tkn = tokens[next_index.call]
+        while tkn == :NUMBER
+          if tokens[index] == nil
+            break
+          end    
+          text += letters[index]
+          tkn = tokens[next_index.call]
+        end
+        document.add(Tokenizer.make_number(text))
+        text = ""
       when :RBRACE
         document.level_down
         p "}"
