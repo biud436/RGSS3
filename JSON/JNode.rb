@@ -34,6 +34,27 @@ class JWhiteSpace < JToken
 
 end
 
+class JNode
+  attr_accessor :parent, :key, :value, :level
+
+  def initialize(key = "", value = "", level = 0)
+    @key = key
+    @value = value
+    @parent = nil
+    @nodes = []
+    @level = level
+  end
+
+  def add(child)
+    @value = child
+    @value.parent = self
+
+    return @value
+  end
+
+end
+
+
 module Tokenizer
 
   DEFAULT_TOKEN_TABLE = {
@@ -124,6 +145,59 @@ module Tokenizer
   end
 end
 
+class JDocument
+  def initialize
+    @nodes = []
+    @current_pairs = JNode.new(nil, nil, 0)
+    @last_node = @current_pairs
+    @last_node_idx = 0
+    @stacks = []
+    @level = 0
+  end
+  def level_up
+    @level += 1
+    @stacks.push(@current_pairs)
+  end
+  def level_down
+    if @level < 0
+      raise "}가 맞지 않습니다"
+    end
+    @last_node = @stacks.pop
+    @level -= 1
+  end
+  def empty_pairs
+    @current_pairs = JNode.new(nil, nil, @level)
+  end
+  def add(node)
+    if !node.is_a?(JToken)
+      raise "JDocument에는 JToken만 추가할 수 있습니다."
+    end
+    if !@current_pairs.key
+      @current_pairs.key = node.raw
+    elsif @current_pairs.key && !@current_pairs.value
+      @current_pairs.value = node.raw
+
+      # 노드에 추가합니다.
+      case @current_pairs.level
+      when 0
+        @nodes.push(@current_pairs)
+        @last_node_idx = @nodes.index(@current_pairs)
+      else
+        # @last_node = @nodes[@last_node_idx]
+        if @last_node.is_a?(JNode)
+          @last_node.add(@current_pairs)
+        else
+          raise "마지막 노드가 없습니다"
+        end
+      end
+      empty_pairs
+    end
+  end
+  def nodes
+    @nodes
+  end
+end
+
 module Tokenizer::Converter
   extend self
 
@@ -133,7 +207,7 @@ module Tokenizer::Converter
     typ = Tokenizer::DEFAULT_TOKEN_TABLE
     letters = raw.dup.split("")
     tokens = []
-    
+
     while (ch = letters.shift) != nil
       tokens.push(typ[ch])
     end
@@ -143,8 +217,76 @@ module Tokenizer::Converter
 
   # Make a JToken
   def try_parse(tokens, raw)
-    items = raw.split("")
-    ch = items[0]
+    letters = raw.split("")
+    index = 0
+    text = ""
+
+    next_index = Proc.new do 
+      index += 1
+      index
+    end
+
+    compose_type = :KEY
+    main_node = JNode.new
+    last_node = nil
+    nodes = []
+    document = JDocument.new
+
+    # 마지막 글자를 만날 때 까지 읽는다
+    while (ch = letters[next_index.call]) != nil
+      
+      # 공백을 스킵한다
+      while tokens[index] == :WHITESPACE
+        ch = letters[next_index.call]
+      end
+
+      # 문자열이라면
+      case tokens[index]
+      when :DBL_Q
+        ch = letters[next_index.call]
+        while ch != "\""
+          if ch == nil
+            break
+          end
+          text += ch
+          ch = letters[next_index.call]
+        end
+        if ch == "\""
+          ch = letters[next_index.call]
+        else
+          raise "문자열 리터럴이 잘못되었습니다"
+        end
+        document.add(Tokenizer.make_string(text))
+        text = ""
+
+      when :LBRACE
+        document.level_up
+        p "{"
+      when :RBRACE
+        document.level_down
+        p "}"
+      when :LBRACKET
+        p "["
+        ch = letters[next_index.call]
+        while ch != "]"
+          if ch == nil
+            break
+          end
+        end
+        if ch == "]"
+
+        else
+          raise "배열 리터럴이 잘못되었습니다"
+        end
+      when :COLON
+        p ":"
+      when :COMMA
+        p ","
+      end
+    end
+
+    document
+
   end
 
   def value_to_token(raw)
@@ -170,29 +312,24 @@ end
 
 Tokenizer.init_type
 
-class JNode
-  attr_accessor :parent, :key, :value
+raw = File.open("test.json", "r+").read
+tokens = Tokenizer::Converter.start(raw.dup)
+document = Tokenizer::Converter.try_parse(tokens, raw)
 
-  def initialize(key = "", value = "")
-    @key = key
-    @value = value
-    @parent = nil
-    @nodes = []
+def print_nodes(nodes)
+  if nodes.is_a?(JNode)
+    nodes = [nodes]
   end
-
-  def add(child)
-    @value = child
-    @value.parent = self
-
-    return @value
+  for i in nodes
+    item = i
+    if i.value.is_a?(JNode)
+      p "KEY : #{i.key} / LEVEL : #{i.level}"
+      print_nodes(i.value)
+    else
+      p "KEY : #{i.key} / VALUE : #{i.value} / LEVEL : #{i.level}"
+    end
   end
-
-  def to_json
-
-  end
-
 end
 
-raw = File.open("test.json", "r+").read
-tokens = Tokenizer::Converter.start(raw)
-p tokens
+p document.nodes
+print_nodes(document.nodes)
