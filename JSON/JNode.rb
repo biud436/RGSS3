@@ -298,18 +298,21 @@ module Tokenizer::Converter
     when :RBRACE
       document.level_down
       p "}"
-    when :LBRACKET 
+    when :LBRACKET # 배열에 대한 처리
       p "["
       ch = letters[next_index.call]
+      text = ""
       while ch != "]"
         if ch == nil
           break
         end
         # 배열 파싱에 대한 내용을 채운다. (숫자나 문자열이 올 수 있으며 JSON이 올 수도 있다)
         # 재귀적으로 구현해야 함 (현재 구조에서 재귀 함수가 불가능 하므로 따로 분리해야 함)
+        text += ch
+        ch = letters[next_index.call]
       end
       if ch == "]" 
-        
+        ch = letters[next_index.call]
       else
         raise "배열 리터럴이 잘못되었습니다"
       end
