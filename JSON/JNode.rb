@@ -359,17 +359,19 @@ raw = File.open("test.json", "r+").read
 tokens = Tokenizer::Converter.start(raw.dup)
 document = Tokenizer::Converter.try_parse(tokens, raw)
 
-def print_nodes(nodes)
-  for i in nodes
-    item = i
-    if !i.nodes.empty?
-      p "KEY : #{i.key} / LEVEL : #{i.level}"
-      print_nodes(i.nodes)
-    else
-      p "KEY : #{i.key} / VALUE : #{i.value} / LEVEL : #{i.level}"
-    end
-  end
-end
+# def print_nodes(ret, nodes)
+#   ret += "{"
+#   for i in nodes
+#     item = i
+#     if !i.nodes.empty?
+#       ret += sprintf("%s : ", i.key)
+#       print_nodes(ret, i.nodes)
+#     else
+#       ret += sprintf("%s : %s,", i.key, i.value)
+#     end
+#   end
+#   ret += "}"
+#   return ret
+# end
 
 p document.nodes
-print_nodes(document.nodes)
