@@ -165,8 +165,8 @@ class JDocument
     @last_node = @stacks.pop
     @level -= 1
   end
-  def empty_pairs
-    @current_pairs = JNode.new(nil, nil, @level)
+  def empty_pairs(level)
+    @current_pairs = JNode.new(nil, nil, level)
   end
   def add(node)
     if !node.is_a?(JToken)
@@ -182,15 +182,15 @@ class JDocument
       when 0
         @nodes.push(@current_pairs)
         @last_node_idx = @nodes.index(@current_pairs)
+        empty_pairs(@current_pairs.level)
       else
-        # @last_node = @nodes[@last_node_idx]
         if @last_node.is_a?(JNode)
           @last_node.add(@current_pairs)
         else
           raise "마지막 노드가 없습니다"
         end
+        empty_pairs(@current_pairs.level - 1)
       end
-      empty_pairs
     end
   end
   def nodes
