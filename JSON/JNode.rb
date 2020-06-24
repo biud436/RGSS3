@@ -198,10 +198,7 @@ class JDocument
       end 
 
       if @last_node.is_a?(JNode)
-        if @last_node.level == @current_pairs.level
-        else
-          @last_node.add(@current_pairs)
-        end
+        @last_node.add(@current_pairs)
       else
         raise "마지막 노드가 없습니다"
       end
@@ -343,26 +340,7 @@ module Tokenizer::Converter
     document
 
   end
-
-  def value_to_token(raw)
-    items = raw.split("")
-    ch = items[0]
-    ret = []
-    index = 0
-
-    if ch == "\""
-      while (next_c = items[index]) != "\""
-        if next_c == nil
-          break
-        end
-        ret.push(next_c)
-        index += 1
-      end
-    end
-
-    return [make_string(ret.join("")), index]
-
-  end  
+  
 end
 
 Tokenizer.init_type
