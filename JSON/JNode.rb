@@ -155,7 +155,16 @@ class JDocument
     @level = 0
   end
   def level_up
+
+    case @level
+    when 0
+      add(Tokenizer.make_lbrace)
+    else
+      add(Tokenizer.make_lbrace)
+    end
+
     @level += 1
+    
     @stacks.push(@current_pairs)
   end
   def level_down
