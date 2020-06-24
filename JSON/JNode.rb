@@ -281,7 +281,6 @@ module Tokenizer::Converter
 
     when :LBRACE
       document.level_up
-      p "{"
     when :NUMBER
       ch = letters[get_index.call]
       text += ch
@@ -297,7 +296,6 @@ module Tokenizer::Converter
       text = ""
     when :RBRACE
       document.level_down
-      p "}"
     when :LBRACKET # 배열에 대한 처리
       p "["
       ch = letters[next_index.call]
@@ -319,7 +317,6 @@ module Tokenizer::Converter
     when :COLON
       p ":"
     when :COMMA
-      p ","
     end
 
   end
