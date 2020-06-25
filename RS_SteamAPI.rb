@@ -21,27 +21,30 @@ module Steam
     SteamAPI_ISteamScreenshots_WriteScreenshot = Win32API.new(DLL , "SteamAPI_ISteamScreenshots_WriteScreenshot", "pplll", "l")
     SteamAPI_ISteamScreenshots_SetLocation = Win32API.new(DLL , "SteamAPI_ISteamScreenshots_WriteScreenshot", "plp", "l")    
         
+    # 초기화
     def initialize
       @base = SteamAPI_SteamScreenshots_v003.call
     end
     
+    # 훅
     def hook
       SteamAPI_ISteamScreenshots_HookScreenshots.call(@base, 1)
     end
     
+    # 언훅
     def unhook
       SteamAPI_ISteamScreenshots_HookScreenshots.call(@base, 0)
     end
     
+    # 스크린샷 추가
     def add_screenshot(filename)
       ret = SteamAPI_ISteamScreenshots_AddScreenshotToLibrary.call(@base, filename, filename, 544, 416)
     end
     
     # 스크린샷을 찍습니다
-    # 스팀 오버레이가 초기화 상태가 아니면 실패합니다.
+    # 스팀 오버레이가 활성화된 상태여야 동작합니다
     def take_screenshot
       
-      # 스팀 오버레이가 HOOK 상태가 아니면 0을 반환합니다.
       if SteamAPI_ISteamScreenshots_IsScreenshotsHooked.call(@base) == 0
         hook
       end    
@@ -68,6 +71,18 @@ module Steam
       SteamAPI_ISteamUser_GetUserDataFolder.call(@user, data, 255)
       data.delete!("\0")
       data
+    end
+  end
+  
+  class SteamFriends
+    SteamAPI_SteamFriends_v017 = Win32API.new(DLL, "SteamAPI_SteamFriends_v017", "v", "p")
+    SteamAPI_ISteamFriends_ActivateGameOverlay = Win32API.new(DLL, "SteamAPI_ISteamFriends_ActivateGameOverlay", "pp", "v")
+    def initialize
+      @base = SteamAPI_SteamFriends_v017.call
+    end
+    
+    def activate_game_overlay
+      SteamAPI_ISteamFriends_ActivateGameOverlay.call(@base, "friends")
     end
   end
   
@@ -109,12 +124,16 @@ module Steam
     # 스팀 유틸 초기화
     @@steam_util = SteamAPI_SteamUtils_v009.call
     
-    system "explorer #{@@steam_user.get_data_folder}"
+#~     system "explorer #{@@steam_user.get_data_folder}"
     
     # 스팀 오버레이 활성화 여부 출력
     if !overlay_enabled?
-      msgbox "스팀 오버레이가 비활성화 되어있습니다."
-    end
+      p "스팀 오버레이가 비활성화 되어있습니다."
+end
+
+    # 스팀 오버레이 강제 활성화
+    @@friends = SteamFriends.new
+    @@friends.activate_game_overlay
     
     @@steam_ready = true
   
