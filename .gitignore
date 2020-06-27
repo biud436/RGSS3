@@ -3,3 +3,4 @@ run.js
 tool.rb
 *.js
 RS_MapEditor.rb
+*.dll
