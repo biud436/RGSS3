@@ -5,7 +5,7 @@
 # Free for commercial and non commercial use.
 #================================================================
 #==============================================================================
-#   Name      : 화면 중앙 상단 메시지 / Floating Message (GUI)
+#   Name      : Top Screen Message
 #   Date      : 2019.12.28
 #   Version   : 1.5.5
 # -----------------------------------------------------------------------------
@@ -112,6 +112,8 @@ module Temp
   EXP_DOWN = "경험치 %d EXP를 상실했습니다"
   # 콘솔 명령어의 입력(미지원)
   MESSAGE = "명령어를 입력하세요"
+  # 퀘스트 완료
+  QUEST_COMPLETION_MARK = "(완료)"
   #--------------------------------------------------------------------------
   # * 효과음 재생
   #--------------------------------------------------------------------------
@@ -580,10 +582,10 @@ module Quest
     gv = $game_variables[i],log(i)
     unless $game_variables[i] > log(i)
       return if $game_variables[i] == 0
-      result = $game_variables[i] >= log(i)? "(완료)".center(6) : "".center(6)
+      result = $game_variables[i] >= log(i)? Temp::QUEST_COMPLETION_MARK.center(6) : "".center(6)
       $hud.create_quest(string,gv[0],gv[1],result)
     else
-      @data.delete(i) if result == "(완료)".center(6)
+      @data.delete(i) if result == Temp::QUEST_COMPLETION_MARK.center(6)
     end
   end
 end
