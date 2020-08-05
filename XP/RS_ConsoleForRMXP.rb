@@ -11,6 +11,8 @@
 # Author : biud436
 # Date : 2018.07.15
 # Version : 
+# 2020.08.05 (v1.0.5)
+# - \r이 제대로 동작하지 않는 문제를 수정하였습니다.
 # 2020.04.01 (v1.0.4) :
 # - 이제 게임 윈도우가 콘솔 윈도우보다 더 위에 표시됩니다.
 # 2020.04.04 (v1.0.5) :
@@ -132,19 +134,19 @@ if not defined? $NEKO_RUBY
       WriteConsole.call(@@std_handle, buf, len, 0, 0)
     end
     def self.logw(args)
-      buf = []
+      buffs = []
       
       args.each do |i|
-        buf.push(i.to_s + "\r\n") 
+        buffs.push(i.to_s) 
+        buffs.push("\r")
+        buffs.push("\n")
       end
-      
-      lf = "\r\n"
-      lf = "\r" if buf.size == 1
-      
-      buf = buf.join(", ") + lf
-      len = buf.size
-      buf = buf.unicode!
-      WriteConsoleW.call(@@std_handle, buf, len, 0, 0)
+            
+      buffs.each do |buf|        
+        len = buf.size
+        buf = buf.unicode!
+        WriteConsoleW.call(@@std_handle, buf, len, 0, 0)
+      end
     end  
     
     Console.activate
