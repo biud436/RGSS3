@@ -44,7 +44,7 @@ module RS::Slash
   }).call
   
   # 컴포넌트
-  class NextSceneCompoenent
+  class NextSceneComponent
     def execute(&block)
       block.call
       SceneManager.call(NEXT_SCENE)
@@ -129,7 +129,7 @@ class Scene_Splash < Scene_Base
   
   def dispose_sprite
     
-    component = RS::Slash::NextSceneCompoenent.new
+    component = RS::Slash::NextSceneComponent.new
     component.execute do
       if not @display.disposed?
         @display.bitmap.dispose if not @display.bitmap.disposed?
