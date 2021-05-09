@@ -13,6 +13,7 @@ $imported["RS_SplashScreenV2"] = true
 # Change Log : 
 # 2021.05.09 (v1.0.0) : First Release.
 # Description : 
+# This script allows you to show up the splash screen before starting the title scene.
 #
 # To use this script, you have to copy and paste the script somewhere above 
 # Main script and below Materials section.
