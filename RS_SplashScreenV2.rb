@@ -12,6 +12,17 @@ $imported["RS_SplashScreenV2"] = true
 # Date : 2021.05.09
 # Change Log : 
 # 2021.05.09 (v1.0.0) : First Release.
+# Description : 
+#
+# To use this script, you have to copy and paste the script somewhere above 
+# Main script and below Materials section.
+#
+# and next you should make a new folder to "Graphics/Splash" in the root game 
+# directory and place a desired image called "Graphics/Splash/splash.png"
+#
+# Notice that you could be seen white screen if you didn't place an image 
+# at the base folder.
+#
 #================================================================
 module RS; end;
 module RS::Slash
