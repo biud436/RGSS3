@@ -120,8 +120,8 @@ LRESULT CALLBACK SuperProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 
 RSDLL void RSInitWithCoreSystem()
 {
-	HINSTANCE hInstance = (HINSTANCE)GetWindowLong(g_hRGSSPlayer, GWL_HINSTANCE);
-	OldProc = (WNDPROC)SetWindowLong(g_hRGSSPlayer, GWL_WNDPROC, (LONG)SuperProc);
+	HINSTANCE hInstance = (HINSTANCE)GetWindowLong(g_hRGSSPlayer, GWLP_HINSTANCE);
+	OldProc = (WNDPROC)SetWindowLong(g_hRGSSPlayer, GWLP_WNDPROC, (LONG)SuperProc);
 
 	if (OldProc == NULL) 
 	{
