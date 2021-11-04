@@ -16,6 +16,9 @@
 # of an ending within a game and its name can set in Tool module.
 #
 # DataManager.ending_setup("엔딩1")
+# Version Log :
+# 1.0.0 (2015.09.07) : First Release
+# 1.0.1 (2021-11-04) : BGM 버그 수정
 #==============================================================================
 # ** Terms of Use
 #==============================================================================
@@ -196,7 +199,7 @@ class Scene_Title < Scene_Base
     if Header.choose_background?
       $data_system.title_bgm.name = Header.export_background[2]
     end
-    $data_system.title_bgm.play
+    $data_system.title_bgm.play rescue nil
     RPG::BGS.stop
     RPG::ME.stop
   end
