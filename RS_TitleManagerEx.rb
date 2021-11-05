@@ -19,6 +19,8 @@
 # Version Log :
 # 1.0.0 (2015.09.07) : First Release
 # 1.0.1 (2021-11-04) : BGM 버그 수정
+# 1.0.2 (2021-11-05) : 
+# - added a title resource to load when loading title resource is failed.
 #==============================================================================
 # ** Terms of Use
 #==============================================================================
@@ -29,6 +31,7 @@
 # This module sets up graphics resources to import within a title screen.
 #==============================================================================
 
+
 $imported = {} if $imported.nil?
 $imported["RS_TitleManagerEx"] = true
 
@@ -36,11 +39,20 @@ module Tool
 
   # Import the game data from Data/System.rvdata2 file
   SYS = load_data("Data/System.rvdata2")
+  DEFAULT_TITLE = {
+    :title1_name => "Plain",
+    :title2_name => "Forest",
+    :title_bgm => RPG::BGM.new("Theme1",100, 100),
+  }
   RESOURCE = {
 
   # Sets the image and BGM for title screen and notice that you must set the
   # actual name of the resouce file.
-  "기본타이틀" => [SYS.title1_name,SYS.title2_name,SYS.title_bgm], # Default Title Resource
+  "기본타이틀" => [
+    SYS.title1_name || DEFAULT_TITLE[:title1_name],
+    SYS.title2_name || DEFAULT_TITLE[:title2_name],
+    SYS.title_bgm || DEFAULT_TITLE[:title_bgm],
+  ], # Default Title Resource
   "엔딩1" => ["Book","","Theme1"],
   "엔딩2" => ["Castle","","Theme2"],
   "엔딩3" => ["CrossedSwords","","Theme3"],
