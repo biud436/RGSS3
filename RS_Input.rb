@@ -7,7 +7,7 @@
 #===============================================================================
 # Name : RS_Input
 # Author : biud436
-# Version : v1.0.11 (2020.05.01)
+# Version : v1.0.12 (2022.01.06)
 # Link : https://biud436.blog.me/220289463681
 # Description : This script provides the extension keycode and easy to use.
 #-------------------------------------------------------------------------------
@@ -42,6 +42,8 @@
 # - 스킬 목록에서 인덱스 계산이 잘못되는 문제를 수정하였습니다.
 # v1.0.11 (2020.05.01) :
 # - 마우스의 아이콘의 인덱스를 바꿀 수 있습니다.
+# v1.0.12 (2022.01.06) :
+# - Windows 11에서 Mouse Wheel이 동작하지 않는 문제가 있어 SafeWin32API 모듈 도입
 #-------------------------------------------------------------------------------
 # 사용법 / How to use
 #-------------------------------------------------------------------------------
@@ -267,6 +269,26 @@ class MouseBuffer < InputBuffer
     @current[2] = val
   end  
 end
+
+#===============================================================================
+# SafeWin32API (Windows 11)
+#===============================================================================
+module SafeWin32API
+  DATA = {
+    "v" => nil,
+    'l' => 0,
+    'p' => ""
+  }
+  
+  class << self
+    def bind(*args)
+      # Windows 11에서 Mouse Wheel이 동작하지 않는 문제가 있어 도입하였습니다.
+      temp_api = Win32API.new(*args) rescue Proc.new { DATA[args[3]] rescue 0 }
+      temp_api
+    end
+  end
+end
+
 #===============================================================================
 # Input moudle
 #===============================================================================
@@ -279,9 +301,9 @@ module Input
   GetAsyncKeyState = Win32API.new('user32.dll', 'GetAsyncKeyState', 'i', 'i')
   GetKeyNameTextW = Win32API.new('user32.dll', 'GetKeyNameText', 'lpi', 'i')
   MapVirtualKey = Win32API.new('user32.dll', 'MapVirtualKey', 'll', 'l')
-  RSGetWheelDelta = Win32API.new('RS-InputCore.dll', 'RSGetWheelDelta', 'v', 'l')
-  RSResetWheelDelta = Win32API.new('RS-InputCore.dll', 'RSResetWheelDelta', 'v', 'v')
-  GetText = Win32API.new('RS-InputCore.dll', 'get_text', 'v', 'p')
+  RSGetWheelDelta = SafeWin32API.bind('RS-InputCore.dll', 'RSGetWheelDelta', 'v', 'l')
+  RSResetWheelDelta = SafeWin32API.bind('RS-InputCore.dll', 'RSResetWheelDelta', 'v', 'v')
+  GetText = SafeWin32API.bind('RS-InputCore.dll', 'get_text', 'v', 'p')
   
   MAPVK_VSC_TO_VK_EX = 3
   
