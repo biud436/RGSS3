@@ -20,6 +20,8 @@
 # 2020.03.28 (v1.0.6) :
 # - Added a new feature that can download the ffmpeg during the game.
 # - Fixed the bug that place the window position incorrectly when playing the movie using FFPLAY.
+# 2022.03.05 (v1.0.7) :
+# - Fixed the bug that can't download FFMPEG due to the URL is broken.
 # Desc :
 # This script allows you to playback a video of specific video format such as mp4
 # 
@@ -31,15 +33,15 @@
 # So before starting this script, you must download the ffmpeg executable files.
 # 
 # it is available at 
-# https://ffmpeg.zeranoe.com/builds/win64/static/ffmpeg-4.2.2-win64-static.zip
+# https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/ffmpeg-n4.4-latest-win64-lgpl-4.4.zip
 #  
-# Next, You must place all files in the directory called "ffmpeg-4.2.2-win64-static/bin/"
+# Next, You must place all files in the directory called "ffmpeg-n4.4-latest-win64-lgpl-4.4/bin/"
 # 
 # The folder tree structure is as follows:
 # 
 # | Game.exe
 # |
-# | ffmpeg-4.2.2-win64-static
+# | ffmpeg-n4.4-latest-win64-lgpl-4.4
 #   | 
 #   | bin
 #     | ffmpeg.exe
@@ -447,6 +449,16 @@ if RUBY_VERSION == "1.8.1"
   end
 end
 
+class File
+  class << self
+    def exist_safe?(filename)
+      unwrap = filename.unicode!
+      wrap = unwrap.unicode_s
+      File::exist?(wrap)
+    end
+  end
+end
+
 module FFMPEG
   
   FindWindowW = Win32API.new('user32.dll', 'FindWindowW', 'pp', 'l')
@@ -502,9 +514,9 @@ module FFMPEG
 
     extend self  
     
-    HOST = "https://ffmpeg.zeranoe.com/builds/win64/static/ffmpeg-4.2.2-win64-static.zip"
-    HOST_NAME = "ffmpeg-4.2.2-win64-static/bin"
-    TARGET_ZIP_FILE = "ffmpeg-4.2.2-win64-static.zip"
+    HOST = "https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/ffmpeg-n4.4-latest-win64-lgpl-4.4.zip"
+    HOST_NAME = "ffmpeg-n4.4-latest-win64-lgpl-4.4/bin"
+    TARGET_ZIP_FILE = "ffmpeg-n4.4-latest-win64-lgpl-4.4.zip"
     MSG = "FFMPEG 파일을 다운로드 받으시겠습니까?"
     
     MessageBox = Win32API.new('User32.dll', 'MessageBoxW', 'lppl', 'i')
@@ -523,7 +535,7 @@ module FFMPEG
       
       def self.extract(filename)
         filename = File.join(Dir.pwd, filename)
-        return if not File::exist?(filename)
+        return if not File::exist_safe?(filename)
         ExtractZip.call(filename)    
       end
     
@@ -563,12 +575,12 @@ module FFMPEG
       
     # 다운로드 시작
     def pending_download
-
+      
       return if exist?
               
       if new_download? == IDYES
         if version >= 3
-          `powershell -command "wget '#{HOST}' -OutFile '#{TARGET_ZIP_FILE}'"`
+          `chcp 65001 | powershell -command "wget '#{HOST}' -OutFile '#{TARGET_ZIP_FILE}'"`
         else
           t = Thread.new do
             ret = Win32API.new("Urlmon", "URLDownloadToFileW", "ppplp", "l").call(0, HOST.unicode!, TARGET_ZIP_FILE.unicode!, 0, 0)
@@ -917,6 +929,7 @@ module FFMPEG
     end
     
   else
+    p "FFMPEG does not exist!"
     FFMPEG::Downloader.pending_download
   end
   
