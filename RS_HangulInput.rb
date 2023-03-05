@@ -15,6 +15,16 @@
 # $hangul = HangulIME.new
 # $hangul.start_with_composite($hangul.decompress("니 결에 있을게 my love"), Proc.new {|ret| p ret })  
 #
+#================================================================
+# Change Log
+# ---------------------------------------------------------------
+# Note that this script is ported from the RPG Maker MV & MZ. 
+# The underlying algorithm of this Ruby script doesn't match that of the MZ version.
+# The latest code algorithm is written in JavaScript, 
+# and it is available on the following link.
+#
+# Link: https://github.com/biud436/MZ/blob/master/RS_HangulInput.js
+#
 #===========================================================
 
 $imported = {} if $imported.nil?
