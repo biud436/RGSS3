@@ -6,7 +6,7 @@
 #================================================================
 #==============================================================================
 # Name       : Create Instance Event (RGSS2)
-# Author     : biud436 (http://biud436.blog.me)
+# Author     : biud436 (https://blog.naver.com/biud436)
 # Version    : 1.4
 # Date       : 2015.06.22
 # Change Log :

@@ -14,7 +14,7 @@ This script allows you to change the UI of Window_TitleCommand on title scene an
 To use this script, 
 Place decompressed resource files in your Graphics/Pictures folder after downloading resource file at following the link.
 
-Link : http://biud436.blog.me/220042810055
+Link : https://blog.naver.com/biud436/220042810055
 
 But, This is pretty old script.
 

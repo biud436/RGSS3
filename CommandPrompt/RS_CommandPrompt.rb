@@ -8,7 +8,7 @@
 #   Name      : Ruby Command Prompt (RPG Maker VX Ace)
 #   Date      : 2015.07.14
 #   Author    : 러닝은빛(biud436)
-#   Link      : http://biud436.blog.me/220419412203
+#   Link      : https://blog.naver.com/biud436/220419412203
 #   Version   : 
 # 2019.09.24 (v1.0.5) : 
 # - 왼쪽, 오른쪽, 홈, 삭제, 백스페이스 키로 커서 이동 추가
