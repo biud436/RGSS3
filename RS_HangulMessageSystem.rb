@@ -1,12 +1,14 @@
 #==============================================================================
-# ** Hangul Message System v1.6.2b (RPG Maker VX Ace)
+# ** Hangul Message System v1.6.3 (RPG Maker VX Ace)
 #==============================================================================
 # Name       : Hangul Message System
 # Author     : biud436
-# Version    : v1.6.2b
+# Version    : v1.6.3
 #==============================================================================
 # ** 업데이트 로그
 #==============================================================================
+# 2023.11.22 (v1.6.3) :
+# - 이름 윈도우에 padding 값 추가
 # 2020.07.23 (v1.6.2b) :
 # - 얼굴 이미지가 설정된 직후, 일반 메시지를 띄웠을 때 공백이 남아있는 문제를 수정하였습니다.
 # 2020.07.22 (v1.6.2) :
@@ -1751,7 +1753,11 @@ class RS::Window_Name < Window_Base
     self.width = @_width || window_width
     text = convert_escape_characters(@text)
     self.contents.font.size = RS::LIST[:FONT_SIZE]
-    draw_text(0,0,contents_width,calc_line_height(text),text.to_s,1)
+    
+    # 패딩 추가
+    target_width = self.width - standard_padding * 2
+    
+    draw_text(0,0,target_width,calc_line_height(text),text.to_s,1)
   end
   #--------------------------------------------------------------------------
   # * 이름 출력
