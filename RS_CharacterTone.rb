@@ -9,7 +9,9 @@
 # Name : Tone_Base
 # Desc : This script allows you to change certain character's tone.
 # Author : biud436
-# Version : 1.0
+# Version : 1.0.1
+# 2024.01.06 (v1.0.1) :
+# - fixed the not working when setting the character image from the tileset
 #==============================================================================
 # ** How to Use
 #==============================================================================
@@ -49,14 +51,10 @@ class Game_CharacterBase
   end
 end
 class Sprite_Character
-  alias xxxx_set_character_bitmap set_character_bitmap
-  alias xxxx_update_other update_other
-  def set_character_bitmap
-    xxxx_set_character_bitmap
-    @original_tone = Tone.new
-  end
-  def update_other
-    xxxx_update_other
+  alias xxxx_update_bitmap update_bitmap
+  def update_bitmap
+    xxxx_update_bitmap
+    @original_tone = Tone.new if @original_tone.nil?
     self.tone = @character.tone || @original_tone
   end
 end
