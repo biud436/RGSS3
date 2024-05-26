@@ -25,11 +25,12 @@
 # 즉, Graphics.update는 멈추면 안됩니다.
 #
 # 4. FFMPEG 링크가 손상되어 다운로드를 할 수 없는 문제가 있습니다.
-# 5. 동영상 재생 시, Graphics.update가 장기간 멈추면 Script is hanging 오류가 생깁니다.
+# 5. 동영상 재생 시, Graphics.update가 멈추면 Script is hanging 오류가 생깁니다.
 #
 # Change Log:
 # 2024.05.26 (v1.0.2): 
 # - FFMPEG 자동 다운로드 스크립트 실행 제거
+# - Hangup 오류 처리 추가
 #
 $imported = {} if $imported.nil?
 $imported["RS_PlayMovieExForXP"] = true
@@ -744,42 +745,44 @@ module FFMPEG
   
   # OGV가 아닌 다른 영상을 재생합니다
   def play(filename)
+    begin
     
-    caption = GetSystemMetrics.call(SM_CYCAPTION)
-    x_padding = GetSystemMetrics.call(SM_CXEDGE)
-    y_padding = GetSystemMetrics.call(SM_CYEDGE)
-    
-    vw = Graphics.width + x_padding
-    vh = Graphics.height + y_padding
-
-    extra = fullscreen? ? "-fs -alwaysontop" : ""
-    
-    rt = [0,0,0,0].pack('l4')
-    GetWindowRect.call(HWND, rt)    
-    r = rt.unpack('l4')
-    
-    x = r[0] + (fullscreen? ? 0 : x_padding)
-    y = r[1] + (fullscreen? ? 0 : (caption + y_padding))
-    
-    rt = [0,0,0,0].pack('l4')
-    GetClientRect.call(HWND, rt)
-    r = rt.unpack('l4')
-    
-    vw = (r[2] - r[0]) + x_padding
-    vh = r[3] - r[1]
-    
-    `#{Downloader::HOST_NAME}/ffplay.exe "Movies/#{filename}" -noborder -autoexit -left #{x} -top #{y} -x #{vw} -y #{vh} #{extra}`
-    
-    t = Thread.new do
+      caption = GetSystemMetrics.call(SM_CYCAPTION)
+      x_padding = GetSystemMetrics.call(SM_CXEDGE)
+      y_padding = GetSystemMetrics.call(SM_CYEDGE)
+      
+      vw = Graphics.width + x_padding
+      vh = Graphics.height + y_padding
+  
+      extra = fullscreen? ? "-fs -alwaysontop" : ""
+      
+      rt = [0,0,0,0].pack('l4')
+      GetWindowRect.call(HWND, rt)    
+      r = rt.unpack('l4')
+      
+      x = r[0] + (fullscreen? ? 0 : x_padding)
+      y = r[1] + (fullscreen? ? 0 : (caption + y_padding))
+      
+      rt = [0,0,0,0].pack('l4')
+      GetClientRect.call(HWND, rt)
+      r = rt.unpack('l4')
+      
+      vw = (r[2] - r[0]) + x_padding
+      vh = r[3] - r[1]
+      
       `#{Downloader::HOST_NAME}/ffplay.exe "Movies/#{filename}" -noborder -autoexit -left #{x} -top #{y} -x #{vw} -y #{vh} #{extra}`
-      p 'play'
-      Graphics.update
-    end
-    
-    ffplay_hwnd = `powershell (Get-Process -Name "ffplay").MainWindowHandle`.to_i
-    
-    if !ffplay_hwnd
-      raise "Cannot find FFPLAY"
+      
+      t = Thread.new do
+        `#{Downloader::HOST_NAME}/ffplay.exe "Movies/#{filename}" -noborder -autoexit -left #{x} -top #{y} -x #{vw} -y #{vh} #{extra}`
+      end
+      
+      ffplay_hwnd = `powershell (Get-Process -Name "ffplay").MainWindowHandle`.to_i
+      
+      if !ffplay_hwnd
+        raise "Cannot find FFPLAY"
+      end
+    rescue Hangup
+      
     end
     
     return t
@@ -914,7 +917,6 @@ module Graphics
       items = Dir.glob("Movies/*.*").select {|v| v =~ /(.*).*/ && v.include?(filename)}
       filename_0 = items.first
       play_thread = FFMPEG.play(File.basename(filename_0))
-      play_thread.join
     end
   end
 end
