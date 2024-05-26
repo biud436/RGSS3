@@ -24,6 +24,13 @@
 # 그래픽이 계속 갱신되는 상태에서 실시간으로 버퍼로 받아야 합니다.
 # 즉, Graphics.update는 멈추면 안됩니다.
 #
+# 4. FFMPEG 링크가 손상되어 다운로드를 할 수 없는 문제가 있습니다.
+# 5. 동영상 재생 시, Graphics.update가 장기간 멈추면 Script is hanging 오류가 생깁니다.
+#
+# Change Log:
+# 2024.05.26 (v1.0.2): 
+# - FFMPEG 자동 다운로드 스크립트 실행 제거
+#
 $imported = {} if $imported.nil?
 $imported["RS_PlayMovieExForXP"] = true
 
@@ -508,6 +515,12 @@ module FFMPEG
       
       return if exist?
       
+      if not exist?
+        msgbox "FFMPEG가 설치되어있어야 합니다."
+        return
+      end
+      
+      # 링크가 시간이 지나면 사라지는 문제로 인하여 직접 다운로드 필요
       pid = Thread.new do
       
         Process.no_wait
@@ -759,6 +772,8 @@ module FFMPEG
     
     t = Thread.new do
       `#{Downloader::HOST_NAME}/ffplay.exe "Movies/#{filename}" -noborder -autoexit -left #{x} -top #{y} -x #{vw} -y #{vh} #{extra}`
+      p 'play'
+      Graphics.update
     end
     
     ffplay_hwnd = `powershell (Get-Process -Name "ffplay").MainWindowHandle`.to_i
@@ -898,7 +913,8 @@ module Graphics
     def play_movie(filename)
       items = Dir.glob("Movies/*.*").select {|v| v =~ /(.*).*/ && v.include?(filename)}
       filename_0 = items.first
-      FFMPEG.play(File.basename(filename_0))
+      play_thread = FFMPEG.play(File.basename(filename_0))
+      play_thread.join
     end
   end
 end
