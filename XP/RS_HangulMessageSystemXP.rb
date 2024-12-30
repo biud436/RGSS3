@@ -1,5 +1,5 @@
 #==============================================================================
-#  ** 한글 메시지 시스템 v1.0.18
+#  ** 한글 메시지 시스템 v1.0.22
 #==============================================================================
 #  ** 사용법
 #==============================================================================
@@ -150,6 +150,8 @@
 # - 이름 윈도우 사용 중에 F12 버튼을 누르면, 오류가 발생하는 문제 수정.
 # 2020.04.19 (v1.0.18) :
 # - 얼굴 이미지 표시 기능 추가
+# 2024.12.31 (v1.0.22) :
+# - 네코플레이어 등 사용하지 않는 코드를 제거하였습니다.
 #==============================================================================
 # ** 사용 조건
 #==============================================================================
@@ -212,62 +214,12 @@ module INI
   # * INI 파일의 내용을 읽어옵니다
   #--------------------------------------------------------------------------
   def read_string(app_name,key_name,file_name)
-    if $NEKO_RUBY
-      return neko_read_string(app_name, key_name, file_name)
-    end
     buf = "\0" * 256
     path = ".\\" + file_name
     (param = [app_name,key_name,path]).collect! {|x| x.unicode!}
     GetPrivateProfileStringW.call(param[0], param[1], 0, buf, 256, param[2])
     buf.unicode_s.unpack('U*').pack('U*')
   end    
-  #--------------------------------------------------------------------------
-  # * INI 파일의 내용을 작성합니다
-  #--------------------------------------------------------------------------  
-  def neko_write_string(app, data, file_name)
-    return if not $NEKO_RUBY
-    
-    Thread.new {
-      path = "./#{file_name}"
-      
-      f = File.open(path, "wb+")
-      
-      f.write "[#{app}]\r\n"
-      data.each do |k, v|
-        f.write "#{k}=#{v.to_s}\r\n"
-      end
-      f.close
-    }
-  end
-  #--------------------------------------------------------------------------
-  # * INI 파일의 내용을 읽어옵니다
-  #--------------------------------------------------------------------------  
-  def neko_read_string(app, key, file_name)
-    return "" if not $NEKO_RUBY
-    
-    # 파일을 읽는다
-    path = "./#{file_name}"
-    f = File.open(path, "r+")
-    data = f.read
-    f.close
-    
-    # app_name이 app과 일치 하는 지 확인한다.
-    m = data.split(/[\r\n]+/)
-    app_name = d[1, d.size - 2]
-    return "" if app_name != app
-    m.shift
-    
-    # 컬러 배열을 만든다
-    color = {}
-    m.each do |line|
-      name, value = line.split("=")
-      color[name] = value
-    end
-    
-    # 컬러가 있으면 반환, 없으면 빈 문자열
-    return color[key] || ""
-    
-  end
 end
 
 #==============================================================================
@@ -275,31 +227,29 @@ end
 #==============================================================================
 module Graphics
   # 프로그램의 가로 길이와 세로 길이 값을 구해 대화창의 폭과 높이를 설정한다.
-  if not defined? $NEKO_RUBY
-    FindWindowW = Win32API.new('user32', 'FindWindowW', 'pp', 'l')
-    GetClientRect = Win32API.new('user32', 'GetClientRect', 'lp', 'i')  
-    begin
-      game_name = INI.read_string("Game", "Title", "Game.ini")
-      hwnd = FindWindowW.call('RGSS Player'.unicode!, game_name.unicode!)
-      if hwnd
-        @handle = hwnd
-      else
-        @handle = FindWindowW.call('RGSS Player'.unicode!, nil)
-      end    
-      rect = [0, 0, 0, 0].pack('l4')
-      GetClientRect.call(@handle, rect)
-      @width,@height = rect.unpack('l4')[2..3]
-    rescue
-      @width, @height = 640, 480
-    end
-  
-    extend self
-    unless method_defined? :width
-      define_method(:width) { @width }
-    end
-    unless method_defined? :height  
-      define_method(:height) { @height } 
-    end
+  FindWindowW = Win32API.new('user32', 'FindWindowW', 'pp', 'l')
+  GetClientRect = Win32API.new('user32', 'GetClientRect', 'lp', 'i')  
+  begin
+    game_name = INI.read_string("Game", "Title", "Game.ini")
+    hwnd = FindWindowW.call('RGSS Player'.unicode!, game_name.unicode!)
+    if hwnd
+      @handle = hwnd
+    else
+      @handle = FindWindowW.call('RGSS Player'.unicode!, nil)
+    end    
+    rect = [0, 0, 0, 0].pack('l4')
+    GetClientRect.call(@handle, rect)
+    @width,@height = rect.unpack('l4')[2..3]
+  rescue
+    @width, @height = 640, 480
+  end
+
+  extend self
+  unless method_defined? :width
+    define_method(:width) { @width }
+  end
+  unless method_defined? :height  
+    define_method(:height) { @height } 
   end
 end
 
@@ -320,7 +270,7 @@ module RS
   LIST["폰트명"] = ["나눔고딕", "굴림", "궁서체"]
   
   # 폰트 크기를 변경합니다. 예:) Font.default_size는 기본 폰트 사이즈입니다.
-  LIST["폰트크기"] = $NEKO_RUBY ? 16 : Font.default_size
+  LIST["폰트크기"] = Font.default_size
   
   # 자동 개행 설정
   # true이면 창의 폭을 넘겼을 때 자동으로 개행합니다.
@@ -453,11 +403,7 @@ end
 #==============================================================================
 class Hash
   def to_ini(file_name="Default.ini",app_name="Default")
-    if $NEKO_RUBY
-      INI.neko_write_string(app_name, self, file_name)
-    else
-      self.each { |k, v| INI.write_string(app_name,k.to_s.dup,v.to_s.dup,file_name) }
-    end
+    self.each { |k, v| INI.write_string(app_name,k.to_s.dup,v.to_s.dup,file_name) }
   end
 end
 
@@ -492,7 +438,6 @@ module RS
   # 폰트를 설치합니다
   #--------------------------------------------------------------------------  
   def add_font
-    return false if $NEKO_RUBY
     return false if ENV["WINDIR"].nil?    
     
     Dir[File.join("Fonts", "*.ttf")].each do |font_name|
@@ -522,7 +467,6 @@ module RS
   #--------------------------------------------------------------------------
   def import_color(string)
     default_color = ::Color.new(255, 255, 255, 255) 
-    return default_color if defined? $NEKO_RUBY
     data = INI.read_string("색상목록",string,'Colors.ini')
     if data =~ /\[(\d+)\W\s*(\d+)\W\s*(\d+)\W\s*(\d+)\s*\]/i
       ::Color.new($1.to_i, $2.to_i, $3.to_i, $4.to_i)
@@ -1215,17 +1159,7 @@ class Window_Name < Window_Base
   #--------------------------------------------------------------------------
   # * 폰트 설정
   #--------------------------------------------------------------------------
-  def set_font(name, size = Font.default_size )
-    
-    if $NEKO_RUBY
-      text_height = size / 0.75 # pt에서 px
-      max_font_size = (line_height - 2) * 0.75 # px에서 pt
-      
-      if text_height > line_height
-        size = max_font_size 
-      end
-    end
-    
+  def set_font(name, size = Font.default_size ) 
     self.contents.font.name = name
     self.contents.font.size = size
   end
@@ -1383,16 +1317,6 @@ class Window_Message < Window_Selectable
   # * 폰트 설정
   #--------------------------------------------------------------------------
   def set_font(name, size = Font.default_size )
-    
-    if $NEKO_RUBY
-      text_height = size / 0.75 # pt에서 px
-      max_font_size = (line_height - 2) * 0.75 # px에서 pt
-      
-      if text_height > line_height
-        size = max_font_size 
-      end
-    end
-    
     self.contents.font.name = name
     self.contents.font.size = size
     
@@ -1926,7 +1850,6 @@ class Window_Message < Window_Selectable
   #--------------------------------------------------------------------------    
   def draw_highlight_color(c, pos, w)
     return if not $game_temp.highlight
-    return if $NEKO_RUBY # 네코 플레이어에서 텍스트 블렌딩을 지원하지 않음
     highlight_color = $game_temp.highlight_color    
     self.contents.fill_rect(4 + pos[:x], pos[:y], w, pos[:height], highlight_color)
   end
@@ -1951,11 +1874,7 @@ class Window_Message < Window_Selectable
     r = (-n..n)
     for i in r
       for j in r
-        if $NEKO_RUBY
-          draw_text_for_neko(4 + pos[:x] + i, pos[:y] + j, tw, pos[:height], c)
-        else 
-          self.contents.draw_text(4 + pos[:x] + i, pos[:y] + j, tw, pos[:height], c)        
-        end
+        self.contents.draw_text(4 + pos[:x] + i, pos[:y] + j, tw, pos[:height], c)     
       end
     end
   end
@@ -2018,11 +1937,7 @@ class Window_Message < Window_Selectable
     
     # 텍스트
     self.contents.font.color = temp_color
-    if $NEKO_RUBY
-      draw_text_for_neko(4 + pos[:x], pos[:y], tw, pos[:height], c)
-    else
-      self.contents.draw_text(4 + pos[:x], pos[:y], tw, pos[:height], c)
-    end
+    self.contents.draw_text(4 + pos[:x], pos[:y], tw, pos[:height], c)
     
     pos[:x] += w     
     
