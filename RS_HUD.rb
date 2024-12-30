@@ -21,6 +21,8 @@
 # - 경험치 바가 잠깐 보이는 현상 제거
 # 2018.08.30 : 
 # - 화면 크기 변경했을 때 위치가 앵커에 따라 바뀌지 않는 현상 수정
+# 2024.12.31 :
+# - 이미지 경로를 상수값으로 변경하였음.
 #==============================================================================
 # ** Terms of Use
 #==============================================================================
@@ -64,6 +66,15 @@ module HUD
   when :BOTTOM_LEFT then Proc.new{[PD,Graphics.height - H - PD]}
   when :TOP_LEFT  then Proc.new{[PD,PD]}
   end
+  
+  # Specify the name of image from Graphics/picutres folder
+  IMG = {
+    :EMPTY => "hud_window_empty",
+    :EXP => "exr",
+    :HP => "hp",
+    :MP => "mp",
+    :MASKING => "masking",
+  }
 end
 
 #==============================================================================
@@ -187,7 +198,7 @@ class Hud
   #--------------------------------------------------------------------------
   def create_hud
     @hud = Sprite.new
-    @hud.bitmap = Cache.picture("hud_window_empty")
+    @hud.bitmap = Cache.picture(HUD::IMG[:EMPTY])
     @hud.x,@hud.y = HUD::POS.call
     @face = Sprite.new
     @face.bitmap = draw_circle(player.face_name, 48, 48, 48)
@@ -196,7 +207,7 @@ class Hud
   # * 마스크 비트맵 생성
   #--------------------------------------------------------------------------  
   def create_mask_bitmap
-    @mask_bitmap = @mask_bitmap || Cache.picture("masking")
+    @mask_bitmap = @mask_bitmap || Cache.picture(HUD::IMG[:MASKING])
   end
   #--------------------------------------------------------------------------
   # * 원 그리기
@@ -278,14 +289,14 @@ class Hud
   #--------------------------------------------------------------------------
   def create_hp
     @hp = Spr_Params.new
-    @hp.bitmap = Cache.picture("hp")
+    @hp.bitmap = Cache.picture(HUD::IMG[:HP])
   end
   #--------------------------------------------------------------------------
   # * MP 생성
   #--------------------------------------------------------------------------
   def create_mp
     @mp = Spr_Params.new
-    @mp.bitmap = Cache.picture("mp")
+    @mp.bitmap = Cache.picture(HUD::IMG[:MP])
   end
   #--------------------------------------------------------------------------
   # * EXP 생성
@@ -293,7 +304,7 @@ class Hud
   def create_exp
     @exp = Spr_Params.new
     @exp.visible = false
-    @exp.bitmap = Cache.picture("exr")
+    @exp.bitmap = Cache.picture(HUD::IMG[:EXP])
     @exp_dirty = true
   end
   #--------------------------------------------------------------------------
