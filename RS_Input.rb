@@ -7,7 +7,7 @@
 #===============================================================================
 # Name : RS_Input
 # Author : biud436
-# Version : v1.0.12 (2022.01.06)
+# Version : v1.0.24 (2024.12.31)
 # Link : https://biud436.blog.me/220289463681
 # Description : This script provides the extension keycode and easy to use.
 #-------------------------------------------------------------------------------
@@ -44,6 +44,11 @@
 # - 마우스의 아이콘의 인덱스를 바꿀 수 있습니다.
 # v1.0.12 (2022.01.06) :
 # - Windows 11에서 Mouse Wheel이 동작하지 않는 문제가 있어 SafeWin32API 모듈 도입
+# v1.0.24 (2024.12.31) :
+# - The issue where a movable tile was incorrectly displayed as non-movable 
+# when hovering the mouse over it has been fixed.
+# (이동 가능한 타일인데 마우스를 올려놓으면, 
+# 이동 불가능한 타일로 표시되는 문제를 수정하였습니다.)
 #-------------------------------------------------------------------------------
 # 사용법 / How to use
 #-------------------------------------------------------------------------------
@@ -1654,7 +1659,12 @@ class Spriteset_Map
     else
       x = $game_map.canvas_to_map_x(TouchInput.x)
       y = $game_map.canvas_to_map_y(TouchInput.y)
-      if $game_map.airship_land_ok?(x, y)
+      if $game_map.check_passage(x, y, 0x0f) ||
+          $game_map.check_passage(x, y, 0x02) ||
+          $game_map.check_passage(x, y, 0x04) ||
+          $game_map.check_passage(x, y, 0x06) ||
+          $game_map.check_passage(x, y, 0x08) 
+        
         @destination.color = RS::Input::Config[:DESTINATION_NORMAL_COLOR]
       else
         @destination.color = RS::Input::Config[:DESTINATION_UNABLE_PASSABLE_TILE_COLOR]
@@ -1741,7 +1751,11 @@ class Scene_Map < Scene_Base
         if @touch_count == 0 or (@touch_count >= 15)
           x = $game_map.canvas_to_map_x(TouchInput.x)
           y = $game_map.canvas_to_map_y(TouchInput.y)
-          if $game_map.airship_land_ok?(x, y)
+          if $game_map.check_passage(x, y, 0x0f) ||
+             $game_map.check_passage(x, y, 0x02) ||
+             $game_map.check_passage(x, y, 0x04) ||
+             $game_map.check_passage(x, y, 0x06) ||
+             $game_map.check_passage(x, y, 0x08) 
             $game_temp.set_destination(x, y) 
           end
         end
