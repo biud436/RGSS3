@@ -8,7 +8,7 @@
 # Name : RS_Input
 # Author : biud436
 # Version : v1.0.24 (2024.12.31)
-# Link : https://biud436.blog.me/220289463681
+# Link : https://blog.naver.com/biud436/220289463681
 # Description : This script provides the extension keycode and easy to use.
 #-------------------------------------------------------------------------------
 # Version Log
