@@ -7,7 +7,7 @@
 =begin
 Name : MiniMap
 Author : biud436
-Version : 1.57
+Version : 1.58
 #==============================================================================
 # ** 사용법
 #==============================================================================
@@ -43,6 +43,9 @@ $game_map.minimap_visible = true
 #==============================================================================
 # ** 업데이트 정보
 #==============================================================================
+
+## 1.58 (2025.01.01) =========================================================
+- 이벤트에 시작 조건이 설정되어있을 때 오류가 생기는 현상을 수정하였습니다.
 
 ## 1.57 (2019.12.25) =========================================================
 - 동적 묘화 옵션(최적화 옵션)을 추가했습니다. 플레이어가 정지 상태일 때에만 묘화 
@@ -744,6 +747,8 @@ class MiniMap_Manager
   #--------------------------------------------------------------------------
   def create_character
     $game_map.events.values.each_with_index do |event,i|
+      return if event.list.nil?
+      return if event.empty?
       list = event.list.select {|i| i.code == 108 or i.code == 408}
       list.each { |m|
       m.parameters[0].gsub(/\u{bbf8}\u{b2c8}\u{b9f5}\u{20}\u{c124}\u{c815}( \d+)/) {
@@ -766,6 +771,8 @@ class MiniMap_Manager
   #--------------------------------------------------------------------------
   def update_character
     $game_map.events.values.each_with_index do |event,i|
+      return if event.list.nil?
+      return if event.empty?
       list = event.list.select {|i| i.code == 108 or i.code == 408}
       list.each { |m|
       m.parameters[0].gsub(/\u{bbf8}\u{b2c8}\u{b9f5}\u{20}\u{c124}\u{c815}( \d+)/) {
@@ -788,6 +795,8 @@ class MiniMap_Manager
   def dispose_character
     if $game_map.need_refresh
       $game_map.events.values.each_with_index do |event,i|
+      return if event.list.nil?
+      return if event.empty?
       list = event.list.select {|i| i.code == 108 or i.code == 408}
       list.each { |m|
         m.parameters[0].gsub(/\u{bbf8}\u{b2c8}\u{b9f5}\u{20}\u{c124}\u{c815}( \d+)/) {
@@ -1115,4 +1124,3 @@ class Spriteset_Map
     @mapster.create_viewrect
   end    
 end
-
