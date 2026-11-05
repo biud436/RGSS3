@@ -11,7 +11,7 @@ name = "un_zip"
 crate-type = ["dylib"]
 
 [dependencies]
-zip = "0.5"
+zip = "9.0"
 
 [target.'cfg(windows)'.dependencies]
 winapi = { version = "0.3", features = ["winuser"] }
